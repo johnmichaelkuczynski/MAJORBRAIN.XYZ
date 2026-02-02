@@ -29,7 +29,7 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="dark" storageKey="ask-them-theme">
+      <ThemeProvider defaultTheme="light" storageKey="ask-them-theme">
         <TooltipProvider>
           <ContentTransferProvider>
             <div className="min-h-screen bg-background">

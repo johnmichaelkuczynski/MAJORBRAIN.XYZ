@@ -72,9 +72,23 @@ async function* streamAnthropic(
   }
 }
 
-// Helper to send SSE response
+// Set up SSE headers to prevent buffering
+function setupSSE(res: Response) {
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache, no-transform");
+  res.setHeader("Connection", "keep-alive");
+  res.setHeader("X-Accel-Buffering", "no"); // Disable Nginx buffering
+  res.setHeader("Transfer-Encoding", "chunked");
+  res.flushHeaders(); // Send headers immediately
+}
+
+// Helper to send SSE response with immediate flush
 function sendSSE(res: Response, data: string) {
   res.write(`data: ${JSON.stringify({ content: data })}\n\n`);
+  // Force flush for real-time streaming
+  if (typeof (res as any).flush === 'function') {
+    (res as any).flush();
+  }
 }
 
 // Helper to safely query database tables that may not exist
@@ -340,10 +354,8 @@ export async function registerRoutes(
     
     const { message, model = "gpt-4o", quoteCount = 20, wordCount = 2000, enhanced = false } = validation.data as any;
 
-    // Set up SSE
-    res.setHeader("Content-Type", "text/event-stream");
-    res.setHeader("Cache-Control", "no-cache");
-    res.setHeader("Connection", "keep-alive");
+    // Set up SSE with proper streaming headers
+    setupSSE(res);
 
     try {
       // Get EXTENSIVE context from database - this is the SKELETON
@@ -389,9 +401,7 @@ export async function registerRoutes(
     
     const { inputText, mode, model = "gpt-4o" } = validation.data;
 
-    res.setHeader("Content-Type", "text/event-stream");
-    res.setHeader("Cache-Control", "no-cache");
-    res.setHeader("Connection", "keep-alive");
+    setupSSE(res);
 
     const systemPrompt = mode === "formal" 
       ? `You are a formal logic expert. Build a formal logical model that makes the given text TRUE. Include:
@@ -448,9 +458,7 @@ CRITICAL: DO NOT USE ANY MARKDOWN FORMATTING. No # headers, no * bullets, no - l
       return res.status(400).json({ error: "Topic and at least 2 thinkers are required" });
     }
 
-    res.setHeader("Content-Type", "text/event-stream");
-    res.setHeader("Cache-Control", "no-cache");
-    res.setHeader("Connection", "keep-alive");
+    setupSSE(res);
 
     // Get EXTENSIVE context for all thinkers
     const contexts = await Promise.all(
@@ -541,9 +549,7 @@ Now write a ${wordCount}-word dialogue between ${thinkerNames.join(" and ")} on 
       return res.status(400).json({ error: "Topic and at least 2 debaters are required" });
     }
 
-    res.setHeader("Content-Type", "text/event-stream");
-    res.setHeader("Cache-Control", "no-cache");
-    res.setHeader("Connection", "keep-alive");
+    setupSSE(res);
 
     const contexts = await Promise.all(
       debaters.map((d: string) => getThinkerContext(d, topic, Math.floor(quoteCount / debaters.length)))
@@ -639,9 +645,7 @@ Now write a ${wordCount}-word debate between ${debaterNames.join(" and ")} on "$
       return res.status(400).json({ error: "Topic and interviewee are required" });
     }
 
-    res.setHeader("Content-Type", "text/event-stream");
-    res.setHeader("Cache-Control", "no-cache");
-    res.setHeader("Connection", "keep-alive");
+    setupSSE(res);
 
     const context = await getThinkerContext(interviewee, topic, quoteCount);
     const intervieweeName = normalizeThinkerName(interviewee);
@@ -840,9 +844,7 @@ Now write a ${wordCount}-word interview with ${intervieweeName} on "${topic}" us
       return res.status(400).json({ error: "Topic and thinker are required" });
     }
 
-    res.setHeader("Content-Type", "text/event-stream");
-    res.setHeader("Cache-Control", "no-cache");
-    res.setHeader("Connection", "keep-alive");
+    setupSSE(res);
 
     const context = await getThinkerContext(thinker, topic, quoteCount);
     const thinkerName = normalizeThinkerName(thinker);
@@ -904,9 +906,7 @@ Create a detailed outline for a paper on "${topic}" using the database content.`
       return res.status(400).json({ error: "Topic and thinker are required" });
     }
 
-    res.setHeader("Content-Type", "text/event-stream");
-    res.setHeader("Cache-Control", "no-cache");
-    res.setHeader("Connection", "keep-alive");
+    setupSSE(res);
 
     const thinkerName = normalizeThinkerName(thinker);
     
@@ -995,9 +995,7 @@ Now write a ${wordCount}-word document on "${topic}" using ONLY the above databa
       return res.status(400).json({ error: "Message is required" });
     }
 
-    res.setHeader("Content-Type", "text/event-stream");
-    res.setHeader("Cache-Control", "no-cache");
-    res.setHeader("Connection", "keep-alive");
+    setupSSE(res);
 
     const systemPrompt = `You are a helpful AI assistant with expertise in philosophy, logic, and intellectual discourse. Provide thoughtful, well-reasoned responses.
 CRITICAL: DO NOT USE ANY MARKDOWN FORMATTING. No # headers, no * bullets, no - lists, no ** bold. Plain text only with numbered sections like 1. 2. 3.`;
