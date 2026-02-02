@@ -269,13 +269,20 @@ ABSOLUTELY FORBIDDEN - ZERO TOLERANCE:
 - NO summarizing what you just said
 - PURE CONTENT ONLY - maximum signal, zero noise
 
+MANDATORY CITATION FORMAT - EVERY PARAGRAPH MUST CITE:
+- EVERY paragraph you write MUST begin with a citation like [P1], [Q3], [A5], or [W2]
+- You MUST cite at least one database item per paragraph
+- Format: Start with the code, then elaborate. Example: "[P1] This position reflects..."
+- A response without [P#], [Q#], [A#], [W#] citations is INVALID and UNACCEPTABLE
+- You have ${quoteCount} items to work with - USE THEM
+
 CRITICAL INSTRUCTIONS:
-1. Your response MUST be grounded in the actual database content below
-2. You MUST reference specific positions [P#], quotes [Q#], arguments [A#] from the database
-3. DO NOT make up philosophical positions - use ONLY what is in the database
-4. If asked about something not covered in the database, say you would need to consult your writings
+1. EVERY paragraph starts with a database citation [P#], [Q#], [A#], or [W#]
+2. DO NOT write any paragraph without first citing a specific database item
+3. DO NOT make up positions - use ONLY what is in the database below
+4. If asked about something not covered, say you would need to consult your writings
 5. Speak in first person as ${name}
-6. ${enhanced ? "ENHANCED MODE (1:3 RATIO): Database content is the SCAFFOLDING (1 part). Your LLM elaboration is the FLESH (3 parts). For every database item referenced, add 3x the content with historical context, scientific parallels, technological applications, examples, and illustrations." : "STRICT MODE: Use ONLY the database content. Elaborate and explain the database items but do not add external content."}
+6. ${enhanced ? "ENHANCED MODE (1:3 RATIO): Database content is the SCAFFOLDING (1 part). Your elaboration is the FLESH (3 parts). Start each paragraph with a citation, then add 3x content with examples, historical context, scientific parallels." : "STRICT MODE: Use ONLY database content. Every paragraph must cite and explain a database item."}
 
 Database contains ${totalDbContent} items for ${name}.
 `;
@@ -309,9 +316,10 @@ Database contains ${totalDbContent} items for ${name}.
     });
   }
 
-  prompt += `\n\nRespond to the user's question using the above database content. Reference items by their codes [P1], [Q1], etc.`;
-  prompt += `\n\nCRITICAL: DO NOT USE ANY MARKDOWN FORMATTING. No # headers, no * bullets, no - lists, no ** bold. Plain text only.`;
-  prompt += `\n\nABSOLUTE REQUIREMENT: You MUST write AT LEAST ${wordCount} words. This is a MINIMUM. A response under ${wordCount} words is unacceptable. Keep writing, keep elaborating, keep explaining until you reach ${wordCount} words. NO EXCEPTIONS.`;
+  prompt += `\n\nRespond to the user's question using the above database content.`;
+  prompt += `\n\nMANDATORY: Start EVERY paragraph with a citation [P1], [Q1], [A1], or [W1]. A response without these codes is INVALID.`;
+  prompt += `\n\nNO MARKDOWN: No # headers, no * bullets, no - lists, no ** bold. Plain text only.`;
+  prompt += `\n\nWORD COUNT: You MUST write AT LEAST ${wordCount} words. NO EXCEPTIONS.`;
 
   return prompt;
 }
