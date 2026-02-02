@@ -231,15 +231,14 @@ function buildPhilosopherSystemPrompt(thinkerId: string, context: any, quoteCoun
   const totalDbContent = (context.positions?.length || 0) + (context.quotes?.length || 0) + 
                         (context.arguments?.length || 0) + (context.works?.length || 0);
 
-  const minWords = Math.floor(wordCount * 0.9);
-  const maxWords = Math.ceil(wordCount * 1.1);
-
   let prompt = `You are ${name}. You must respond ONLY based on the actual database content provided below.
 
-CRITICAL WORD COUNT REQUIREMENT:
-Your response MUST be between ${minWords} and ${maxWords} words (target: ${wordCount} words).
-This is NOT optional. Count your words. If the user asks for ${wordCount} words, you MUST deliver ${wordCount} words.
-Write extensive, detailed responses that fully explore the topic to reach the word count.
+ABSOLUTE WORD COUNT REQUIREMENT - NO EXCEPTIONS:
+You MUST write AT LEAST ${wordCount} words. This is a MINIMUM, not a target.
+If the user requests ${wordCount} words, you deliver ${wordCount} words or MORE. NEVER LESS.
+There are ZERO exceptions to this rule. A response under ${wordCount} words is a FAILURE.
+You must write extensively, elaborating on every point with full explanations and examples.
+Continue writing until you have reached ${wordCount} words. Do not stop early.
 
 CRITICAL INSTRUCTIONS:
 1. Your response MUST be grounded in the actual database content below
@@ -283,7 +282,7 @@ Database contains ${totalDbContent} items for ${name}.
 
   prompt += `\n\nRespond to the user's question using the above database content. Reference items by their codes [P1], [Q1], etc.`;
   prompt += `\n\nCRITICAL: DO NOT USE ANY MARKDOWN FORMATTING. No # headers, no * bullets, no - lists, no ** bold. Plain text only.`;
-  prompt += `\n\nREMINDER: Your response MUST be ${wordCount} words (±10%). This is mandatory. Write extensively to meet this requirement.`;
+  prompt += `\n\nABSOLUTE REQUIREMENT: You MUST write AT LEAST ${wordCount} words. This is a MINIMUM. A response under ${wordCount} words is unacceptable. Keep writing, keep elaborating, keep explaining until you reach ${wordCount} words. NO EXCEPTIONS.`;
 
   return prompt;
 }
@@ -462,7 +461,7 @@ CRITICAL: DO NOT USE ANY MARKDOWN FORMATTING. No # headers, no * bullets, no - l
 CRITICAL INSTRUCTIONS:
 1. The dialogue MUST be built from the database content provided below as the SKELETON
 2. You MUST incorporate at least ${quoteCount} items total from the databases
-3. The dialogue must be EXACTLY ${wordCount} words (tolerance: ±10%)
+3. The dialogue MUST be AT LEAST ${wordCount} words. This is a MINIMUM, not a target. NEVER write less than ${wordCount} words. NO EXCEPTIONS.
 4. ${modeInstruction}
 5. Each thinker should quote and reference their actual positions [P#], quotes [Q#], arguments [A#] and works [W#]
 6. DO NOT invent philosophical positions - use ONLY what is provided
@@ -536,7 +535,7 @@ Now write a ${wordCount}-word dialogue between ${thinkerNames.join(" and ")} on 
 CRITICAL INSTRUCTIONS:
 1. The debate MUST be built from the database content provided below as the SKELETON
 2. You MUST incorporate at least ${quoteCount} items total from the databases
-3. The debate must be EXACTLY ${wordCount} words (tolerance: ±10%)
+3. The debate MUST be AT LEAST ${wordCount} words. This is a MINIMUM, not a target. NEVER write less than ${wordCount} words. NO EXCEPTIONS.
 4. ${modeInstruction}
 5. Each debater should reference their actual positions [P#], quotes [Q#], arguments [A#] and works [W#]
 6. DO NOT invent philosophical positions - use ONLY what is provided
@@ -608,7 +607,7 @@ Now write a ${wordCount}-word debate between ${debaterNames.join(" and ")} on "$
 CRITICAL INSTRUCTIONS:
 1. The interview MUST be built from the database content provided below as the SKELETON
 2. You MUST incorporate at least ${quoteCount} items from the database
-3. The interview must be EXACTLY ${wordCount} words (tolerance: ±10%)
+3. The interview MUST be AT LEAST ${wordCount} words. This is a MINIMUM, not a target. NEVER write less than ${wordCount} words. NO EXCEPTIONS.
 4. ${modeInstruction}
 5. ${intervieweeName} should quote and reference their actual positions [P#], quotes [Q#], arguments [A#] and works [W#]
 6. DO NOT invent philosophical positions - use ONLY what is provided
@@ -858,7 +857,7 @@ Create a detailed outline for a paper on "${topic}" using the database content.`
 CRITICAL INSTRUCTIONS:
 1. Your document MUST be built from the database content provided below as the SKELETON
 2. You MUST incorporate at least ${quoteCount} items from the database
-3. The document must be EXACTLY ${wordCount} words (tolerance: ±10%)
+3. The document MUST be AT LEAST ${wordCount} words. This is a MINIMUM, not a target. NEVER write less than ${wordCount} words. NO EXCEPTIONS.
 4. ${modeInstruction}
 5. Structure the document with clear sections, weaving together the database content
 6. Each section should directly reference specific positions [P#], quotes [Q#], arguments [A#], and works [W#]
