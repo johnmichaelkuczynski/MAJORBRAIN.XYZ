@@ -1,0 +1,1167 @@
+# Extracted Arguments (77 total)
+
+## Preface and Introduction
+
+### Argument 1 (deductive)
+**Author:** adler
+
+**Premises:**
+- The art of understanding human nature is the art of understanding the dynamic patterns of human conduct.
+- Alfred Adler has given us the key to this understanding in his monumental contributions to modern psychology.
+- Before the compilation of this volume of case histories the student of the methods of Individual Psychology has been compelled to search for his case material among the German publications of Adler and his pupils.
+- Many of these published cases deal with conditions germane to continental environments, but puzzling to American readers.
+- The principles and practice of Individual Psychology, however, are universally valid in their application, as this volume of purely American cases demonstrates.
+
+**→ Conclusion:** Alfred Adler’s contributions to modern psychology provide the key to understanding human nature through Individual Psychology, and this volume of American cases demonstrates the universal validity of his principles.
+
+**Counterarguments addressed:**
+- Many of these published cases deal with conditions germane to continental environments, but puzzling to American readers.
+
+*Source: Preface and Introduction | Importance: 10/10*
+
+---
+
+### Argument 2 (inductive)
+**Author:** adler
+
+**Premises:**
+- The essential unity of all human conduct is amply adduced by the success of the Viennese psychologist and educator in the analysis and treatment of these cases brought to his clinic.
+- Without previous selection or limitation, at the New School of Social Research.
+
+**→ Conclusion:** The success of Alfred Adler in analyzing and treating cases without selection or limitation demonstrates the essential unity of all human conduct.
+
+*Source: Preface and Introduction | Importance: 9/10*
+
+---
+
+### Argument 3 (causal)
+**Author:** adler
+
+**Premises:**
+- Among the main lessons you have to remember, is to be extremely careful with what you think and how you think it.
+- Thoughts are Things; things that have a tendency to transform into our reality.
+- ‘As a man thinks so is his life’ says the Bible.
+- Like attracts like. Fear, Hate and Worry attract more fear, more hate and more worry, in all its manifestations.
+- However, positive thinking and a faithful attitude attracts positive things.
+
+**→ Conclusion:** Thoughts have a tendency to transform into our reality, and positive thinking attracts positive outcomes while negative thinking attracts negative outcomes.
+
+*Source: Preface and Introduction | Importance: 8/10*
+
+---
+
+### Argument 4 (inductive)
+**Author:** adler
+
+**Premises:**
+- King Solomon says in Proverbs that there is nothing new under the sun.
+- For thousands of years, life has been teaching us the same lessons over and over.
+- Through war and peace; through rags and riches; through stories of hope and of despair; through tragedies and failure that end in triumph and success— The lessons are simple, as simple are the values in which they are based: Courage, Perseverance, Faith, Love, Truthfulness, Purpose, Decision, Good Stewardship, Happiness.
+
+**→ Conclusion:** Life has been teaching us the same lessons over and over for thousands of years.
+
+*Source: Preface and Introduction | Importance: 7/10*
+
+---
+
+### Argument 5 (inductive)
+**Author:** adler
+
+**Premises:**
+- Countless sages of the ages have tried to convey these messages and lessons in different ways and formulas.
+- From Pythagoras to Plato; from Dante, to Da Vinci and Goethe; from Bacon to Shakespeare; from Emerson to Prentice Mulford; from Joan D’Arc to Helen Keller; from Ben Franklin to Abraham Lincoln.
+- But we just keep ignoring them, and making the same mistakes.
+
+**→ Conclusion:** Despite the efforts of countless sages to teach timeless lessons, humanity continues to ignore them and repeat the same mistakes.
+
+*Source: Preface and Introduction | Importance: 6/10*
+
+---
+
+### Argument 6 (deductive)
+**Author:** adler
+
+**Premises:**
+- The author is considered a forward thinker and was way ahead of its time.
+- However, please remember that this book is a product of its time and do not reflect the same views on race, gender, sexuality, ethnicity, and interpersonal relations as it would if it was written today.
+- Most references to ‘Man’ must be read understanding ‘Man’ as human being, both male and female, as the author intended from the beginning.
+- Although the wisdom they impart is ageless, parents might wish to discuss with their children how some things have changed since this book was written.
+
+**→ Conclusion:** Alfred Adler’s work is timeless in wisdom but reflects the views of its era, requiring contextual understanding when read today.
+
+**Counterarguments addressed:**
+- This book is a product of its time and do not reflect the same views on race, gender, sexuality, ethnicity, and interpersonal relations as it would if it was written today.
+
+*Source: Preface and Introduction | Importance: 6/10*
+
+---
+
+### Argument 7 (deductive)
+**Author:** adler
+
+**Premises:**
+- In this series, we present you men and women whose lives were committed to enlighten the world with the wisdom of the ages.
+- We started this series as a tribute to the New Thought authors that started the self-development and positive thinking movement over a century ago, which were rediscovered and became extremely popular in the new millennium thanks to books like ‘The Secret’.
+- William Walker Atkinson, Orison Swett Marden, Napoleon Hill, Dale Carnegie, Charles A. Haanel, Wallace Wattles, Bruce Maclelland, Christian D Larson, Ernest Holmes, Ralph Waldo Trine, Elizabeth Towne, Henry Wood, Neville Goddard, Florence Scovell-Shinn, Charles Fillmore, Emile Coué and a few others—all household names during the XXth Century—are featured in our collection.
+
+**→ Conclusion:** This series is a tribute to New Thought authors and others who have contributed to self-development and positive thinking, aiming to enlighten the world with timeless wisdom.
+
+*Source: Preface and Introduction | Importance: 5/10*
+
+---
+
+### Argument 8 (deductive)
+**Author:** adler
+
+**Premises:**
+- We have carefully chosen them to place in your hands one of the best collections in personal and mind-development in existence.
+- These books are for enlightenment... They will provide the seeker—the one who is ready and is paying attention—, some of the deepest answers of life.
+
+**→ Conclusion:** This collection is one of the best in personal and mind-development, providing deep answers for those who seek enlightenment.
+
+*Source: Preface and Introduction | Importance: 5/10*
+
+---
+
+### Argument 9 (deductive)
+**Author:** adler
+
+**Premises:**
+- The collection would be incomplete if we would not include authors of theosophy and eastern philosophies as Annie Besant, William Judge, Charles Leadbeater; A.P. Sinnet, or Stewart Edward White; great modern philosophers as Bertrand Russell, Alfred North Whitehead or J.W.Dunne; Industrialists that changed the world as Henry Ford, Andrew Carnegie and Charles Schwab; the economists that shaped our future as John Maynard Keynes; and of course, the best classics of modern literature represented by names as Ernest Hemingway, William Faulkner, H. G. Wells, George Orwell, Aldous Huxley and C.S. Lewis.
+- In hundreds of books—most of which are listed at the end of this volume—these writers brilliantly captured the essence of life and success in its different manifestations.
+
+**→ Conclusion:** The collection is comprehensive by including a wide range of authors from various fields to capture the essence of life and success.
+
+*Source: Preface and Introduction | Importance: 4/10*
+
+---
+
+## Principles of Individual Psychology
+
+### Argument 10 (inductive)
+**Author:** adler
+
+**Premises:**
+- The concept of the unity of the human personality, which is the foundation of Individual Psychology, is neither new nor unique to Alfred Adler's psychology.
+- The Greek dramatists considered this unity essential long before the birth of Christ.
+- The unknown writer of the nursery rhyme of Humpty Dumpty stated the case for this indestructible unity of living organisms when he proclaimed that all the king's horses and all the king's men could not reassemble a broken egg.
+- Were it not for this unity, no psychologist could predict human behavior as Adler has been able to predict the conduct of a child after reading a case protocol.
+
+**→ Conclusion:** The unity of the human personality is the foundation of Individual Psychology.
+
+*Source: Principles of Individual Psychology | Importance: 10/10*
+
+---
+
+### Argument 11 (deductive)
+**Author:** adler
+
+**Premises:**
+- It is philosophically impossible to conceive of more than one soul in a body.
+- It is impossible to believe that human conduct is solely the result of certain motivating and activating drives and instincts, since no one can predict the relative potency of such drives and instincts.
+- If each human being were no more than the haphazard resultant of the blind interaction of imponderable energies, a systematic psychology would be as impossible as a science of chemistry in which the chemical elements changed their valence from day to day.
+
+**→ Conclusion:** The unity of the human organism is the sine qua non of human understanding.
+
+*Source: Principles of Individual Psychology | Importance: 9/10*
+
+---
+
+### Argument 12 (causal)
+**Author:** adler
+
+**Premises:**
+- The second great principle of Adler's psychology is that the unit organism is a dynamic whole, moving through a definite life pattern toward a definite goal.
+- 'The goal of life is the maintenance of life,' as Remy de Gourmont wrote in his 'Physique de l'Amour.'
+- It is this goal which differentiates living matter from dead matter.
+
+**→ Conclusion:** The unit organism is a dynamic whole, moving through a definite life pattern toward a definite goal.
+
+*Source: Principles of Individual Psychology | Importance: 9/10*
+
+---
+
+### Argument 13 (analogical)
+**Author:** adler
+
+**Premises:**
+- A sand pile has no goal. If you remove a few shovelfuls of sand from a sand pile, its essential nature is not changed. It remains a sand pile.
+- But a living organism, be it a one-celled amoeba, a hummingbird, or giraffe, has a goal of life, and its entire organization and way of life is appropriate to the attainment of that goal.
+- You cannot remove an essential portion of a living organism without changing it into an amorphous congeries of inert cells.
+
+**→ Conclusion:** It is this goal which differentiates living matter from dead matter.
+
+*Source: Principles of Individual Psychology | Importance: 8/10*
+
+---
+
+### Argument 14 (causal)
+**Author:** adler
+
+**Premises:**
+- Each living organism has a definite life pattern and a definite and characteristic technique of combating the environment in order to maintain its life and goal.
+- The complexity of the pattern varies with the organism's capability of change and adaptation.
+- For this reason the patterns of human behavior are much more complicated than the patterns of an oak tree, a comparatively immobile and fixed organism.
+
+**→ Conclusion:** The patterns of human behavior are much more complicated than the patterns of an oak tree.
+
+*Source: Principles of Individual Psychology | Importance: 7/10*
+
+---
+
+### Argument 15 (definitional)
+**Author:** adler
+
+**Premises:**
+- What we call soul, or psyche, in a purely biological sense, is the function of adaptation, of apperception, of the mobilization of resources, and the maintenance of life by an offensive-defensive strategy of living.
+
+**→ Conclusion:** What we call soul, or psyche, in a purely biological sense, is the function of adaptation, of apperception, of the mobilization of resources, and the maintenance of life by an offensive-defensive strategy of living.
+
+*Source: Principles of Individual Psychology | Importance: 6/10*
+
+---
+
+### Argument 16 (inductive)
+**Author:** adler
+
+**Premises:**
+- Dr. Adler, without having seen the child or previously discussing the case with the teacher, read the case history, sentence by sentence, making his deductions as the case progressed.
+- Occasionally Dr. Adler was misled by a statement in the protocol, but in the vast majority of instances he built up a dynamic picture of the child's personality, often predicting the findings with uncanny insight into the ways of a child's soul.
+- After the record had been analyzed with the finesse of a psychiatric detective weighing clues, a brief discussion of the child's situation followed, and a summary of the aims of psychotherapy or guidance outlined.
+
+**→ Conclusion:** Dr. Adler was able to build up a dynamic picture of the child's personality, often predicting the findings with uncanny insight.
+
+**Counterarguments addressed:**
+- Occasionally Dr. Adler was misled by a statement in the protocol.
+
+*Source: Principles of Individual Psychology | Importance: 5/10*
+
+---
+
+### Argument 17 (definitional)
+**Author:** adler
+
+**Premises:**
+- The book will have fulfilled its purpose if it succeeds in encouraging all who study its pages to view human beings not as static machines designated by labels, but as moving, living, purpose-fulfilling entities striving for significance and security in a perplexing world.
+
+**→ Conclusion:** The purpose of the book is to encourage readers to view human beings as moving, living, purpose-fulfilling entities striving for significance and security.
+
+*Source: Principles of Individual Psychology | Importance: 5/10*
+
+---
+
+### Argument 18 (causal)
+**Author:** adler
+
+**Premises:**
+- Not all the cases were finally successful in their readjustment, failures being due sometimes to the ignorance and lack of cooperation of parents whose neuroses remained unresolved despite the efforts of teachers and psychiatrists to change their attitudes toward their children.
+- Other causes of slow progress were deplorable economic situations, intercurrent diseases, or difficulties which served to restore the original situation in which the neurosis occurred.
+- Some of the cases showed temporary improvement but presented new sets of symptoms under new conditions, which required continued psychotherapy.
+
+**→ Conclusion:** Not all the cases were finally successful in their readjustment.
+
+*Source: Principles of Individual Psychology | Importance: 4/10*
+
+---
+
+### Argument 19 (causal)
+**Author:** adler
+
+**Premises:**
+- One of our own cases which showed excellent progress under intensive treatment and reeducation, relapsed when the child was faced by the insuperable problem of an old-style school teacher, whose discouragement and deprecation in a few days destroyed the results of months of painstaking work.
+
+**→ Conclusion:** Relapse can occur when a child faces an insuperable problem such as an unsupportive teacher.
+
+*Source: Principles of Individual Psychology | Importance: 4/10*
+
+---
+
+## Childhood Development and Inferiority Complex
+
+### Argument 20 (causal)
+**Author:** adler
+
+**Premises:**
+- The baby can recognize the fact that it is dependent upon its mother for food and warmth and protection.
+- It knows that the mother is capable of many necessary activities which lie beyond its powers.
+- A father appears as a huge and relatively omnipotent giant.
+- The world about the baby moves according to ineluctable laws.
+- But the young child realizes his relative weakness.
+- The human baby is the only living animal that experiences his own inadequacy because his mind develops faster than his body.
+
+**→ Conclusion:** It is in this situation that the feeling of inferiority, a cornerstone of Individual Psychology, is created.
+
+*Source: Childhood Development and Inferiority Complex | Importance: 10/10*
+
+---
+
+### Argument 21 (inductive)
+**Author:** adler
+
+**Premises:**
+- The goal of the human race is the maintenance of the human race.
+- Just as every living species has its characteristic technique of self-preservation... so the human race has its characteristic method of self-preservation.
+- This technique we call communal life, society, civilization.
+- Millennia of living have proved this the best method.
+- So far as archeological researches can determine, human beings have always lived in groups.
+- The recent discoveries of the most primitive man, the Pekin man, showed that ten millions of years ago our ancestors were already living in a community.
+
+**→ Conclusion:** Because it is no more possible to conceive of an isolated man than it is possible to conceive of a shortnecked giraffe, it is obvious that every psychology, every science of human behavior, must be a social psychology.
+
+*Source: Childhood Development and Inferiority Complex | Importance: 9/10*
+
+---
+
+### Argument 22 (inductive)
+**Author:** adler
+
+**Premises:**
+- Far from being a handicap, the inferiority feeling has proved itself the most cogent stimulus for the development of the human race.
+- The telescope and the microscope would never have been invented if our human eyes were as powerful as the eagle's.
+- The phonograph, the radio, the telephone, could never have existed without a need for better communication between human beings.
+- The art of the perfumer and the virtuosity of the chef are our compensations for the blunting of primitive sensory perceptions far better developed in the 'lower' animals.
+- The very structure of our civilization, from newspapers to skyscrapers, from airplanes to symphony orchestras, from steam shovels to silk stockings, is the resultant of this primitive need for the compensation of human frailties.
+
+**→ Conclusion:** The inferiority feeling to which every human being is heir because of his physical and biological constellation in the cosmos need not therefore be an individual liability.
+
+*Source: Childhood Development and Inferiority Complex | Importance: 9/10*
+
+---
+
+### Argument 23 (deductive)
+**Author:** adler
+
+**Premises:**
+- The fate of the individual is inextricably linked with the fate of his group.
+- He cannot be isolated in a laboratory and watched and observed as the behaviorists have attempted to do, because in the moment he is isolated he no longer acts as a human being, but as a caged animal.
+- He is no longer, strictly speaking, a human being.
+
+**→ Conclusion:** All human behavior, therefore, must be taken in its social relativity if it is to be understood.
+
+**Counterarguments addressed:**
+- Behaviorists' attempt to isolate individuals for study
+
+*Source: Childhood Development and Inferiority Complex | Importance: 8/10*
+
+---
+
+### Argument 24 (causal)
+**Author:** adler
+
+**Premises:**
+- A third set of factors that may intensify the inferiority feeling of the child derive from his family constellation.
+- The only child derives his inferiority complex from his abnormal importance in the family, and his poor training for social adjustment.
+- The oldest child, having been an only child, and displaced by a younger rival, may be so discouraged by his fall from power that he can never muster sufficient courage to attack the problems of existence objectively.
+- The second child... has always a pace-maker ahead of him and, in his aggressive striving to overtake the older child, may overshoot his mark and become an unobjective rebel.
+- The youngest child may shrink in fear of competing with the more successful older children.
+- The only boy in a family of girls, the only girl in a family of boys, may be discouraged because of this unique position.
+
+**→ Conclusion:** Family constellation and birth order can intensify the inferiority feeling and contribute to the development of an inferiority complex.
+
+*Source: Childhood Development and Inferiority Complex | Importance: 8/10*
+
+---
+
+### Argument 25 (causal)
+**Author:** adler
+
+**Premises:**
+- The social life of the human race is an outgrowth of its weakness.
+- Communal existence was probably the quickest and most effective way our ancestors could find to protect themselves.
+- The pattern of the human race has been a pattern beginning in individual weakness, moving toward a goal of comparative security in social solidarity.
+
+**→ Conclusion:** All the strengths of the human race fit into this pattern; all its weaknesses are derived from the danger of isolation.
+
+*Source: Childhood Development and Inferiority Complex | Importance: 7/10*
+
+---
+
+### Argument 26 (causal)
+**Author:** adler
+
+**Premises:**
+- Unfortunately for the human race, a variety of factors militate against the optimum compensation of the inferiority feeling in social adjustment and in useful work.
+- The first of these factors that intensify the inferiority feeling until it crystallizes in an inferiority complex is the factor of physical defect.
+- If in addition to his normal weakness the human infant experiences a special weakness in the form of a defective apparatus, his struggle for significance is made more difficult.
+- This inferiority may be an actual inferiority of certain organs or organ systems of his body.
+- It may, however, be an unimportant physical anomaly, medically unimportant, but socially embarrassing, such as abnormal fatness, thinness, albinism, moles, red hair, bow legs, facial hair, and the like.
+- Ugliness is a special case in point, and, strange as it may seem, exceptional beauty may eventually lead to an inferiority complex because the beautiful child believes that his beauty is the only contribution which society requires of him.
+
+**→ Conclusion:** Physical defects or anomalies can intensify the inferiority feeling and contribute to the development of an inferiority complex.
+
+*Source: Childhood Development and Inferiority Complex | Importance: 7/10*
+
+---
+
+### Argument 27 (causal)
+**Author:** adler
+
+**Premises:**
+- The second group of factors that intensify the inferiority feeling deal with the social, religious, and economic condition of the individual.
+- Members of any minority group, whether social, religious, or economic, suffer an accentuation of their inferiority feeling because of the additional difficulties of the world, contact with sordidness, vice, and crime.
+- Great riches, however, may also have a disastrous effect, because the proper stimulus to work is so frequently lacking where a child grows up in an atmosphere of affluence.
+
+**→ Conclusion:** Social, religious, and economic conditions can intensify the inferiority feeling and contribute to the development of an inferiority complex.
+
+*Source: Childhood Development and Inferiority Complex | Importance: 7/10*
+
+---
+
+### Argument 28 (causal)
+**Author:** adler
+
+**Premises:**
+- Every human being begins life as a relatively helpless, impotent, dependent parasite.
+- Without the aid of his parents, the first community of the family, the human infant would perish miserably in a few hours.
+- Under the fostering influence of parents the individual child grows in power and ability.
+- During his growth he is a virtual parasite of the society that nurtures him.
+
+**→ Conclusion:** With maturity the normal individual has developed adequate powers to begin life as a contributing member of his social group.
+
+*Source: Childhood Development and Inferiority Complex | Importance: 6/10*
+
+---
+
+### Argument 29 (analogical)
+**Author:** adler
+
+**Premises:**
+- Man's history is replete with records of his conquest of inferiority.
+- Genius is probably no more than the expression of the urge to compensate for an individual defect in terms of social contribution.
+- Every work of genius bears this mark of social usefulness.
+- When we speak of genius we are inclined to forget those unsung men who invented the lever, the wheel, the ax, the musical reed, weaving, writing, and the like, and remember solely our modern geniuses who have but combined these elements in some novel form.
+
+**→ Conclusion:** The true history of human genius is the history of the caveman's struggle for existence.
+
+*Source: Childhood Development and Inferiority Complex | Importance: 6/10*
+
+---
+
+## Patterns of Life and Social Dynamics
+
+### Argument 30 (deductive)
+**Author:** adler
+
+**Premises:**
+- Only that individual who has learned to understand completely the pattern of his own life, who can change his goal if necessary, who realizes the bad and the good in his own conduct, can be said to be the master of his own fate and the captain of his own soul
+- It is the outstanding merit of Individual Psychology that its study helps us to understand our own goals and our own patterns, and to change them, at least to the extent that lesser errors are substituted for the major mistakes of neurotic conduct
+
+**→ Conclusion:** It is the outstanding merit of Individual Psychology that its study helps us to understand our own goals and our own patterns, and to change them
+
+*Source: Patterns of Life and Social Dynamics | Importance: 10/10*
+
+---
+
+### Argument 31 (causal)
+**Author:** adler
+
+**Premises:**
+- A child's mother is the first person with whom the child makes a social contact
+- Mother's love is the first social approval
+- As soon as a child realizes that he is appreciated by one other human being he has begun the process of social adjustment
+- In his mother, and she need not be his blood mother, he experiences the first wholly trustworthy individual in his environment
+- with this beginning he can continue his progress toward the normal goal of human adjustment
+
+**→ Conclusion:** with this beginning he can continue his progress toward the normal goal of human adjustment
+
+*Source: Patterns of Life and Social Dynamics | Importance: 9/10*
+
+---
+
+### Argument 32 (inductive)
+**Author:** adler
+
+**Premises:**
+- Patterns of life are usually fixed by the time a child is five or six years old
+- a definite set of situations, giving a specific and characteristically individual tinge to the inferiority situation of each child, expresses itself in a characteristic goal in life, which is often crystallized in a phrase-formula
+- Unless the individual gains insight by later education or by an abrupt change of conditions, this pattern of conduct—between the first inferiority situation and the final crystallized goal of what seems security, totality, superiority—continues as an unchanging dynamic, unified stream
+
+**→ Conclusion:** Patterns of life are usually fixed by the time a child is five or six years old
+
+**Counterarguments addressed:**
+- Unless the individual gains insight by later education or by an abrupt change of conditions
+
+*Source: Patterns of Life and Social Dynamics | Importance: 9/10*
+
+---
+
+### Argument 33 (causal)
+**Author:** adler
+
+**Premises:**
+- We live in a civilization dominated by a masculine ideal, a civilization that exaggerates masculine values and activities, and still considers, despite good scientific evidence to the contrary, that woman is an inferior sex
+- The utter fallacy of the prejudice has been exploded by the microscope and the machine, but it exists in widespread tradition nevertheless
+- Every girl child therefore has an additional burden of proof thrown upon her shoulders
+- The fact that she is 'only a girl' often precludes a normal development along lines of her choice
+
+**→ Conclusion:** Every girl child therefore has an additional burden of proof thrown upon her shoulders
+
+**Counterarguments addressed:**
+- despite good scientific evidence to the contrary
+
+*Source: Patterns of Life and Social Dynamics | Importance: 8/10*
+
+---
+
+### Argument 34 (causal)
+**Author:** adler
+
+**Premises:**
+- there are nevertheless many mothers in this selfish age who either neglect their children or actually hate them
+- Illegitimate, ugly, unwanted children often develop antisocial character traits because their guardians have not interested or reconciled them with the world in which they live
+- It is not strange that many criminals are recruited from the poorer sections of the population, where such neglect and such hate, together with the poverty that leads to ugliness and disease, flourish most widely
+- These children learn courage and independence in the gutter, but their courage is always the false courage of rebellion against society
+- These children can hardly be held entirely responsible for their criminal behavior, so long as society allows them to grow up without the warmth of a mother's love and without the opportunities to develop their social feeling and their sense of social significance
+
+**→ Conclusion:** These children can hardly be held entirely responsible for their criminal behavior
+
+*Source: Patterns of Life and Social Dynamics | Importance: 8/10*
+
+---
+
+### Argument 35 (causal)
+**Author:** adler
+
+**Premises:**
+- A far more common type is the spoiled and pampered and solicitously coddled child who basks in the tropic warmth of a fostering but psychically murderous mother-love throughout the first years of his life
+- More mothers overdo than underdo their first function of reconciliation
+- They prove themselves so indispensable to the child that the child never develops the ability to think and act for himself
+- Pampering, oversolicitude, overprotection, are false techniques for parents to follow, because they are poor preparation for the communal tasks that the individual child must face later in life
+- Our civilization demands a maximum of contribution, a maximum of adjustment. Its rewards are few, its punishment quick to those who do not pay their dividend of socially useful work
+
+**→ Conclusion:** Pampering, oversolicitude, overprotection, are false techniques for parents to follow
+
+*Source: Patterns of Life and Social Dynamics | Importance: 8/10*
+
+---
+
+### Argument 36 (deductive)
+**Author:** adler
+
+**Premises:**
+- family is without its dangers, it is one of the most important teachings of Individual Psychology, the first science to point out the significance of the ordinal position of the child in the family constellation
+- that no position can compel a child to become neurotic
+
+**→ Conclusion:** no position can compel a child to become neurotic
+
+*Source: Patterns of Life and Social Dynamics | Importance: 7/10*
+
+---
+
+### Argument 37 (causal)
+**Author:** adler
+
+**Premises:**
+- The prejudice in favor of the males, however, is not without damage to them
+- Many a boy is terrified, either by minor physical defects or by other discouraging factors, until he doubts his ability to be a 'hundred-per-cent he-man'
+- spends the rest of his life avoiding the implications and responsibilities of his sex
+
+**→ Conclusion:** The prejudice in favor of the males, however, is not without damage to them
+
+*Source: Patterns of Life and Social Dynamics | Importance: 7/10*
+
+---
+
+### Argument 38 (causal)
+**Author:** adler
+
+**Premises:**
+- One can learn from experiences, that is to say, change one's pattern, only if one has previously learned the art of being objective about oneself
+- This art is seldom learned spontaneously—it derives usually from some external influence or education
+- The great majority of human beings make their experiences fit into their patterns
+- Unconsciously they so live that the appropriate experiences occur
+- After a fashion our experiences are predestined by the nature of our childhood inferiority situation and its fictional compensation in the consequent goal of life
+
+**→ Conclusion:** After a fashion our experiences are predestined by the nature of our childhood inferiority situation and its fictional compensation in the consequent goal of life
+
+*Source: Patterns of Life and Social Dynamics | Importance: 7/10*
+
+---
+
+### Argument 39 (causal)
+**Author:** adler
+
+**Premises:**
+- The increase in marital disharmony, divorce, homosexuality, and sexual delinquency among children, is an important aspect of our overemphasis on sexual differences
+- the ever-increasing struggle for prestige that marks the contemporary life of the sexes
+
+**→ Conclusion:** The increase in marital disharmony, divorce, homosexuality, and sexual delinquency among children, is an important aspect of our overemphasis on sexual differences
+
+*Source: Patterns of Life and Social Dynamics | Importance: 6/10*
+
+---
+
+## Neuroses and Their Origins
+
+### Argument 40 (causal)
+**Author:** adler
+
+**Premises:**
+- The more inferior a child feels himself in the beginning, the higher his goal of compensatory superiority, the closer to the idea of godlikeness
+- The sick child wants to be entirely healthy, the poor child rich, the myopic child wants to translate the world into visual values, the clumsy child desires complete dexterity, the hated child demands a 'plus' of love beyond the gifts of mankind
+- The goal of impotence is omnipotence
+- As the individual's goal is set long before he realizes that power and security come with growth and development, this goal is frequently beyond the reach of human aspiration and activity
+
+**→ Conclusion:** The more inferior a child feels himself in the beginning, the higher his goal of compensatory superiority, the closer to the idea of godlikeness
+
+*Source: Neuroses and Their Origins | Importance: 10/10*
+
+---
+
+### Argument 41 (causal)
+**Author:** adler
+
+**Premises:**
+- In the case of children the pattern of life is often dictated by the special interests of the parents
+- It is not fortuitous that preachers' sons are frequently sinners, that lawyers' and policemen's sons are often criminals
+- A protesting child who feels overpowered by the artificial authority of an overbearing parent is quick to search out the psychological weaknesses of that parent and strike at the Achilles' heel of the parent's pattern
+
+**→ Conclusion:** In the case of children the pattern of life is often dictated by the special interests of the parents
+
+*Source: Neuroses and Their Origins | Importance: 9/10*
+
+---
+
+### Argument 42 (definitional)
+**Author:** adler
+
+**Premises:**
+- If we were to dare to outline a normal it would be the pattern of an individual whose goal in life was to be a complete human being, compensating for his personal weaknesses and the experiences of his childhood by some socially valuable, productive work
+- Such a human being would develop the traits of honesty, sincerity, responsibility
+- As he grew older his social connections would become more extended, his usefulness wider, his poise better, his courage greater
+- He would be independent in action and judgment and service, but his activities would be dominated by the social need of his time
+
+**→ Conclusion:** If we were to dare to outline a normal it would be the pattern of an individual whose goal in life was to be a complete human being
+
+*Source: Neuroses and Their Origins | Importance: 9/10*
+
+---
+
+### Argument 43 (causal)
+**Author:** adler
+
+**Premises:**
+- The tragedy of this technique of elevating an instrument (and frequently it is an unworthy tool) into a goal of life, is that the individual loses the normal opportunities to develop the real powers within himself, which might have vouchsafed an objective security
+- The pragmatic effectiveness is dangerous because such a man knows that the subjective security he has gained by the cult of ill health is false
+- He is tortured by his inner need to redouble his efforts and reiterate his ill health, until, sunk in the morass of hypochondriacal self-pity, he not only loses all contact with the world, and all sense of real values, but his joy in living as well
+
+**→ Conclusion:** The tragedy of this technique of elevating an instrument into a goal of life, is that the individual loses the normal opportunities to develop the real powers within himself
+
+*Source: Neuroses and Their Origins | Importance: 9/10*
+
+---
+
+### Argument 44 (analogical)
+**Author:** adler
+
+**Premises:**
+- The personality is a unity as we explained in the beginning of this essay
+- What seems to be a 'splitting of the personality' is no more than the choice of a different set of tools to meet a different situation
+- It would be ludicrous to hold that a stockbroker who played 'bull' on the market one day, and 'bear' the next was suffering from a dissociation of personality
+- His goal, and his pattern remain the same: to make money. Only the instruments have changed!
+
+**→ Conclusion:** What seems to be a 'splitting of the personality' is no more than the choice of a different set of tools to meet a different situation
+
+**Counterarguments addressed:**
+- The notion of personality dissociation as a genuine split
+
+*Source: Neuroses and Their Origins | Importance: 8/10*
+
+---
+
+### Argument 45 (analogical)
+**Author:** adler
+
+**Premises:**
+- In this way each individual builds up a scheme of apperception with which he tests all his experiences
+- It is this artificially developed scale of values which he applies to every experience that he meets
+- The fable of Procrustes and his ill-famed bed is the nearest analogy to this scheme of apperception
+- Just as Procrustes stretched unfortunate visitors who were too short for his bed until they met its proportions, and lopped off the feet of those who were too long for it, so each individual subjects every experience to the Procrustean bed of his apperception formula
+
+**→ Conclusion:** Each individual subjects every experience to the Procrustean bed of his apperception formula
+
+*Source: Neuroses and Their Origins | Importance: 8/10*
+
+---
+
+### Argument 46 (causal)
+**Author:** adler
+
+**Premises:**
+- For example, a spoiled child who senses that he has lost the paradise of his mother's love, whose goal in life for the first years of his existence is to be an irresponsible pampered baby, is taken sick with a dangerous disease, which brings his parents to his side with their old solicitude and attention
+- The experience teaches him the value of sickness as a means to power and as a path to the attainment of his ideal
+- He makes a secondary goal of illness, and approaches each new task, decision, difficulty, or obstacle with one and the same device—illness
+
+**→ Conclusion:** He makes a secondary goal of illness, and approaches each new task, decision, difficulty, or obstacle with one and the same device—illness
+
+*Source: Neuroses and Their Origins | Importance: 8/10*
+
+---
+
+### Argument 47 (causal)
+**Author:** adler
+
+**Premises:**
+- The characteristic instruments which an individual chooses vary with his physical constitution, his environment, the age in which he lives, and the resistance he meets
+- Thus we have patterns of life as different as the aggressiveness of the 'go-getter' and the submission of the saint
+- Mussolini and Mahatma Gandhi may be striving for the identical goal—time and environment force them to choose unrelated means
+
+**→ Conclusion:** The characteristic instruments which an individual chooses vary with his physical constitution, his environment, the age in which he lives, and the resistance he meets
+
+*Source: Neuroses and Their Origins | Importance: 7/10*
+
+---
+
+### Argument 48 (causal)
+**Author:** adler
+
+**Premises:**
+- Now and again in the course of human existence an individual finds a technique which gives him a subjective sense of having attained his goal
+- It may then happen that the technique is elevated into a secondary goal
+- The phenomenon of the preponderance of the means over the end may then supervene
+- In this case the individual loses sight of his original goal, and continues the rest of his life in a fatuous repetition and enlargement of his favorite instrument, to the detriment of his efficiency as a human being
+
+**→ Conclusion:** The phenomenon of the preponderance of the means over the end may then supervene
+
+*Source: Neuroses and Their Origins | Importance: 7/10*
+
+---
+
+### Argument 49 (causal)
+**Author:** adler
+
+**Premises:**
+- Specially well-developed talents in an older brother may lead to the choice of another sphere of activity in a younger brother who fears to compete in the same field
+- If one child follows the model of the father, a second child, contesting with the first for the family prestige, is almost compelled to choose the mother as an ideal
+- In deprecating the model of the first child develop his sense of security and totality along the only path that remains to him
+
+**→ Conclusion:** Specially well-developed talents in an older brother may lead to the choice of another sphere of activity in a younger brother who fears to compete in the same field
+
+*Source: Neuroses and Their Origins | Importance: 6/10*
+
+---
+
+## Therapeutic Approaches in Individual Psychology
+
+### Argument 50 (appeal to authority)
+**Author:** adler
+
+**Premises:**
+- The whole problem of mental hygiene is a problem in education, a problem which Alfred Adler has courageously attacked by applying his methods to the prevention of conduct deviations in children.
+- This is the great contribution of Adler to contemporary society: other psychiatrists have realized that the neuroses begin in childhood—Adler has developed a technique, not only of investigating these childhood deviations of conduct, but of obviating them.
+
+**→ Conclusion:** Adler's significant contribution to society lies in developing techniques to investigate and prevent childhood conduct deviations, addressing mental hygiene through education.
+
+*Source: Therapeutic Approaches in Individual Psychology | Importance: 10/10*
+
+---
+
+### Argument 51 (causal)
+**Author:** adler
+
+**Premises:**
+- The neuroses of adults begin as the 'problems' of childhood.
+- Every 'problem' child is a potential neurotic.
+- But 'problem' children can grow only in 'problem' environments. They are, so to speak, the normal reactions to a vicious environment.
+- They flourish best where ignorance of human nature appears most crassly.
+
+**→ Conclusion:** Childhood neuroses originate from problematic environments characterized by ignorance of human nature, leading to potential neurotic development in adulthood.
+
+*Source: Therapeutic Approaches in Individual Psychology | Importance: 9/10*
+
+---
+
+### Argument 52 (causal)
+**Author:** adler
+
+**Premises:**
+- A neurosis is a self-deceptive device in which a painful alibi is substituted for a useful performance.
+- To say 'I will not' would evoke the criticism of society. 'I cannot' not only justifies the neurotic but shifts the onus of his failing to the group, while a subjective sense of justification and exoneration accrues to the neurotic.
+
+**→ Conclusion:** A neurosis serves as a mechanism for the neurotic to avoid societal criticism by claiming inability rather than unwillingness, thus providing self-justification.
+
+*Source: Therapeutic Approaches in Individual Psychology | Importance: 8/10*
+
+---
+
+### Argument 53 (causal)
+**Author:** adler
+
+**Premises:**
+- We may consider a neurosis to be the frustration product of a false pattern of life.
+- Where an individual, having misinterpreted his inferiority situation, and having set out in an unconscious pattern of overcompensation that outrages the laws of reality, objectivity, and communal living, meets with an insuperable obstacle in reality, he produces a new pattern.
+- This new pattern is his neurosis. It represents an attempt either to justify his failure to solve the problem, or to make a psychic detour around it; in some cases he produces a pattern in which the very existence of the obstacle is denied by the creation of a system of hallucinations.
+
+**→ Conclusion:** A neurosis is a new behavioral pattern created as a result of frustration from a false life pattern and overcompensation, serving to justify failure or avoid obstacles through denial or detour.
+
+*Source: Therapeutic Approaches in Individual Psychology | Importance: 8/10*
+
+---
+
+### Argument 54 (inductive)
+**Author:** adler
+
+**Premises:**
+- An only child, pampered and carefully guarded throughout the first six years of his life, which were marked by difficulties in his digestion, is faced with the task of adjusting himself to the community of the kindergarten for the first time.
+- Naturally his former life is the worst possible preparation for such an adjustment.
+- The kindergarten is the first frustration of his pattern of dominating his environment.
+- Formerly, when his adult environment did not meet his approval he countered with a hunger-strike, which immediately brought his parents to their knees.
+- The hunger-strike was the forerunner of his neurosis, because the child was misusing an organic inferiority to voice his protest against his parents, and club them into submission.
+- He does this by vomiting every morning on the steps of the school.
+
+**→ Conclusion:** The child wants to restore his former favorable situation by making adjustment to the kindergarten impossible.
+
+*Source: Therapeutic Approaches in Individual Psychology | Importance: 7/10*
+
+---
+
+### Argument 55 (causal)
+**Author:** adler
+
+**Premises:**
+- A first-born son is followed by a sister, who, because of her greater beauty and the willingness to ingratiate herself, displaces him in the family's affection.
+- The boy does not understand the situation, but he considers himself dethroned and displaced by a girl, and betrayed by his mother, who formerly held him more warmly in her affections.
+- Little by little this boy's mistaken goal in life becomes formulated in the phrase: 'You must be careful with women. They are false. Consider every woman your enemy!'
+- During the years of childhood and adolescence he pursues this unconscious goal by cruelly teasing all girls, by deprecating everything feminine, by refusing to work for women teachers, by overemphasizing his masculinity.
+- His Procrustes formula becomes crystallized in the dialectic, 'Male = good; female = bad.'
+
+**→ Conclusion:** By the time he has reached adolescence he has built up an elaborate system of false evaluations of women and their role in life.
+
+*Source: Therapeutic Approaches in Individual Psychology | Importance: 6/10*
+
+---
+
+### Argument 56 (causal)
+**Author:** adler
+
+**Premises:**
+- Let us take the case of a youngest child in a large family of successful and well-adjusted children.
+- Terrified by the thought of competing with his older brothers and sisters, this child builds another world of fantasy and dream for himself, to substitute for the world of reality, which seems too difficult.
+- He is afraid to make human contacts with other boys and girls, because he feels his inadequacy too deeply.
+- He builds up a new world of fairy tales, a private language, an individual system of values and ideals.
+- Not being able to make contacts with other children, he imagines fantastic companions within himself.
+
+**→ Conclusion:** The fiction of dissociation of personality is necessary to such a child, because no human being can live entirely alone, and it follows, as the night the day, that if the child cannot make contact with other children, he will create imaginary companions, who proffer no risk, who accede to all demands, who fit into his world.
+
+*Source: Therapeutic Approaches in Individual Psychology | Importance: 6/10*
+
+---
+
+### Argument 57 (conditional)
+**Author:** adler
+
+**Premises:**
+- The development of sexual maturity presents a new problem for the first-born son with false evaluations of women.
+- If he comes under the influence of some kindly male teacher, or finds some friend who gives him the comfort and communal feeling which he failed to find in his relations with women, he may well choose the neurosis we call homosexuality.
+- In this case he will divert all his love to men, because the problem of loving a woman, marrying, and forming a true human bond, seems impossible in the light of his misconceptions.
+- From this point he begins training himself to be a homosexual by avoiding all relations with women, reading books which glorify friendship between men, and other books which treat of the perfidy of women.
+
+**→ Conclusion:** He may develop homosexuality as a neurotic response to his inability to form bonds with women due to his misconceptions.
+
+*Source: Therapeutic Approaches in Individual Psychology | Importance: 5/10*
+
+---
+
+### Argument 58 (conditional)
+**Author:** adler
+
+**Premises:**
+- Alternatively, the first-born son may consider his sexual maturity as another instrument to effect his domination over women.
+- He may become a veritable Don Juan, to whom every woman is a challenge to prove his sexual superiority.
+- As a necessary part of the latter pattern he may feel that sexual intercourse is equivalent to subjugation of his partner, and again no real happiness will be possible for him in his relation with women.
+- Such men are interested only in the chase— not in the community of marriage.
+
+**→ Conclusion:** He may become a Don Juan, using sexual maturity to dominate women, resulting in an inability to find happiness in genuine relationships.
+
+*Source: Therapeutic Approaches in Individual Psychology | Importance: 5/10*
+
+---
+
+## Case Studies: Understanding and Treatment
+
+### Argument 59 (deductive)
+**Author:** adler
+
+**Premises:**
+- The 'cure' of the neurosis depends on the art of giving the neurotic insight into his errors and the demonstration of the inefficiency of his technique together with the encouragement to find better goals and patterns.
+- It means that the psychiatrist discloses the neurotic's hidden and secret goal of domination to him, traces the formation of his unconscious pattern, ferrets out his apperception formula, applies it to the material which the patient presents in his autobiographical data as well as in his present activities and desires.
+- Eventually convinces the neurotic, in the course of friendly conversations, which are carried out without dim lights, couches, or hypnotic suggestions, that more human goals offer him greater human satisfactions than the false securities of his neurosis.
+
+**→ Conclusion:** The 'cure' of the neurosis depends on the art of giving the neurotic insight into his errors and the demonstration of the inefficiency of his technique together with the encouragement to find better goals and patterns.
+
+*Source: Case Studies: Understanding and Treatment | Importance: 10/10*
+
+---
+
+### Argument 60 (inductive)
+**Author:** adler
+
+**Premises:**
+- The descriptions of schizophrenia, the splittings of the personality, the mutism, the individual language, the negativism, the sexual aberration that all authors have described in this interesting syndrome, can be understood by any student of human nature who sees in all these manifestations the common denominator of hopelessness.
+- As soon as physicians learn to understand the utter logic of the behavior of cases of dementia praecox, their inexorable march toward a goal of isolation and irresponsibility, the fiction that it is always an incurable disease will be dispelled.
+- Many cases of dementia praecox, as Adler has shown, are curable if the physician who treats them is more hopeful than the patient.
+
+**→ Conclusion:** Many cases of dementia praecox, as Adler has shown, are curable if the physician who treats them is more hopeful than the patient.
+
+**Counterarguments addressed:**
+- The fiction that it is always an incurable disease
+
+*Source: Case Studies: Understanding and Treatment | Importance: 9/10*
+
+---
+
+### Argument 61 (causal)
+**Author:** adler
+
+**Premises:**
+- It is not surprising that a certain system of psychology has premised that all human woes begin with sexual maladjustment, and all neuroses are based on aberrations of the sexual function.
+- Students of the Adlerian psychology will quickly see the fallacies underlying such a system of psychology.
+- Sexual behavior is never a cause of neurosis or insanity—it is one of its manifestations.
+- It is frequently the first sign of neurosis, but a careful analysis of the entire pattern of an individual's conduct, an examination of his goal in life, and his technique of approach to his goal, will demonstrate that the neurotic attitude may be found in his social and occupational reactions as well.
+
+**→ Conclusion:** Sexual behavior is never a cause of neurosis or insanity—it is one of its manifestations.
+
+**Counterarguments addressed:**
+- A certain system of psychology has premised that all human woes begin with sexual maladjustment, and all neuroses are based on aberrations of the sexual function.
+
+*Source: Case Studies: Understanding and Treatment | Importance: 9/10*
+
+---
+
+### Argument 62 (causal)
+**Author:** adler
+
+**Premises:**
+- When this child meets with the real problems of the school, or when he finds his struggle for significance complicated by the strains and stresses of adolescence or disease, it is not surprising that he should develop a pattern of isolation, of negativism, of a cramped relation to the outside world, on the one hand, and on the other, a full inner life.
+- Some of these children gradually reconcile themselves to life, become poets, dreamers, dramatists, writers, occasionally philosophers and psychologists.
+- But it is more than likely, especially if their problems are complicated by certain obscure physical inadequacies of constitution, that they will join the great army which fills our state hospitals with cases of dementia praecox.
+
+**→ Conclusion:** It is more than likely, especially if their problems are complicated by certain obscure physical inadequacies of constitution, that they will join the great army which fills our state hospitals with cases of dementia praecox.
+
+*Source: Case Studies: Understanding and Treatment | Importance: 8/10*
+
+---
+
+### Argument 63 (causal)
+**Author:** adler
+
+**Premises:**
+- The first stages of a neurosis are ushered in by a group of symptoms that constitute what Adler has called 'the hesitating attitude.'
+- Doubt, indecision, procrastination, pessimism, deprecation of life, anxiety, overcautiousness, exaggerated ambition (which is always ambition for personal power or dominance), isolation, disinterestedness, abnormal fatigue, impatience, and a host of similar character traits mark this hesitating attitude.
+- When we remember that all human activities are purposive, we can deduce what the goal of these traits is.
+- Doubt, vacillation, laziness, are not to be considered static descriptions of character. These are actually very dynamic instruments exquisitely appropriate to their goal: to avoid the final tests of life, to approach problems so slowly that no solution is possible, to maintain what Adler has called 'distance' from the normal activities of many.
+
+**→ Conclusion:** Doubt, vacillation, laziness, are not to be considered static descriptions of character. These are actually very dynamic instruments exquisitely appropriate to their goal: to avoid the final tests of life, to approach problems so slowly that no solution is possible, to maintain what Adler has called 'distance' from the normal activities of many.
+
+*Source: Case Studies: Understanding and Treatment | Importance: 8/10*
+
+---
+
+### Argument 64 (comparative)
+**Author:** adler
+
+**Premises:**
+- During the analysis and reeducation of the patient the Adlerian psychiatrist abrogates all personal authority.
+- This is in contradistinction to the methods of psychoanalysis, in which the analyst demands absolute servility, and denies the patient the use of his critical faculties.
+- The Adlerian reeducation is in the nature of a cooperative research between physician and patient, in which the patient contributes the material from his life, the psychiatrist furnishes interpretation and encouragement.
+- The psychiatrist minimizes any personal superiority of insight. Like any good educator he uses his position to encourage, not to humiliate his pupil.
+
+**→ Conclusion:** The Adlerian reeducation is in the nature of a cooperative research between physician and patient, in which the patient contributes the material from his life, the psychiatrist furnishes interpretation and encouragement.
+
+**Counterarguments addressed:**
+- Methods of psychoanalysis, in which the analyst demands absolute servility, and denies the patient the use of his critical faculties.
+
+*Source: Case Studies: Understanding and Treatment | Importance: 8/10*
+
+---
+
+### Argument 65 (deductive)
+**Author:** adler
+
+**Premises:**
+- Because of man's relation to the cosmos there are three great groups of problems which he must face. These problems are the problems of society, of work, and of sex.
+- The first group of problems derive from the biologic necessity of man's communal life. Everyone who wishes to be human must affirm his connection to his fellow men by affirming certain common bonds, notably those of speech, reason, common sense, sympathy, and the like.
+- The second problem, -that of work-, arises from the corollarial necessity that each individual uphold the social structure. The individual must pay a dividend to society, and that dividend we call useful work.
+- The third problem derives from the bisexuality of the human race, and from the fact that it may best be solved in these social terms we call love and marriage.
+
+**→ Conclusion:** Because of man's relation to the cosmos there are three great groups of problems which he must face. These problems are the problems of society, of work, and of sex.
+
+*Source: Case Studies: Understanding and Treatment | Importance: 7/10*
+
+---
+
+### Argument 66 (causal)
+**Author:** adler
+
+**Premises:**
+- These side-show performers are the neurotics and psychotics whose hyperactivity is designed to deceive themselves and their fellow men.
+- They demonstrate their good will, their entire helplessness, their irresponsibility, their extreme activity, as a justification for their desertion from the main arenas.
+- It must not be believed that these side-show performers are maliciously avoiding their obligations as human beings. It is their ignorance of the coherence of all human activities that enables them to continue patterns whose constant common denominator is social uselessness.
+
+**→ Conclusion:** It must not be believed that these side-show performers are maliciously avoiding their obligations as human beings. It is their ignorance of the coherence of all human activities that enables them to continue patterns whose constant common denominator is social uselessness.
+
+**Counterarguments addressed:**
+- Belief that side-show performers are maliciously avoiding obligations
+
+*Source: Case Studies: Understanding and Treatment | Importance: 6/10*
+
+---
+
+### Argument 67 (causal)
+**Author:** adler
+
+**Premises:**
+- Because our training for the sexual problems of our time is relatively unsuited to the development of a normal attitude toward sex, because we still live in a world in which sexual antagonism rather than sexual cooperation is the rule, and because, unlike the other two sets of problems, the solution of the sexual problem is not immediately necessary to individual life, and its good solution demands a high degree of social feeling, the side-shows about this arena are more numerous, perhaps, than those about the other two.
+- The existence of those major sexual deviations of our times—homosexuality in both men and women, frigidity in women, and impotence in men, dyspareunia in sexual relations, prostitution, sadism and masochism, fetishism, the excesses of 'free love,' the puritan spirit, the neurotic pruriency of the Watch and Ward Society, the cult of pornography, the inhuman exploitation of sexual problems in the tabloid newspapers, the legal proscription of contraceptive information—is evidence that a very considerable portion of the human race finds itself in the side-shows of the sexual arena.
+
+**→ Conclusion:** The side-shows about this arena are more numerous, perhaps, than those about the other two.
+
+*Source: Case Studies: Understanding and Treatment | Importance: 6/10*
+
+---
+
+### Argument 68 (inductive)
+**Author:** adler
+
+**Premises:**
+- Individuals, such as beggars, who live on a false exploitation of the sympathy of their fellows, are surely to be considered as side-show artists.
+- Pimps and prostitutes who distort their sexual functions for economic grounds fall in a similar category.
+- 'Confidence' men, criminals, and the whole host of underworld characters who live by their wits at the expense of a gullible humanity are individuals who have never realized that work is not a curse, but a form of personal salvation.
+- Those who change from one job to another, not holding to any one piece of work long enough to contribute anything, those who cannot adjust themselves to normal working conditions, those whose work is the exploitation of other human beings, are unhappy men and women who have not understood the meaning and value of work.
+
+**→ Conclusion:** Individuals who exploit others or fail to engage in meaningful work are unhappy men and women who have not understood the meaning and value of work.
+
+*Source: Case Studies: Understanding and Treatment | Importance: 5/10*
+
+---
+
+## Conclusion and Reflections
+
+### Argument 69 (causal)
+**Author:** adler
+
+**Premises:**
+- Knowing that every neurosis is essentially the product of discouragement, the psychiatrist sets his pupil easy tasks, which are well within the patient's power to solve.
+- In this way the patient—and in the Adlerian psychology the relation of physician and patient is much more the relation of teacher and pupil—enlarges his initial capital of courage and social feeling, only to be given progressively more difficult tasks.
+- This continues until his behavior pattern approaches the normal in all three problems of life.
+
+**→ Conclusion:** The benefit the patient derives from his newly gained insight is that he is enabled to substitute minor errors for the major mistakes of his neurosis; by living a fuller life, he gains a greater joy in living.
+
+*Source: Conclusion and Reflections | Importance: 9/10*
+
+---
+
+### Argument 70 (inductive)
+**Author:** adler
+
+**Premises:**
+- In the treatment of children with behavior and conduct problems the Individual Psychologist finds the Adlerian technique simple and amazingly effective.
+- After reading a case protocol, or hearing a mother's description of her child's difficulties, the psychiatrist has usually gained insight into the nature of the child's specific problem.
+- Problem children have simple patterns, and to those who can read and interpret the signs, the remedies are almost immediately apparent.
+
+**→ Conclusion:** The treatment of problem children, then, consists largely in the education of parents and teachers to the understanding of the dynamic patterns of the child's conduct and the removal, wherever possible, of discouraging factors.
+
+*Source: Conclusion and Reflections | Importance: 8/10*
+
+---
+
+### Argument 71 (causal)
+**Author:** adler
+
+**Premises:**
+- Problem children, as the case histories given here demonstrate, are those who have been discouraged by any or all of the factors described in the first paragraphs of this foreword.
+- The problem usually lies with the parents, who have frustrated the normal channels of the child's development by the interposition of additional difficulties and obstacles.
+
+**→ Conclusion:** The treatment of problem children, then, consists largely in the education of parents and teachers to the understanding of the dynamic patterns of the child's conduct and the removal, wherever possible, of discouraging factors.
+
+*Source: Conclusion and Reflections | Importance: 8/10*
+
+---
+
+### Argument 72 (inductive)
+**Author:** adler
+
+**Premises:**
+- The logical and trenchant simplicity of Individual Psychology is attested by the fact that children very often understand its workings and may be won over to its point of view.
+- In the case of the very young child the problem is solved by the removal of the discouraging factors by the parents and the psychiatrist.
+- In older children there is a definite training toward courage, toward independence, and toward the acquisition of the social feeling.
+
+**→ Conclusion:** While Individual Psychology cannot claim to cure all cases of problem behavior in children, even the most difficult cases respond to its treatment when parents and teachers can be taught to cooperate intelligently in the treatment.
+
+**Counterarguments addressed:**
+- Individual Psychology cannot claim to cure all cases of problem behavior in children
+
+*Source: Conclusion and Reflections | Importance: 7/10*
+
+---
+
+### Argument 73 (deductive)
+**Author:** adler
+
+**Premises:**
+- Alfred Adler has always claimed that the school was the ideal locus for the prophylactic mental-hygiene clinic.
+- Here every child faces a microcosm of the world in the social situation of the schoolroom and its tasks.
+- Teachers who have learned Adler's method of approach, and his technique of influencing the child mind, find their classroom tasks materially lightened.
+
+**→ Conclusion:** The recognition of neurotic behavior patterns is the first step in their redirection into normal channels.
+
+*Source: Conclusion and Reflections | Importance: 7/10*
+
+---
+
+### Argument 74 (analogical)
+**Author:** adler
+
+**Premises:**
+- Children react as surely to encouragement and understanding as plants react to sun and rain and proper soil.
+- It is quite as easy for parents and teachers to understand and to encourage as it is to put children in static categories and discourage them.
+
+**→ Conclusion:** To treat a child 'as if' he could adjust himself to the scheme of human society costs nothing, and often accomplishes miracles.
+
+*Source: Conclusion and Reflections | Importance: 6/10*
+
+---
+
+### Argument 75 (causal)
+**Author:** adler
+
+**Premises:**
+- The Adlerian psychology posits as a first principle: 'Every human being can do everything.'
+- This theorem has limitations well known to its discoverers, but as a pragmatic principle in human relations it is invaluable.
+
+**→ Conclusion:** One thing is certain: when teachers categorize children as bad, as stupid, as lazy, as neurotic, nothing is accomplished thereby but to make them stupid and neurotic.
+
+**Counterarguments addressed:**
+- This theorem has limitations well known to its discoverers
+
+*Source: Conclusion and Reflections | Importance: 6/10*
+
+---
+
+### Argument 76 (causal)
+**Author:** adler
+
+**Premises:**
+- When teachers categorize children as bad, as stupid, as lazy, as neurotic, nothing is accomplished thereby but to make them stupid and neurotic.
+- To treat them as such usually results in the child's obliging with the very conduct that is expected of him.
+
+**→ Conclusion:** To treat a child 'as if' he could adjust himself to the scheme of human society costs nothing, and often accomplishes miracles.
+
+*Source: Conclusion and Reflections | Importance: 6/10*
+
+---
+
+### Argument 77 (deductive)
+**Author:** adler
+
+**Premises:**
+- There can be no place for moralizing in such a research.
+- The psychiatrist holds no moral superiority over his patient.
+- His attitude is always: 'Under what circumstances, and toward what goal, would I employ the same technique of living?'
+
+**→ Conclusion:** The psychiatrist sets his pupil easy tasks, which are well within the patient's power to solve.
+
+*Source: Conclusion and Reflections | Importance: 5/10*
+
+---
+

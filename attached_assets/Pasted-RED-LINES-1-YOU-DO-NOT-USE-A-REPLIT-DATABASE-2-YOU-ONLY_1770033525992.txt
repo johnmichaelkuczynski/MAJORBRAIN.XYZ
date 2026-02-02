@@ -1,0 +1,347 @@
+RED LINES: 
+1. YOU DO NOT USE A REPLIT DATABASE. 
+2. YOU ONLY USE THE DATABASE I GIVE YOU. PERIOD. 
+3. YOU DO NOT USE PHONY REPLIT VERSIONS OF API KEYS. 
+4. YOU ONLY USE THE API KEYS I GIVE YOU (FOR OPENAI, ANTHROPIC, ETC.)
+5. ALL OUTPUTS MUST STREAM. 
+6. THE MAIN CHAT IS KUCZYNSKI. 
+7. THE MAIN CHAT BEHAVES THE SAME WAY AS THE OTHER CHAT BOTS. 
+8. MATERIAL FROM A DEDICATED CHATBOT POPUP NEVER EVER EVER EVER IS DEPOSITED INTO THE MAIN CHAT.
+9. YOU MUST CREATE A CLEAR ALL KEY FOR THE WHOLE APP AND FOR EACH INDIVIDUAL FUNCTION. 
+10. YOU MUST MAKE IT EASY TO COPY/DOWNLOAD FROM EACH INDIVIDUAL FUNCTION.
+11. APART FROM QUOTE/POSITION/ARGUMENT GENERATOR, EVERY SINGLE FUNCTION USES THE LARGE-SCALE COHERENCE FUNCTIONALITY DESCRIBED BELOW: THE PAPER WRITER, INTERVIEW CREATOR, DEBATE CREATOR, MODEL BUILDER, DIALOGUE CREATOR, OUTLINE TESTER, FULL DOCUMENT GENERATOR. 
+12. EVERYTHING IS ON ONE BIG PAGE. BITG INPUT. BIG OUTPUT. DO NOT CREATE SPECIAL LITTLE TABS THAT "OPEN UP" FUNCTIONS. PERIOD. EVER. 
+13. THE MAIN CHAT IS ABOVE THE MODEL BUILDER; IS ABOVE THE DIALOGUE CREATOR; IS ABOVE THE DEBATE CREATOR; IS ABOVE THE INTERVIEW CREATOR; IS ABOVE THE QUOTE GENERATOR; IS ABOVE THE POSITION GENERATOR; IS ABOVE THE ARGUMENT GENERATOR; IS ABOVE THE OUTLINE GENERATOR; IS ABOVE THE FULL DOCUMENT GENERATOR; IS ABOVE THE AI CHAT. 
+
+
+ASK THEM - COMPLETE APPLICATION BLUEPRINT
+PART 1: APPLICATION FUNCTIONS
+The app has 8 core functions:
+
+1. MAIN CHAT (Figure Chat)
+Location: Sidebar philosopher list → Click any thinker
+Purpose: Ask any of 50+ philosophers questions grounded in their actual writings
+Database: Queries positions, quotes, text_chunks tables for that thinker
+Endpoint: POST /api/figures/:figureId/chat
+Output: Streaming SSE response with database-grounded content
+2. MODEL BUILDER
+Location: Model Builder section in main UI
+Purpose: Build formal/informal logical models that make input text TRUE
+Two Modes:
+FORMAL: Domain, Interpretation, Axioms, Theorems
+INFORMAL: Conceptual reinterpretation
+Endpoint: POST /api/model-builder
+Output: Streaming logical model with downloadable result
+3. PAPER WRITER
+Location: Paper Writer section
+Purpose: Generate academic papers on philosophical topics (100-50,000 words)
+Database: Uses PhilosopherCoherenceService for structured generation
+Endpoint: POST /api/figures/:figureId/write-paper
+Output: Streaming paper with copy/download functionality
+4. QUOTE GENERATOR
+Location: Quote Generator section
+Purpose: Extract and display quotes from uploaded documents
+Accepts: .txt, .md, .doc, .docx, .pdf files up to 5MB
+Endpoint: POST /api/parse-file
+Output: Parsed quotes ready for use
+5. DIALOGUE CREATOR
+Location: Dialogue Creator section
+Purpose: Generate philosophical dialogues between thinkers (100-50,000 words)
+Endpoint: POST /api/dialogue/generate
+Output: Streaming dialogue with downloadable result
+6. INTERVIEW CREATOR
+Location: Interview Creator section
+Purpose: Generate interview-format discussions (500-50,000 words)
+Endpoint: POST /api/interview/generate
+Output: Streaming interview with downloadable result
+7. DEBATE CREATOR
+Location: Debate Creator section
+Purpose: Generate structured debates between philosophers (1500-2500 words)
+Endpoint: POST /api/debate/generate
+Output: Streaming debate with downloadable result
+8. COMPARE THINKERS
+Location: "Compare Thinkers" button in header
+Purpose: Compare positions of multiple philosophers on a topic
+Endpoint: POST /api/compare
+Output: Side-by-side comparison modal
+PART 2: COMPLETE FILE TREE
+/
+├── APP_BLUEPRINT.md                    # This document
+├── replit.md                           # Project documentation and preferences
+├── package.json                        # Dependencies and scripts
+├── tsconfig.json                       # TypeScript configuration
+├── vite.config.ts                      # Vite bundler configuration
+├── drizzle.config.ts                   # Database ORM configuration
+├── tailwind.config.ts                  # Tailwind CSS configuration
+│
+├── /client/                            # FRONTEND (React + TypeScript)
+│   ├── /src/
+│   │   ├── App.tsx                     # Main app component, routing
+│   │   ├── main.tsx                    # React entry point
+│   │   ├── index.css                   # Global styles
+│   │   │
+│   │   ├── /components/                # UI Components
+│   │   │   ├── figure-chat.tsx         # Individual philosopher chat
+│   │   │   ├── model-builder-section.tsx   # Model Builder UI
+│   │   │   ├── paper-writer-section.tsx    # Paper Writer UI
+│   │   │   ├── paper-writer.tsx            # Paper Writer logic
+│   │   │   ├── quote-generator-section.tsx # Quote Generator UI
+│   │   │   ├── dialogue-creator-section.tsx    # Dialogue Creator UI
+│   │   │   ├── interview-creator-section.tsx   # Interview Creator UI
+│   │   │   ├── debate-creator-section.tsx      # Debate Creator UI
+│   │   │   ├── comparison-modal.tsx        # Compare Thinkers modal
+│   │   │   ├── chat-input.tsx              # Message input component
+│   │   │   ├── chat-message.tsx            # Message display component
+│   │   │   ├── audit-panel.tsx             # Database activity panel
+│   │   │   ├── thinking-panel.tsx          # AI thinking display
+│   │   │   ├── what-to-ask-modal.tsx       # Topic suggestions
+│   │   │   ├── welcome-screen.tsx          # Landing welcome
+│   │   │   ├── persona-settings-dialog.tsx # User settings
+│   │   │   ├── workflow-chat.tsx           # 6-stage workflow UI
+│   │   │   ├── theme-toggle.tsx            # Dark/light mode
+│   │   │   ├── theme-provider.tsx          # Theme context
+│   │   │   │
+│   │   │   └── /ui/                    # Shadcn UI primitives
+│   │   │       ├── button.tsx
+│   │   │       ├── card.tsx
+│   │   │       ├── dialog.tsx
+│   │   │       ├── input.tsx
+│   │   │       ├── select.tsx
+│   │   │       ├── slider.tsx
+│   │   │       ├── tabs.tsx
+│   │   │       ├── textarea.tsx
+│   │   │       ├── toast.tsx
+│   │   │       ├── streaming-output-popup.tsx  # Streaming results popup
+│   │   │       ├── multi-popup-manager.tsx     # Multiple popup handler
+│   │   │       └── ... (40+ UI components)
+│   │   │
+│   │   ├── /pages/                     # Route pages
+│   │   │   ├── chat.tsx                # Main chat page
+│   │   │   ├── landing.tsx             # Landing page
+│   │   │   ├── workflow.tsx            # 6-stage workflow page
+│   │   │   ├── model-builder.tsx       # Model builder page
+│   │   │   ├── paper-writer.tsx        # Paper writer page
+│   │   │   └── not-found.tsx           # 404 page
+│   │   │
+│   │   ├── /data/                      # Thinker topic suggestions
+│   │   │   ├── kuczynski-topics.ts     # Kuczynski "What to Ask"
+│   │   │   ├── freud-topics.ts         # Freud topics
+│   │   │   ├── nietzsche-topics.ts     # Nietzsche topics
+│   │   │   └── ... (50+ thinker topic files)
+│   │   │
+│   │   ├── /hooks/                     # React hooks
+│   │   │   ├── useAuth.ts              # Authentication hook
+│   │   │   ├── use-toast.ts            # Toast notifications
+│   │   │   └── use-mobile.tsx          # Mobile detection
+│   │   │
+│   │   ├── /lib/                       # Utilities
+│   │   │   ├── queryClient.ts          # TanStack Query setup
+│   │   │   ├── utils.ts                # Helper functions
+│   │   │   └── authUtils.ts            # Auth helpers
+│   │   │
+│   │   └── /contexts/                  # React contexts
+│   │       └── popup-manager-context.tsx
+│
+├── /server/                            # BACKEND (Express + TypeScript)
+│   ├── index.ts                        # Server entry point
+│   ├── routes.ts                       # ALL API endpoints (6684 lines)
+│   ├── storage.ts                      # Database CRUD operations
+│   ├── db.ts                           # Drizzle ORM database connection
+│   ├── vite.ts                         # Vite dev server integration
+│   │
+│   ├── vector-search.ts                # RAG search functions
+│   │   - searchPositions()             # Search positions table
+│   │   - searchTextChunks()            # Search text_chunks table
+│   │   - searchQuotes()                # Search quotes table
+│   │   - normalizeAuthorName()         # Map figureId → author name
+│   │   - AUTHOR_ALIASES                # Name variant mappings
+│   │   - FIGURE_ID_TO_AUTHOR           # ID to full name mappings
+│   │
+│   ├── WorkflowService.ts              # 6-stage generation workflow
+│   │   - gatherMaterials()             # Stage 1: Get DB content
+│   │   - generateOutline()             # Stage 2: Create outline
+│   │   - generateQuestions()           # Stage 3: Question list
+│   │   - generateBlueprint()           # Stage 4: Detailed plan
+│   │   - generateShortVersion()        # Stage 5: Short version
+│   │   - generateFinal()               # Stage 6: Final product
+│   │   - halt()                        # Emergency stop
+│   │   - courseCorrect()               # User course correction
+│   │
+│   ├── PhilosopherCoherenceService.ts  # Coherent paper generation
+│   ├── prompt-builder.ts               # System prompt construction
+│   ├── paper-search.ts                 # Paper-specific search
+│   ├── audited-search.ts               # Truthful search with audit
+│   ├── audit-search.ts                 # Search audit logging
+│   │
+│   ├── googleAuth.ts                   # Google OAuth setup
+│   ├── replitAuth.ts                   # Replit auth (unused)
+│   ├── internal-auth.ts                # Internal auth logic
+│   │
+│   ├── nietzsche-db.ts                 # Nietzsche SQLite database
+│   ├── plato-db.ts                     # Plato SQLite database
+│   ├── bible-verses.ts                 # Bible verse lookup
+│   │
+│   ├── /scripts/                       # Database ingestion scripts
+│   │   ├── embed-kuczynski-corpus.ts
+│   │   ├── embed-freud-*.ts
+│   │   ├── embed-nietzsche-*.ts
+│   │   └── ... (100+ embedding scripts)
+│   │
+│   ├── /services/                      # Service modules
+│   │   └── /reconstruction/
+│   │       ├── index.ts
+│   │       ├── reconstructionService.ts
+│   │       ├── reconstructionDb.ts
+│   │       └── promptBuilders.ts
+│   │
+│   └── /data/                          # Static position data
+│       ├── kuczynski-ai-philosophy-positions.ts
+│       ├── kuczynski-determinism-positions.ts
+│       └── kuczynski-socrates-execution-positions.ts
+│
+├── /shared/                            # Shared types
+│   ├── schema.ts                       # Drizzle database schema
+│   ├── audit-types.ts                  # Audit event types
+│   └── coherence-types.ts              # Coherence service types
+│
+├── /RULES_FULL/                        # Inference engine rules
+│   ├── kuczynski_rules_full.json
+│   ├── freud_rules_full.json
+│   ├── nietzsche_rules_full.json
+│   ├── adler_rules_full.json
+│   └── ... (thinker rule files)
+│
+└── /attached_assets/                   # Source data files
+    ├── KUCZYNSKI_DATABASE_v29.json
+    ├── FREUD_DATABASE_v1_COMPLETE.json
+    └── ... (source databases)
+PART 3: FILE DESCRIPTIONS
+SERVER FILES
+File	Purpose
+server/index.ts	Express server entry point. Starts server on port 5000.
+server/routes.ts	MAIN FILE: All 50+ API endpoints. Figure chat, paper writer, model builder, etc.
+server/storage.ts	Database CRUD: users, conversations, messages, settings, figures
+server/db.ts	Drizzle ORM connection to Neon PostgreSQL
+server/vector-search.ts	RAG functions: searchPositions, searchTextChunks, searchQuotes, author name normalization
+server/WorkflowService.ts	6-stage generation: materials → outline → questions → blueprint → short → final
+server/PhilosopherCoherenceService.ts	Structured paper generation with section-by-section coherence
+server/prompt-builder.ts	Builds system prompts for each philosopher persona
+server/paper-search.ts	Searches paper_chunks table for specific papers
+server/audited-search.ts	Truthful search that finds 3 direct answers before responding
+server/googleAuth.ts	Google OAuth 2.0 authentication flow
+server/nietzsche-db.ts	SQLite database for Nietzsche positions (706 entries)
+server/plato-db.ts	SQLite database for Plato positions (182 entries)
+CLIENT COMPONENTS
+File	Purpose
+client/src/App.tsx	Main app: routing, sidebar, layout
+client/src/components/figure-chat.tsx	Individual philosopher chat interface
+client/src/components/model-builder-section.tsx	Model Builder: formal/informal logical models
+client/src/components/paper-writer-section.tsx	Paper Writer: academic paper generation
+client/src/components/quote-generator-section.tsx	Quote Generator: extract quotes from files
+client/src/components/dialogue-creator-section.tsx	Dialogue Creator: philosophical dialogues
+client/src/components/interview-creator-section.tsx	Interview Creator: interview format
+client/src/components/debate-creator-section.tsx	Debate Creator: structured debates
+client/src/components/comparison-modal.tsx	Compare Thinkers modal
+client/src/components/audit-panel.tsx	Shows database activity in real-time
+client/src/components/workflow-chat.tsx	6-stage workflow UI with HALT/COURSE-CORRECT
+client/src/components/what-to-ask-modal.tsx	"What to Ask" topic suggestions for each thinker
+client/src/components/streaming-output-popup.tsx	Popup for streaming output with copy/download
+SHARED FILES
+File	Purpose
+shared/schema.ts	Drizzle schema: users, conversations, messages, figures, positions, quotes, text_chunks, paper_chunks, argument_statements
+shared/audit-types.ts	TypeScript types for audit events
+shared/coherence-types.ts	Types for coherence service
+PART 4: DATABASE SCHEMA
+The app uses Neon PostgreSQL with these tables:
+
+Table	Columns	Count
+positions	id, thinker, position_text, topic, source_text_id, embedding	135,695
+quotes	id, thinker, quote_text, topic, source_text_id	26,608
+text_chunks	id, thinker, chunk_text, source_document, embedding	69,744
+paper_chunks	id, thinker, chunk_text, source_document, embedding	varies
+argument_statements	id, thinker, argument_type, premises, conclusion, importance	varies
+figures	id, name, title, bio, avatarUrl	50+
+users	id, email, firstName, lastName	varies
+conversations	id, userId, title, createdAt	varies
+messages	id, conversationId, role, content, createdAt	varies
+persona_settings	userId, responseLength, quoteFrequency, selectedModel, enhancedMode, dialogueMode	varies
+PART 5: API ENDPOINTS SUMMARY
+Authentication
+POST /api/login - Username login
+POST /api/logout - Logout
+GET /api/user - Current user
+GET /api/auth/google - Google OAuth
+GET /api/auth/google/callback - OAuth callback
+Main Chat
+GET /api/figures - List all philosophers
+GET /api/figures/:figureId - Get single philosopher
+POST /api/figures/:figureId/chat - Chat with philosopher (streaming SSE)
+GET /api/figures/:figureId/messages - Chat history
+Generation Tools
+POST /api/model-builder - Build logical model
+POST /api/figures/:figureId/write-paper - Write paper
+POST /api/dialogue/generate - Generate dialogue
+POST /api/interview/generate - Generate interview
+POST /api/debate/generate - Generate debate
+POST /api/compare - Compare thinkers
+6-Stage Workflow
+POST /api/workflow/init - Initialize workflow
+POST /api/workflow/start - Start workflow
+GET /api/workflow/:id - Get workflow state
+POST /api/workflow/:id/halt - HALT button
+POST /api/workflow/:id/course-correct - COURSE-CORRECT button
+GET /api/workflow/:id/outline/stream - Stream outline
+GET /api/workflow/:id/questions/stream - Stream questions
+GET /api/workflow/:id/blueprint/stream - Stream blueprint
+GET /api/workflow/:id/short-version/stream - Stream short version
+GET /api/workflow/:id/final/stream - Stream final
+GET /api/workflow/:id/download/:artifact - Download artifacts
+Quotes & Search
+GET /api/quotes/:thinkerId - Get quotes
+GET /api/quotes/:thinkerId/random - Random quotes
+POST /api/quotes/search - Search quotes
+POST /api/parse-file - Parse uploaded file
+Settings
+GET /api/persona-settings - Get settings
+POST /api/persona-settings - Update settings
+PART 6: THE MANDATORY 6-STAGE WORKFLOW
+Every generation MUST follow this process:
+
+STAGE 1: GATHER MATERIALS
+├── Query positions table for thinker
+├── Query quotes table for thinker  
+├── Query text_chunks table for thinker
+├── Display list of retrieved materials
+└── Materials list is DOWNLOADABLE
+STAGE 2: GENERATE OUTLINE
+├── LLM creates outline using materials
+├── Outline shows how materials will be used
+└── Outline is DOWNLOADABLE
+STAGE 3: GENERATE QUESTIONS
+├── LLM creates list of questions to address
+├── Based on outline and materials
+└── Question list is DOWNLOADABLE
+STAGE 4: GENERATE BLUEPRINT
+├── LLM creates detailed plan for final
+├── Section-by-section structure
+└── Blueprint is DOWNLOADABLE
+STAGE 5: GENERATE SHORT VERSION
+├── LLM creates 500-800 word summary
+├── Hits all major points
+└── Short version is DOWNLOADABLE
+STAGE 6: GENERATE FINAL
+├── LLM creates full response
+├── Uses all materials and blueprint
+└── Final is DOWNLOADABLE
+CONTROLS:
+
+HALT BUTTON: Emergency stop - aborts entire process
+COURSE-CORRECT BUTTON: Pause and give feedback, then resume
+POPUP WINDOWS:
+
+Main Output Popup: Shows streamed content from each stage
+Database Activity Popup: Shows all DB queries in real-time via SSE
+ENFORCEMENT:
+
+If any stage is skipped → process.exit(1)
+If Replit database is used instead of Neon → process.exit(1)
