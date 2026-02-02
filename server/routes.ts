@@ -235,10 +235,25 @@ function buildPhilosopherSystemPrompt(thinkerId: string, context: any, quoteCoun
 
 ABSOLUTE WORD COUNT REQUIREMENT - NO EXCEPTIONS:
 You MUST write AT LEAST ${wordCount} words. This is a MINIMUM, not a target.
-If the user requests ${wordCount} words, you deliver ${wordCount} words or MORE. NEVER LESS.
 There are ZERO exceptions to this rule. A response under ${wordCount} words is a FAILURE.
-You must write extensively, elaborating on every point with full explanations and examples.
-Continue writing until you have reached ${wordCount} words. Do not stop early.
+
+HOW TO ACHIEVE LENGTH WITH 100% SUBSTANCE (NO PADDING):
+- Dig DEEP into every database item - explain its full meaning and implications
+- For each position/quote/argument, provide: historical context, scientific parallels, technological applications, intellectual connections
+- Give concrete EXAMPLES and ILLUSTRATIONS for every abstract idea
+- Connect ideas to developments in science, technology, history, philosophy
+- Explore counterarguments and how the thinker would respond
+- Trace the logical chain of reasoning in exhaustive detail
+- EVERY sentence must add new information or insight
+
+ABSOLUTELY FORBIDDEN - ZERO TOLERANCE:
+- NO disclaimers ("I should note...", "It's important to remember...")
+- NO filler phrases ("That's a great question", "Let me explain", "In other words")
+- NO meta-commentary about the response itself
+- NO padding or repetition
+- NO placeholder sentences
+- NO summarizing what you just said
+- PURE CONTENT ONLY - maximum signal, zero noise
 
 CRITICAL INSTRUCTIONS:
 1. Your response MUST be grounded in the actual database content below
@@ -246,7 +261,7 @@ CRITICAL INSTRUCTIONS:
 3. DO NOT make up philosophical positions - use ONLY what is in the database
 4. If asked about something not covered in the database, say you would need to consult your writings
 5. Speak in first person as ${name}
-6. ${enhanced ? "ENHANCED MODE: You may elaborate creatively while staying true to the philosophical framework" : "STRICT MODE: Use ONLY the database content, no creative additions"}
+6. ${enhanced ? "ENHANCED MODE: You may elaborate with historical/scientific/technological examples while staying true to the philosophical framework" : "STRICT MODE: Use ONLY the database content, elaborate with examples and illustrations"}
 
 Database contains ${totalDbContent} items for ${name}.
 `;
@@ -453,18 +468,36 @@ CRITICAL: DO NOT USE ANY MARKDOWN FORMATTING. No # headers, no * bullets, no - l
     });
 
     const modeInstruction = enhanced 
-      ? "You may expand creatively while staying true to each thinker's philosophy."
-      : "STRICT MODE: You must ONLY use content from the database. Do NOT invent positions or quotes.";
+      ? "You may expand with historical/scientific/technological examples while staying true to each thinker's philosophy."
+      : "STRICT MODE: You must ONLY use content from the database. Elaborate with examples and illustrations.";
 
     const systemPrompt = `You are creating a philosophical dialogue based ENTIRELY on database content.
+
+ABSOLUTE WORD COUNT REQUIREMENT - NO EXCEPTIONS:
+The dialogue MUST be AT LEAST ${wordCount} words. This is a MINIMUM, not a target. NEVER write less. NO EXCEPTIONS.
+
+HOW TO ACHIEVE LENGTH WITH 100% SUBSTANCE (NO PADDING):
+- Dig DEEP into every database item - have thinkers explain full meaning and implications
+- For each position/quote/argument, provide: historical context, scientific parallels, technological applications
+- Give concrete EXAMPLES and ILLUSTRATIONS for every abstract idea
+- Have thinkers challenge each other and respond with detailed reasoning
+- Trace logical chains of reasoning in exhaustive detail
+- EVERY exchange must add new information or insight
+
+ABSOLUTELY FORBIDDEN - ZERO TOLERANCE:
+- NO filler phrases or pleasantries between speakers
+- NO meta-commentary ("That's an interesting point...")
+- NO padding, repetition, or summarizing
+- NO disclaimers or placeholder sentences
+- PURE PHILOSOPHICAL CONTENT ONLY - maximum signal, zero noise
 
 CRITICAL INSTRUCTIONS:
 1. The dialogue MUST be built from the database content provided below as the SKELETON
 2. You MUST incorporate at least ${quoteCount} items total from the databases
-3. The dialogue MUST be AT LEAST ${wordCount} words. This is a MINIMUM, not a target. NEVER write less than ${wordCount} words. NO EXCEPTIONS.
-4. ${modeInstruction}
-5. Each thinker should quote and reference their actual positions [P#], quotes [Q#], arguments [A#] and works [W#]
-6. DO NOT invent philosophical positions - use ONLY what is provided
+3. ${modeInstruction}
+4. Each thinker should quote and reference their actual positions [P#], quotes [Q#], arguments [A#] and works [W#]
+5. DO NOT invent philosophical positions - use ONLY what is provided
+6. DO NOT USE ANY MARKDOWN - no #, no *, no -, no **. Plain text only.
 
 ${allSkeletons}
 
@@ -527,18 +560,36 @@ Now write a ${wordCount}-word dialogue between ${thinkerNames.join(" and ")} on 
     });
 
     const modeInstruction = enhanced 
-      ? "You may expand creatively while staying true to each thinker's philosophy."
-      : "STRICT MODE: You must ONLY use content from the database. Do NOT invent positions or quotes.";
+      ? "You may expand with historical/scientific/technological examples while staying true to each thinker's philosophy."
+      : "STRICT MODE: You must ONLY use content from the database. Elaborate with examples and illustrations.";
 
     const systemPrompt = `You are creating a formal philosophical debate based ENTIRELY on database content.
+
+ABSOLUTE WORD COUNT REQUIREMENT - NO EXCEPTIONS:
+The debate MUST be AT LEAST ${wordCount} words. This is a MINIMUM, not a target. NEVER write less. NO EXCEPTIONS.
+
+HOW TO ACHIEVE LENGTH WITH 100% SUBSTANCE (NO PADDING):
+- Dig DEEP into every database item - have debaters explain full meaning and implications
+- For each position/argument, provide: historical context, scientific parallels, technological applications
+- Give concrete EXAMPLES and ILLUSTRATIONS for every abstract idea
+- Have debaters challenge each other with detailed reasoning and evidence
+- Trace logical chains in exhaustive detail
+- EVERY exchange must add new information or insight
+
+ABSOLUTELY FORBIDDEN - ZERO TOLERANCE:
+- NO filler phrases or pleasantries between debaters
+- NO meta-commentary ("That's an interesting point...")
+- NO padding, repetition, or summarizing
+- NO disclaimers or placeholder sentences
+- PURE PHILOSOPHICAL CONTENT ONLY - maximum signal, zero noise
 
 CRITICAL INSTRUCTIONS:
 1. The debate MUST be built from the database content provided below as the SKELETON
 2. You MUST incorporate at least ${quoteCount} items total from the databases
-3. The debate MUST be AT LEAST ${wordCount} words. This is a MINIMUM, not a target. NEVER write less than ${wordCount} words. NO EXCEPTIONS.
-4. ${modeInstruction}
-5. Each debater should reference their actual positions [P#], quotes [Q#], arguments [A#] and works [W#]
-6. DO NOT invent philosophical positions - use ONLY what is provided
+3. ${modeInstruction}
+4. Each debater should reference their actual positions [P#], quotes [Q#], arguments [A#] and works [W#]
+5. DO NOT invent philosophical positions - use ONLY what is provided
+6. DO NOT USE ANY MARKDOWN - no #, no *, no -, no **. Plain text only.
 
 Structure:
 1. OPENING STATEMENTS from each debater (using their database content)
@@ -599,19 +650,37 @@ Now write a ${wordCount}-word debate between ${debaterNames.join(" and ")} on "$
     const skeleton = buildDatabaseSkeleton(context, intervieweeName, quoteCount);
     
     const modeInstruction = enhanced 
-      ? "You may expand creatively while staying true to the thinker's philosophy."
-      : "STRICT MODE: You must ONLY use content from the database. Do NOT invent positions or quotes.";
+      ? "You may expand with historical/scientific/technological examples while staying true to the thinker's philosophy."
+      : "STRICT MODE: You must ONLY use content from the database. Elaborate with examples and illustrations.";
 
     const systemPrompt = `You are creating an in-depth interview based ENTIRELY on database content.
+
+ABSOLUTE WORD COUNT REQUIREMENT - NO EXCEPTIONS:
+The interview MUST be AT LEAST ${wordCount} words. This is a MINIMUM, not a target. NEVER write less. NO EXCEPTIONS.
+
+HOW TO ACHIEVE LENGTH WITH 100% SUBSTANCE (NO PADDING):
+- Dig DEEP into every database item - have ${intervieweeName} explain full meaning and implications
+- For each position/quote/argument, provide: historical context, scientific parallels, technological applications
+- Give concrete EXAMPLES and ILLUSTRATIONS for every abstract idea
+- Ask probing follow-up questions that draw out detailed explanations
+- Trace logical chains of reasoning in exhaustive detail
+- EVERY exchange must add new information or insight
+
+ABSOLUTELY FORBIDDEN - ZERO TOLERANCE:
+- NO filler phrases ("That's a great question...")
+- NO meta-commentary about the interview itself
+- NO padding, repetition, or summarizing
+- NO disclaimers or placeholder sentences
+- PURE PHILOSOPHICAL CONTENT ONLY - maximum signal, zero noise
 
 CRITICAL INSTRUCTIONS:
 1. The interview MUST be built from the database content provided below as the SKELETON
 2. You MUST incorporate at least ${quoteCount} items from the database
-3. The interview MUST be AT LEAST ${wordCount} words. This is a MINIMUM, not a target. NEVER write less than ${wordCount} words. NO EXCEPTIONS.
-4. ${modeInstruction}
-5. ${intervieweeName} should quote and reference their actual positions [P#], quotes [Q#], arguments [A#] and works [W#]
-6. DO NOT invent philosophical positions - use ONLY what is provided
-7. The interviewer is ${interviewerName}
+3. ${modeInstruction}
+4. ${intervieweeName} should quote and reference their actual positions [P#], quotes [Q#], arguments [A#] and works [W#]
+5. DO NOT invent philosophical positions - use ONLY what is provided
+6. The interviewer is ${interviewerName}
+7. DO NOT USE ANY MARKDOWN - no #, no *, no -, no **. Plain text only.
 
 ${skeleton}
 
@@ -849,19 +918,39 @@ Create a detailed outline for a paper on "${topic}" using the database content.`
                           (context.arguments?.length || 0) + (context.works?.length || 0);
     
     const modeInstruction = enhanced 
-      ? "You may expand on the ideas creatively while staying true to the thinker's philosophy."
-      : "STRICT MODE: You must ONLY use content from the database. Do NOT add any ideas that are not directly derived from the provided material.";
+      ? "You may expand with historical/scientific/technological examples while staying true to the thinker's philosophy."
+      : "STRICT MODE: You must ONLY use content from the database. Elaborate with examples and illustrations.";
 
     const systemPrompt = `You are creating a comprehensive philosophical document based ENTIRELY on ${thinkerName}'s actual writings from the database.
+
+ABSOLUTE WORD COUNT REQUIREMENT - NO EXCEPTIONS:
+The document MUST be AT LEAST ${wordCount} words. This is a MINIMUM, not a target. NEVER write less. NO EXCEPTIONS.
+
+HOW TO ACHIEVE LENGTH WITH 100% SUBSTANCE (NO PADDING):
+- Dig DEEP into every database item - explain full meaning, implications, and significance
+- For each position/quote/argument, provide: historical context, scientific parallels, technological applications, intellectual connections
+- Give concrete EXAMPLES and ILLUSTRATIONS for every abstract idea
+- Connect ideas to developments in science, technology, history, other philosophers
+- Explore counterarguments and how ${thinkerName} would respond
+- Trace logical chains of reasoning in exhaustive detail
+- EVERY sentence must add new information or insight
+
+ABSOLUTELY FORBIDDEN - ZERO TOLERANCE:
+- NO disclaimers ("I should note...", "It's important to remember...")
+- NO filler phrases ("In other words", "To put it simply")
+- NO meta-commentary about the document itself
+- NO padding, repetition, or summarizing what you just said
+- NO placeholder sentences
+- PURE CONTENT ONLY - maximum signal, zero noise
 
 CRITICAL INSTRUCTIONS:
 1. Your document MUST be built from the database content provided below as the SKELETON
 2. You MUST incorporate at least ${quoteCount} items from the database
-3. The document MUST be AT LEAST ${wordCount} words. This is a MINIMUM, not a target. NEVER write less than ${wordCount} words. NO EXCEPTIONS.
-4. ${modeInstruction}
-5. Structure the document with clear sections, weaving together the database content
-6. Each section should directly reference specific positions [P#], quotes [Q#], arguments [A#], and works [W#]
-7. DO NOT invent philosophical positions or quotes that are not in the database
+3. ${modeInstruction}
+4. Structure the document with clear sections, weaving together the database content
+5. Each section should directly reference specific positions [P#], quotes [Q#], arguments [A#], and works [W#]
+6. DO NOT invent philosophical positions or quotes that are not in the database
+7. DO NOT USE ANY MARKDOWN - no #, no *, no -, no **. Plain text only.
 
 Database contains ${totalDbContent} items for ${thinkerName}.
 ${skeleton}
