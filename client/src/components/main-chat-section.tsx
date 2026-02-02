@@ -35,10 +35,6 @@ export function MainChatSection() {
 
   const thinker = THINKERS.find(t => t.id === selectedThinker);
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
   const handleFileContent = (content: string, fileName: string) => {
     setDocumentContent(content);
     if (!input.trim()) {
