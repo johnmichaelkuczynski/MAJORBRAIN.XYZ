@@ -399,6 +399,60 @@ export async function registerRoutes(
     }
   });
 
+  // Get skeleton (database content) for a thinker - Phase 1 of two-phase generation
+  app.post("/api/figures/:figureId/skeleton", async (req: Request, res: Response) => {
+    const figureId = req.params.figureId as string;
+    const { topic, quoteCount = 20 } = req.body;
+
+    try {
+      const context = await getThinkerContext(figureId, topic || "", quoteCount);
+      const thinkerName = normalizeThinkerName(figureId);
+      
+      let skeleton = `=== DATABASE SKELETON FOR ${thinkerName.toUpperCase()} ===\n`;
+      skeleton += `Topic: ${topic || "General"}\n`;
+      skeleton += `Items fetched: ${quoteCount}\n\n`;
+
+      if (context.positions?.length > 0) {
+        skeleton += `--- POSITIONS (${context.positions.length}) ---\n`;
+        context.positions.slice(0, quoteCount).forEach((p: any, i: number) => {
+          skeleton += `[P${i + 1}] ${p.positionText || p.position_text}\n\n`;
+        });
+      }
+
+      if (context.quotes?.length > 0) {
+        skeleton += `\n--- QUOTES (${context.quotes.length}) ---\n`;
+        context.quotes.slice(0, quoteCount).forEach((q: any, i: number) => {
+          skeleton += `[Q${i + 1}] "${q.quoteText || q.quote_text}"\n\n`;
+        });
+      }
+
+      if (context.arguments?.length > 0) {
+        skeleton += `\n--- ARGUMENTS (${context.arguments.length}) ---\n`;
+        context.arguments.slice(0, Math.floor(quoteCount / 2)).forEach((a: any, i: number) => {
+          skeleton += `[A${i + 1}] ${a.argumentText || a.argument_text}\n\n`;
+        });
+      }
+
+      if (context.works?.length > 0) {
+        skeleton += `\n--- WORKS EXCERPTS (${context.works.length}) ---\n`;
+        context.works.slice(0, Math.floor(quoteCount / 3)).forEach((w: any, i: number) => {
+          const text = (w.workText || w.work_text || '').substring(0, 500);
+          skeleton += `[W${i + 1}] ${text}...\n\n`;
+        });
+      }
+
+      const totalItems = (context.positions?.length || 0) + (context.quotes?.length || 0) + 
+                         (context.arguments?.length || 0) + (context.works?.length || 0);
+      
+      skeleton += `\n=== END SKELETON (${totalItems} total items) ===`;
+
+      res.json({ skeleton, totalItems, thinkerName });
+    } catch (error: any) {
+      console.error("Skeleton error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Model Builder (streaming)
   app.post("/api/model-builder", async (req: Request, res: Response) => {
     // Validate request body

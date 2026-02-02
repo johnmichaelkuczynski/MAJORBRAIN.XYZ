@@ -29,6 +29,9 @@ export function MainChatSection() {
   const [wordCount, setWordCount] = useState(2000);
   const [quoteCount, setQuoteCount] = useState(10);
   const [enhanced, setEnhanced] = useState(true);
+  const [skeleton, setSkeleton] = useState("");
+  const [showSkeleton, setShowSkeleton] = useState(false);
+  const [pendingMessage, setPendingMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { setModelBuilderInput } = useContentTransfer();
   const { toast } = useToast();
@@ -43,6 +46,22 @@ export function MainChatSection() {
     toast({ title: "Document Loaded", description: `${content.split(/\s+/).length.toLocaleString()} words loaded` });
   };
 
+  const fetchSkeleton = async (message: string) => {
+    try {
+      const response = await fetch(`/api/figures/${selectedThinker}/skeleton`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topic: message, quoteCount }),
+      });
+      if (!response.ok) throw new Error("Failed to fetch skeleton");
+      const data = await response.json();
+      return data.skeleton;
+    } catch (error) {
+      console.error("Skeleton error:", error);
+      return null;
+    }
+  };
+
   const handleSubmit = async () => {
     if (!input.trim() || isStreaming) return;
 
@@ -50,9 +69,31 @@ export function MainChatSection() {
       ? `${input.trim()}\n\n--- DOCUMENT TO DISCUSS ---\n${documentContent}` 
       : input.trim();
     
+    // For word counts > 500, show skeleton first
+    if (wordCount > 500) {
+      setIsStreaming(true);
+      toast({ title: "Phase 1: Fetching Database Skeleton", description: "Loading source material..." });
+      
+      const skeletonContent = await fetchSkeleton(input.trim());
+      if (skeletonContent) {
+        setSkeleton(skeletonContent);
+        setShowSkeleton(true);
+        setPendingMessage(userMessage);
+        setIsStreaming(false);
+        toast({ title: "Skeleton Ready", description: "Review and download the skeleton, then click Generate to continue." });
+        return;
+      }
+    }
+    
+    await generateResponse(userMessage);
+  };
+
+  const generateResponse = async (userMessage: string) => {
     setInput("");
     setDocumentContent("");
-    setMessages(prev => [...prev, { role: "user", content: input.trim() + (documentContent ? ` [Document: ${documentContent.split(/\s+/).length.toLocaleString()} words]` : "") }]);
+    setShowSkeleton(false);
+    setPendingMessage("");
+    setMessages(prev => [...prev, { role: "user", content: input.trim() || pendingMessage.split("\n")[0] + (documentContent ? ` [Document attached]` : "") }]);
     setIsStreaming(true);
 
     try {
@@ -92,7 +133,19 @@ export function MainChatSection() {
       }]);
     } finally {
       setIsStreaming(false);
+      setSkeleton("");
     }
+  };
+
+  const handleGenerateFromSkeleton = () => {
+    if (pendingMessage) {
+      generateResponse(pendingMessage);
+    }
+  };
+
+  const handleDownloadSkeleton = () => {
+    downloadText(skeleton, `skeleton-${selectedThinker}-${Date.now()}.txt`);
+    toast({ title: "Downloaded", description: "Skeleton downloaded" });
   };
 
   const handleClear = () => {
