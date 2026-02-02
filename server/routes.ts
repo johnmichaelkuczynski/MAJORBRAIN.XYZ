@@ -223,7 +223,7 @@ function buildDatabaseSkeleton(context: any, thinkerName: string, quoteCount: nu
 }
 
 // Build system prompt for philosopher chat - USES DATABASE AS SKELETON
-function buildPhilosopherSystemPrompt(thinkerId: string, context: any, quoteCount: number = 10): string {
+function buildPhilosopherSystemPrompt(thinkerId: string, context: any, quoteCount: number = 10, wordCount: number = 2000, enhanced: boolean = false): string {
   const normalizedId = thinkerId.toLowerCase();
   const thinker = THINKERS.find(t => t.id.toLowerCase() === normalizedId || t.name.toLowerCase() === normalizedId);
   const name = thinker?.name || thinkerId;
@@ -231,7 +231,15 @@ function buildPhilosopherSystemPrompt(thinkerId: string, context: any, quoteCoun
   const totalDbContent = (context.positions?.length || 0) + (context.quotes?.length || 0) + 
                         (context.arguments?.length || 0) + (context.works?.length || 0);
 
+  const minWords = Math.floor(wordCount * 0.9);
+  const maxWords = Math.ceil(wordCount * 1.1);
+
   let prompt = `You are ${name}. You must respond ONLY based on the actual database content provided below.
+
+CRITICAL WORD COUNT REQUIREMENT:
+Your response MUST be between ${minWords} and ${maxWords} words (target: ${wordCount} words).
+This is NOT optional. Count your words. If the user asks for ${wordCount} words, you MUST deliver ${wordCount} words.
+Write extensive, detailed responses that fully explore the topic to reach the word count.
 
 CRITICAL INSTRUCTIONS:
 1. Your response MUST be grounded in the actual database content below
@@ -239,6 +247,7 @@ CRITICAL INSTRUCTIONS:
 3. DO NOT make up philosophical positions - use ONLY what is in the database
 4. If asked about something not covered in the database, say you would need to consult your writings
 5. Speak in first person as ${name}
+6. ${enhanced ? "ENHANCED MODE: You may elaborate creatively while staying true to the philosophical framework" : "STRICT MODE: Use ONLY the database content, no creative additions"}
 
 Database contains ${totalDbContent} items for ${name}.
 `;
@@ -274,6 +283,7 @@ Database contains ${totalDbContent} items for ${name}.
 
   prompt += `\n\nRespond to the user's question using the above database content. Reference items by their codes [P1], [Q1], etc.`;
   prompt += `\n\nCRITICAL: DO NOT USE ANY MARKDOWN FORMATTING. No # headers, no * bullets, no - lists, no ** bold. Plain text only.`;
+  prompt += `\n\nREMINDER: Your response MUST be ${wordCount} words (±10%). This is mandatory. Write extensively to meet this requirement.`;
 
   return prompt;
 }
@@ -314,7 +324,7 @@ export async function registerRoutes(
       return res.status(400).json({ error: validation.error.issues[0]?.message || "Invalid request" });
     }
     
-    const { message, model = "gpt-4o", quoteCount = 20 } = validation.data as any;
+    const { message, model = "gpt-4o", quoteCount = 20, wordCount = 2000, enhanced = false } = validation.data as any;
 
     // Set up SSE
     res.setHeader("Content-Type", "text/event-stream");
@@ -324,7 +334,7 @@ export async function registerRoutes(
     try {
       // Get EXTENSIVE context from database - this is the SKELETON
       const context = await getThinkerContext(figureId, message as string, quoteCount);
-      const systemPrompt = buildPhilosopherSystemPrompt(figureId, context, quoteCount);
+      const systemPrompt = buildPhilosopherSystemPrompt(figureId, context, quoteCount, wordCount, enhanced);
 
       if (isOpenAIModel(model)) {
         const messages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [
