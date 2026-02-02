@@ -351,6 +351,7 @@ export async function registerRoutes(
   });
 
   // Main Chat - Chat with a philosopher (streaming) - USES DATABASE AS SKELETON
+  // For outputs > 500 words, uses Cross-Chunk Coherence (CC) system
   app.post("/api/figures/:figureId/chat", async (req: Request, res: Response) => {
     const figureId = req.params.figureId as string;
     
@@ -368,6 +369,34 @@ export async function registerRoutes(
     try {
       // Get EXTENSIVE context from database - this is the SKELETON
       const context = await getThinkerContext(figureId, message as string, quoteCount);
+      const thinkerName = normalizeThinkerName(figureId);
+
+      // For outputs > 500 words, use Cross-Chunk Coherence system
+      if (wordCount > 500) {
+        const { processWithCoherence } = await import("./services/coherenceService");
+        
+        await processWithCoherence({
+          sessionType: "chat",
+          thinkerId: figureId,
+          thinkerName,
+          userPrompt: message,
+          targetWords: wordCount,
+          model: model as any,
+          databaseContent: {
+            positions: context.positions || [],
+            quotes: context.quotes || [],
+            arguments: context.arguments || [],
+            works: context.works || [],
+          },
+          res,
+        });
+
+        res.write("data: [DONE]\n\n");
+        res.end();
+        return;
+      }
+
+      // For short outputs (< 500 words), use simple single-pass generation
       const systemPrompt = buildPhilosopherSystemPrompt(figureId, context, quoteCount, wordCount, enhanced);
 
       if (isOpenAIModel(model)) {

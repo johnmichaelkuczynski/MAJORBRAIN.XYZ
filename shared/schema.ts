@@ -289,3 +289,55 @@ export const THINKERS = [
 ] as const;
 
 export type ThinkerId = typeof THINKERS[number]["id"];
+
+// ============================================================================
+// COHERENCE SYSTEM TABLES - For large-scale coherent output generation
+// ============================================================================
+
+// Coherence sessions - tracks each coherent generation job
+export const coherenceSessions = pgTable("coherence_sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  sessionType: varchar("session_type", { length: 50 }).notNull(), // 'chat', 'debate', 'interview', 'dialogue', 'document'
+  thinkerId: varchar("thinker_id", { length: 100 }),
+  userPrompt: text("user_prompt").notNull(),
+  globalSkeleton: jsonb("global_skeleton"), // The extracted skeleton
+  targetWords: integer("target_words").notNull(),
+  actualWords: integer("actual_words").default(0),
+  totalChunks: integer("total_chunks").default(0),
+  currentChunk: integer("current_chunk").default(0),
+  status: varchar("status", { length: 20 }).default("pending"), // 'pending', 'skeleton', 'chunking', 'stitching', 'complete', 'failed'
+  finalOutput: text("final_output"),
+  errorMessage: text("error_message"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type CoherenceSession = typeof coherenceSessions.$inferSelect;
+export type InsertCoherenceSession = typeof coherenceSessions.$inferInsert;
+
+// Coherence chunks - stores each processed chunk
+export const coherenceChunks = pgTable("coherence_chunks", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  sessionId: varchar("session_id").notNull(),
+  chunkIndex: integer("chunk_index").notNull(),
+  chunkOutput: text("chunk_output"),
+  chunkDelta: jsonb("chunk_delta"), // { claims_added, terms_used, conflicts_detected }
+  wordCount: integer("word_count").default(0),
+  status: varchar("status", { length: 20 }).default("pending"), // 'pending', 'processing', 'complete', 'failed'
+  processedAt: timestamp("processed_at"),
+});
+
+export type CoherenceChunk = typeof coherenceChunks.$inferSelect;
+export type InsertCoherenceChunk = typeof coherenceChunks.$inferInsert;
+
+// Stitch results - stores conflict detection and repairs
+export const stitchResults = pgTable("stitch_results", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  sessionId: varchar("session_id").notNull(),
+  conflicts: jsonb("conflicts"),
+  repairs: jsonb("repairs"),
+  coherenceScore: varchar("coherence_score", { length: 20 }), // 'pass', 'needs_repair'
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type StitchResult = typeof stitchResults.$inferSelect;
