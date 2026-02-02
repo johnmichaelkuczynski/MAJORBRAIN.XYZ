@@ -557,8 +557,36 @@ CRITICAL: DO NOT USE ANY MARKDOWN FORMATTING. No # headers, no * bullets, no - l
     );
 
     const thinkerNames = thinkers.map((t: string) => normalizeThinkerName(t));
+
+    // For outputs > 500 words, use Cross-Chunk Coherence system
+    if (wordCount > 500) {
+      const { processWithCoherence } = await import("./services/coherenceService");
+      
+      // Combine all thinkers' content
+      const combinedContent = {
+        positions: contexts.flatMap(c => c.positions || []),
+        quotes: contexts.flatMap(c => c.quotes || []),
+        arguments: contexts.flatMap(c => c.arguments || []),
+        works: contexts.flatMap(c => c.works || []),
+      };
+
+      await processWithCoherence({
+        sessionType: "dialogue",
+        thinkerId: thinkers.join("-and-"),
+        thinkerName: thinkerNames.join(" and "),
+        userPrompt: `Create a philosophical dialogue on "${topic}" between ${thinkerNames.join(" and ")}. Each speaker should present and defend their actual philosophical positions.`,
+        targetWords: wordCount,
+        model: model as any,
+        databaseContent: combinedContent,
+        res,
+      });
+
+      res.write("data: [DONE]\n\n");
+      res.end();
+      return;
+    }
     
-    // Build skeleton for each thinker
+    // Build skeleton for each thinker (short outputs only)
     let allSkeletons = "";
     thinkers.forEach((t: string, i: number) => {
       const ctx = contexts[i];
@@ -566,47 +594,24 @@ CRITICAL: DO NOT USE ANY MARKDOWN FORMATTING. No # headers, no * bullets, no - l
       allSkeletons += buildDatabaseSkeleton(ctx, name, Math.floor(quoteCount / thinkers.length));
     });
 
-    const modeInstruction = enhanced 
-      ? "ENHANCED MODE (1:3 RATIO): Database content is the SCAFFOLDING (1 part). LLM elaboration is the FLESH (3 parts). For every database item, add 3x content with historical context, scientific parallels, examples, and illustrations."
-      : "STRICT MODE: Use ONLY database content. Explain and elaborate on database items but do not add external content.";
-
     const systemPrompt = `You are creating a philosophical dialogue based ENTIRELY on database content.
 
 ABSOLUTE WORD COUNT REQUIREMENT - NO EXCEPTIONS:
-The dialogue MUST be AT LEAST ${wordCount} words. This is a MINIMUM, not a target. NEVER write less. NO EXCEPTIONS.
-
-HOW TO ACHIEVE LENGTH WITH 100% SUBSTANCE (NO PADDING):
-- Dig DEEP into every database item - have thinkers explain full meaning and implications
-- For each position/quote/argument, provide: historical context, scientific parallels, technological applications
-- Give concrete EXAMPLES and ILLUSTRATIONS for every abstract idea
-- Have thinkers challenge each other and respond with detailed reasoning
-- Trace logical chains of reasoning in exhaustive detail
-- EVERY exchange must add new information or insight
-
-ABSOLUTELY FORBIDDEN - ZERO TOLERANCE:
-- NO filler phrases or pleasantries between speakers
-- NO meta-commentary ("That's an interesting point...")
-- NO padding, repetition, or summarizing
-- NO disclaimers or placeholder sentences
-- PURE PHILOSOPHICAL CONTENT ONLY - maximum signal, zero noise
+The dialogue MUST be AT LEAST ${wordCount} words.
 
 CRITICAL INSTRUCTIONS:
-1. The dialogue MUST be built from the database content provided below as the SKELETON
-2. You MUST incorporate at least ${quoteCount} items total from the databases
-3. ${modeInstruction}
-4. Each thinker should quote and reference their actual positions [P#], quotes [Q#], arguments [A#] and works [W#]
-5. DO NOT invent philosophical positions - use ONLY what is provided
-6. DO NOT USE ANY MARKDOWN - no #, no *, no -, no **. Plain text only.
+1. Each thinker should quote and reference their actual positions [P#], quotes [Q#], arguments [A#] and works [W#]
+2. DO NOT USE ANY MARKDOWN - plain text only.
 
 ${allSkeletons}
 
-Now write a ${wordCount}-word dialogue between ${thinkerNames.join(" and ")} on "${topic}" using the database content as the skeleton.`;
+Now write a ${wordCount}-word dialogue between ${thinkerNames.join(" and ")} on "${topic}".`;
 
     try {
       if (isOpenAIModel(model)) {
         const messages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [
           { role: "system", content: systemPrompt },
-          { role: "user", content: `Create the ${wordCount}-word dialogue using the database content. Each speaker should reference items by their codes [P1], [Q1], etc.` }
+          { role: "user", content: `Create the ${wordCount}-word dialogue.` }
         ];
 
         for await (const chunk of streamOpenAI(messages, model)) {
@@ -614,7 +619,7 @@ Now write a ${wordCount}-word dialogue between ${thinkerNames.join(" and ")} on 
         }
       } else {
         const messages: Array<{ role: "user" | "assistant"; content: string }> = [
-          { role: "user", content: `Create the ${wordCount}-word dialogue using the database content. Each speaker should reference items by their codes [P1], [Q1], etc.` }
+          { role: "user", content: `Create the ${wordCount}-word dialogue.` }
         ];
 
         for await (const chunk of streamAnthropic(systemPrompt, messages, model)) {
@@ -647,8 +652,36 @@ Now write a ${wordCount}-word dialogue between ${thinkerNames.join(" and ")} on 
     );
 
     const debaterNames = debaters.map((d: string) => normalizeThinkerName(d));
+
+    // For outputs > 500 words, use Cross-Chunk Coherence system
+    if (wordCount > 500) {
+      const { processWithCoherence } = await import("./services/coherenceService");
+      
+      // Combine all debaters' content
+      const combinedContent = {
+        positions: contexts.flatMap(c => c.positions || []),
+        quotes: contexts.flatMap(c => c.quotes || []),
+        arguments: contexts.flatMap(c => c.arguments || []),
+        works: contexts.flatMap(c => c.works || []),
+      };
+
+      await processWithCoherence({
+        sessionType: "debate",
+        thinkerId: debaters.join("-vs-"),
+        thinkerName: debaterNames.join(" vs "),
+        userPrompt: `Create a formal debate on "${topic}" between ${debaterNames.join(" and ")}. Structure: Opening Statements, Rebuttals, Cross-Examination, Closing Arguments.`,
+        targetWords: wordCount,
+        model: model as any,
+        databaseContent: combinedContent,
+        res,
+      });
+
+      res.write("data: [DONE]\n\n");
+      res.end();
+      return;
+    }
     
-    // Build skeleton for each debater
+    // Build skeleton for each debater (short outputs only)
     let allSkeletons = "";
     debaters.forEach((d: string, i: number) => {
       const ctx = contexts[i];
@@ -665,44 +698,22 @@ Now write a ${wordCount}-word dialogue between ${thinkerNames.join(" and ")} on 
 ABSOLUTE WORD COUNT REQUIREMENT - NO EXCEPTIONS:
 The debate MUST be AT LEAST ${wordCount} words. This is a MINIMUM, not a target. NEVER write less. NO EXCEPTIONS.
 
-HOW TO ACHIEVE LENGTH WITH 100% SUBSTANCE (NO PADDING):
-- Dig DEEP into every database item - have debaters explain full meaning and implications
-- For each position/argument, provide: historical context, scientific parallels, technological applications
-- Give concrete EXAMPLES and ILLUSTRATIONS for every abstract idea
-- Have debaters challenge each other with detailed reasoning and evidence
-- Trace logical chains in exhaustive detail
-- EVERY exchange must add new information or insight
-
-ABSOLUTELY FORBIDDEN - ZERO TOLERANCE:
-- NO filler phrases or pleasantries between debaters
-- NO meta-commentary ("That's an interesting point...")
-- NO padding, repetition, or summarizing
-- NO disclaimers or placeholder sentences
-- PURE PHILOSOPHICAL CONTENT ONLY - maximum signal, zero noise
-
 CRITICAL INSTRUCTIONS:
 1. The debate MUST be built from the database content provided below as the SKELETON
 2. You MUST incorporate at least ${quoteCount} items total from the databases
 3. ${modeInstruction}
 4. Each debater should reference their actual positions [P#], quotes [Q#], arguments [A#] and works [W#]
-5. DO NOT invent philosophical positions - use ONLY what is provided
-6. DO NOT USE ANY MARKDOWN - no #, no *, no -, no **. Plain text only.
-
-Structure:
-1. OPENING STATEMENTS from each debater (using their database content)
-2. REBUTTALS (referencing opponent's positions)
-3. CROSS-EXAMINATION
-4. CLOSING ARGUMENTS
+5. DO NOT USE ANY MARKDOWN - no #, no *, no -, no **. Plain text only.
 
 ${allSkeletons}
 
-Now write a ${wordCount}-word debate between ${debaterNames.join(" and ")} on "${topic}" using the database content as the skeleton.`;
+Now write a ${wordCount}-word debate between ${debaterNames.join(" and ")} on "${topic}".`;
 
     try {
       if (isOpenAIModel(model)) {
         const messages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [
           { role: "system", content: systemPrompt },
-          { role: "user", content: `Create the ${wordCount}-word debate using the database content. Each debater should reference items by their codes [P1], [Q1], etc.` }
+          { role: "user", content: `Create the ${wordCount}-word debate.` }
         ];
 
         for await (const chunk of streamOpenAI(messages, model)) {
@@ -710,7 +721,7 @@ Now write a ${wordCount}-word debate between ${debaterNames.join(" and ")} on "$
         }
       } else {
         const messages: Array<{ role: "user" | "assistant"; content: string }> = [
-          { role: "user", content: `Create the ${wordCount}-word debate using the database content. Each debater should reference items by their codes [P1], [Q1], etc.` }
+          { role: "user", content: `Create the ${wordCount}-word debate.` }
         ];
 
         for await (const chunk of streamAnthropic(systemPrompt, messages, model)) {
@@ -742,50 +753,54 @@ Now write a ${wordCount}-word debate between ${debaterNames.join(" and ")} on "$
     const intervieweeName = normalizeThinkerName(interviewee);
     const interviewerName = interviewer ? normalizeThinkerName(interviewer) : "Interviewer";
 
+    // For outputs > 500 words, use Cross-Chunk Coherence system
+    if (wordCount > 500) {
+      const { processWithCoherence } = await import("./services/coherenceService");
+      
+      await processWithCoherence({
+        sessionType: "interview",
+        thinkerId: interviewee,
+        thinkerName: intervieweeName,
+        userPrompt: `Create an in-depth interview with ${intervieweeName} on "${topic}". The interviewer is ${interviewerName}. Format: Q&A with probing follow-up questions.`,
+        targetWords: wordCount,
+        model: model as any,
+        databaseContent: {
+          positions: context.positions || [],
+          quotes: context.quotes || [],
+          arguments: context.arguments || [],
+          works: context.works || [],
+        },
+        res,
+      });
+
+      res.write("data: [DONE]\n\n");
+      res.end();
+      return;
+    }
+
+    // Short output path
     const skeleton = buildDatabaseSkeleton(context, intervieweeName, quoteCount);
     
-    const modeInstruction = enhanced 
-      ? "ENHANCED MODE (1:3 RATIO): Database content is the SCAFFOLDING (1 part). LLM elaboration is the FLESH (3 parts). For every database item, add 3x content with historical context, scientific parallels, examples, and illustrations."
-      : "STRICT MODE: Use ONLY database content. Explain and elaborate on database items but do not add external content.";
-
     const systemPrompt = `You are creating an in-depth interview based ENTIRELY on database content.
 
 ABSOLUTE WORD COUNT REQUIREMENT - NO EXCEPTIONS:
 The interview MUST be AT LEAST ${wordCount} words. This is a MINIMUM, not a target. NEVER write less. NO EXCEPTIONS.
 
-HOW TO ACHIEVE LENGTH WITH 100% SUBSTANCE (NO PADDING):
-- Dig DEEP into every database item - have ${intervieweeName} explain full meaning and implications
-- For each position/quote/argument, provide: historical context, scientific parallels, technological applications
-- Give concrete EXAMPLES and ILLUSTRATIONS for every abstract idea
-- Ask probing follow-up questions that draw out detailed explanations
-- Trace logical chains of reasoning in exhaustive detail
-- EVERY exchange must add new information or insight
-
-ABSOLUTELY FORBIDDEN - ZERO TOLERANCE:
-- NO filler phrases ("That's a great question...")
-- NO meta-commentary about the interview itself
-- NO padding, repetition, or summarizing
-- NO disclaimers or placeholder sentences
-- PURE PHILOSOPHICAL CONTENT ONLY - maximum signal, zero noise
-
 CRITICAL INSTRUCTIONS:
 1. The interview MUST be built from the database content provided below as the SKELETON
-2. You MUST incorporate at least ${quoteCount} items from the database
-3. ${modeInstruction}
-4. ${intervieweeName} should quote and reference their actual positions [P#], quotes [Q#], arguments [A#] and works [W#]
-5. DO NOT invent philosophical positions - use ONLY what is provided
-6. The interviewer is ${interviewerName}
-7. DO NOT USE ANY MARKDOWN - no #, no *, no -, no **. Plain text only.
+2. ${intervieweeName} should quote and reference their actual positions [P#], quotes [Q#], arguments [A#] and works [W#]
+3. The interviewer is ${interviewerName}
+4. DO NOT USE ANY MARKDOWN - plain text only.
 
 ${skeleton}
 
-Now write a ${wordCount}-word interview with ${intervieweeName} on "${topic}" using the database content as the skeleton.`;
+Now write a ${wordCount}-word interview with ${intervieweeName} on "${topic}".`;
 
     try {
       if (isOpenAIModel(model)) {
         const messages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [
           { role: "system", content: systemPrompt },
-          { role: "user", content: `Create the ${wordCount}-word interview using the database content. ${intervieweeName} should reference items by their codes [P1], [Q1], etc.` }
+          { role: "user", content: `Create the ${wordCount}-word interview.` }
         ];
 
         for await (const chunk of streamOpenAI(messages, model)) {
@@ -793,7 +808,7 @@ Now write a ${wordCount}-word interview with ${intervieweeName} on "${topic}" us
         }
       } else {
         const messages: Array<{ role: "user" | "assistant"; content: string }> = [
-          { role: "user", content: `Create the ${wordCount}-word interview using the database content. ${intervieweeName} should reference items by their codes [P1], [Q1], etc.` }
+          { role: "user", content: `Create the ${wordCount}-word interview.` }
         ];
 
         for await (const chunk of streamAnthropic(systemPrompt, messages, model)) {
@@ -1003,56 +1018,54 @@ Create a detailed outline for a paper on "${topic}" using the database content.`
     
     // Fetch EXTENSIVE database content - this is the SKELETON
     const context = await getThinkerContext(thinker, topic, quoteCount);
+
+    // For outputs > 500 words, use Cross-Chunk Coherence system
+    if (wordCount > 500) {
+      const { processWithCoherence } = await import("./services/coherenceService");
+      
+      await processWithCoherence({
+        sessionType: "document",
+        thinkerId: thinker,
+        thinkerName,
+        userPrompt: `Create a comprehensive philosophical document on "${topic}" based on ${thinkerName}'s actual writings.`,
+        targetWords: wordCount,
+        model: model as any,
+        databaseContent: {
+          positions: context.positions || [],
+          quotes: context.quotes || [],
+          arguments: context.arguments || [],
+          works: context.works || [],
+        },
+        res,
+      });
+
+      res.write("data: [DONE]\n\n");
+      res.end();
+      return;
+    }
+
+    // Short output path
     const skeleton = buildDatabaseSkeleton(context, thinkerName, quoteCount);
     
-    const totalDbContent = (context.positions?.length || 0) + (context.quotes?.length || 0) + 
-                          (context.arguments?.length || 0) + (context.works?.length || 0);
-    
-    const modeInstruction = enhanced 
-      ? "ENHANCED MODE (1:3 RATIO): Database content is the SCAFFOLDING (1 part). LLM elaboration is the FLESH (3 parts). For every database item, add 3x content with historical context, scientific parallels, examples, and illustrations."
-      : "STRICT MODE: Use ONLY database content. Explain and elaborate on database items but do not add external content.";
-
     const systemPrompt = `You are creating a comprehensive philosophical document based ENTIRELY on ${thinkerName}'s actual writings from the database.
 
 ABSOLUTE WORD COUNT REQUIREMENT - NO EXCEPTIONS:
-The document MUST be AT LEAST ${wordCount} words. This is a MINIMUM, not a target. NEVER write less. NO EXCEPTIONS.
-
-HOW TO ACHIEVE LENGTH WITH 100% SUBSTANCE (NO PADDING):
-- Dig DEEP into every database item - explain full meaning, implications, and significance
-- For each position/quote/argument, provide: historical context, scientific parallels, technological applications, intellectual connections
-- Give concrete EXAMPLES and ILLUSTRATIONS for every abstract idea
-- Connect ideas to developments in science, technology, history, other philosophers
-- Explore counterarguments and how ${thinkerName} would respond
-- Trace logical chains of reasoning in exhaustive detail
-- EVERY sentence must add new information or insight
-
-ABSOLUTELY FORBIDDEN - ZERO TOLERANCE:
-- NO disclaimers ("I should note...", "It's important to remember...")
-- NO filler phrases ("In other words", "To put it simply")
-- NO meta-commentary about the document itself
-- NO padding, repetition, or summarizing what you just said
-- NO placeholder sentences
-- PURE CONTENT ONLY - maximum signal, zero noise
+The document MUST be AT LEAST ${wordCount} words.
 
 CRITICAL INSTRUCTIONS:
-1. Your document MUST be built from the database content provided below as the SKELETON
-2. You MUST incorporate at least ${quoteCount} items from the database
-3. ${modeInstruction}
-4. Structure the document with clear sections, weaving together the database content
-5. Each section should directly reference specific positions [P#], quotes [Q#], arguments [A#], and works [W#]
-6. DO NOT invent philosophical positions or quotes that are not in the database
-7. DO NOT USE ANY MARKDOWN - no #, no *, no -, no **. Plain text only.
+1. Your document MUST be built from the database content as the SKELETON
+2. Reference specific positions [P#], quotes [Q#], arguments [A#], and works [W#]
+3. DO NOT USE ANY MARKDOWN - plain text only.
 
-Database contains ${totalDbContent} items for ${thinkerName}.
 ${skeleton}
 
-Now write a ${wordCount}-word document on "${topic}" using ONLY the above database content as your skeleton.`;
+Now write a ${wordCount}-word document on "${topic}".`;
 
     try {
       if (isOpenAIModel(model)) {
         const messages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [
           { role: "system", content: systemPrompt },
-          { role: "user", content: `Create the ${wordCount}-word document on "${topic}" using the database content as the skeleton. Reference items by their codes [P1], [Q1], etc.` }
+          { role: "user", content: `Create the ${wordCount}-word document.` }
         ];
 
         for await (const chunk of streamOpenAI(messages, model)) {
@@ -1060,7 +1073,7 @@ Now write a ${wordCount}-word document on "${topic}" using ONLY the above databa
         }
       } else {
         const messages: Array<{ role: "user" | "assistant"; content: string }> = [
-          { role: "user", content: `Create the ${wordCount}-word document on "${topic}" using the database content as the skeleton. Reference items by their codes [P1], [Q1], etc.` }
+          { role: "user", content: `Create the ${wordCount}-word document.` }
         ];
 
         for await (const chunk of streamAnthropic(systemPrompt, messages, model)) {

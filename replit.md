@@ -102,6 +102,38 @@ Examples:
 - Frontend runs on port 5000
 - Backend API prefixed with `/api`
 
+## Cross-Chunk Coherence (CC) System
+
+For outputs > 500 words, the app uses a three-pass architecture to ensure coherent long-form generation:
+
+### The Three Passes
+
+**PASS 1 - SKELETON EXTRACTION:**
+- Extracts thesis, outline, key terms, commitments from database content
+- Creates a "map" that constrains all subsequent generation
+- Stored and retrieved from database (not memory)
+
+**PASS 2 - CONSTRAINED CHUNK PROCESSING:**
+- Divides target output into ~1000 word chunks
+- Each chunk retrieves skeleton from database
+- Each chunk is constrained: "Do not contradict skeleton"
+- Chunks are streamed to user in real-time
+- 15-second pause between chunks for rate limiting
+
+**PASS 3 - STITCH AND VERIFY:**
+- Checks total word count against target
+- Generates additional content if shortfall detected
+- Reports final word count
+
+### Service Files
+- `server/services/coherenceService.ts` - Main coherence logic
+- `server/services/aiProviderService.ts` - Unified LLM interface
+
+### Database Tables
+- `coherence_sessions` - Tracks generation jobs
+- `coherence_chunks` - Stores processed chunks
+- `stitch_results` - Stores conflict detection results
+
 ## Design Decisions
 - All sections on one page (no tabs/popups)
 - Big inputs, big outputs
@@ -111,3 +143,5 @@ Examples:
 - Content can be transferred between sections (e.g., chat to Model Builder)
 - Kuczynski is an Epistemic Engineer, not a philosopher
 - All thinkers displayed by last name only
+- Cross-Chunk Coherence (CC) for outputs > 500 words
+- White background (light theme) by default for accessibility

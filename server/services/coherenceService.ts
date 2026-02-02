@@ -1,5 +1,8 @@
 import { Response } from "express";
 import { generateText, streamText, countWords, delay, CHUNK_DELAY_MS, ModelId } from "./aiProviderService";
+import { db } from "../db";
+import { coherenceSessions, coherenceChunks, stitchResults } from "@shared/schema";
+import { eq } from "drizzle-orm";
 
 export interface GlobalSkeleton {
   thesis: string;
@@ -43,6 +46,84 @@ function sendSSE(res: Response, data: string) {
   if (typeof (res as any).flush === "function") {
     (res as any).flush();
   }
+}
+
+async function createSession(options: CoherenceOptions): Promise<string> {
+  const result = await db.insert(coherenceSessions).values({
+    sessionType: options.sessionType,
+    thinkerId: options.thinkerId,
+    userPrompt: options.userPrompt,
+    targetWords: options.targetWords,
+    status: "pending",
+  }).returning({ id: coherenceSessions.id });
+  
+  return result[0].id;
+}
+
+async function updateSessionSkeleton(sessionId: string, skeleton: GlobalSkeleton, totalChunks: number): Promise<void> {
+  await db.update(coherenceSessions)
+    .set({ 
+      globalSkeleton: skeleton as any,
+      totalChunks,
+      status: "skeleton",
+    })
+    .where(eq(coherenceSessions.id, sessionId));
+}
+
+async function getSessionSkeleton(sessionId: string): Promise<GlobalSkeleton | null> {
+  const result = await db.select({ globalSkeleton: coherenceSessions.globalSkeleton })
+    .from(coherenceSessions)
+    .where(eq(coherenceSessions.id, sessionId));
+  
+  if (result.length > 0 && result[0].globalSkeleton) {
+    return result[0].globalSkeleton as unknown as GlobalSkeleton;
+  }
+  return null;
+}
+
+async function saveChunk(sessionId: string, chunkIndex: number, output: string, delta: ChunkDelta, wordCount: number): Promise<void> {
+  await db.insert(coherenceChunks).values({
+    sessionId,
+    chunkIndex,
+    chunkOutput: output,
+    chunkDelta: delta as any,
+    wordCount,
+    status: "complete",
+    processedAt: new Date(),
+  });
+  
+  await db.update(coherenceSessions)
+    .set({ 
+      currentChunk: chunkIndex + 1,
+      status: "chunking",
+    })
+    .where(eq(coherenceSessions.id, sessionId));
+}
+
+async function getPriorDeltas(sessionId: string): Promise<ChunkDelta[]> {
+  const result = await db.select({ chunkDelta: coherenceChunks.chunkDelta })
+    .from(coherenceChunks)
+    .where(eq(coherenceChunks.sessionId, sessionId));
+  
+  return result
+    .map(r => r.chunkDelta as unknown as ChunkDelta)
+    .filter(Boolean);
+}
+
+async function saveStitchResult(sessionId: string, totalWords: number, conflicts: string[]): Promise<void> {
+  await db.insert(stitchResults).values({
+    sessionId,
+    conflicts: conflicts as any,
+    repairs: [] as any,
+    coherenceScore: conflicts.length === 0 ? "pass" : "needs_repair",
+  });
+  
+  await db.update(coherenceSessions)
+    .set({ 
+      actualWords: totalWords,
+      status: "complete",
+    })
+    .where(eq(coherenceSessions.id, sessionId));
 }
 
 export async function extractGlobalSkeleton(
@@ -137,11 +218,12 @@ function buildChunkPrompt(
   thinkerName: string,
   priorDeltas: ChunkDelta[]
 ): { system: string; user: string } {
-  const priorClaimsStr = priorDeltas.flatMap(d => d.claimsAdded).join("; ");
+  const priorClaimsStr = priorDeltas.flatMap(d => d.claimsAdded || []).join("; ");
+  const priorTermsStr = priorDeltas.flatMap(d => d.termsUsed || []).join(", ");
   
   const system = `You are ${thinkerName}. You MUST write AT LEAST ${targetWordsPerChunk} words for this chunk.
 
-GLOBAL SKELETON (DO NOT CONTRADICT):
+GLOBAL SKELETON FROM DATABASE (DO NOT CONTRADICT):
 - THESIS: ${skeleton.thesis}
 - COMMITMENTS: ${skeleton.commitments.join("; ")}
 - KEY TERMS: ${Object.entries(skeleton.keyTerms).map(([k, v]) => `${k}: ${v}`).join("; ")}
@@ -151,10 +233,13 @@ ${skeleton.databaseContent.positions.slice(0, 10).join("\n")}
 ${skeleton.databaseContent.quotes.slice(0, 10).join("\n")}
 ${skeleton.databaseContent.arguments.slice(0, 5).join("\n")}
 
+${priorClaimsStr ? `PRIOR CLAIMS ALREADY MADE (DO NOT CONTRADICT): ${priorClaimsStr}` : ""}
+${priorTermsStr ? `TERMS ALREADY USED: ${priorTermsStr}` : ""}
+
 RULES:
 1. Start EVERY paragraph with a citation [P#], [Q#], [A#], or [W#]
 2. Write AT LEAST ${targetWordsPerChunk} words - NO EXCEPTIONS
-3. Do NOT contradict the skeleton commitments
+3. Do NOT contradict the skeleton commitments or prior claims
 4. Do NOT use markdown - plain text only
 5. 100% substance - NO filler, NO disclaimers`;
 
@@ -163,11 +248,42 @@ RULES:
   const user = `This is chunk ${chunkIndex + 1} of ${totalChunks}.
 Focus on: ${outlineSection}
 
-${priorClaimsStr ? `PRIOR CLAIMS MADE: ${priorClaimsStr}` : "This is the first chunk."}
-
 Write AT LEAST ${targetWordsPerChunk} words. Start every paragraph with a database citation.`;
 
   return { system, user };
+}
+
+function extractDeltaFromOutput(output: string, skeleton: GlobalSkeleton): ChunkDelta {
+  const claimsAdded: string[] = [];
+  const termsUsed: string[] = [];
+  const conflictsDetected: string[] = [];
+
+  const sentences = output.split(/[.!?]+/).filter(s => s.trim().length > 20);
+  sentences.slice(0, 5).forEach(s => {
+    if (s.includes("assert") || s.includes("claim") || s.includes("argue") || s.includes("position")) {
+      claimsAdded.push(s.trim().substring(0, 100));
+    }
+  });
+
+  Object.keys(skeleton.keyTerms).forEach(term => {
+    if (output.toLowerCase().includes(term.toLowerCase())) {
+      termsUsed.push(term);
+    }
+  });
+
+  skeleton.commitments.forEach(commitment => {
+    const negation = commitment.replace("asserts", "rejects").replace("rejects", "asserts");
+    if (output.includes(negation.substring(0, 30))) {
+      conflictsDetected.push(`Potential contradiction with commitment: ${commitment}`);
+    }
+  });
+
+  return {
+    claimsAdded,
+    termsUsed,
+    conflictsDetected,
+    continuityNotes: `Chunk produced ${countWords(output)} words`,
+  };
 }
 
 export async function processWithCoherence(options: CoherenceOptions): Promise<void> {
@@ -177,12 +293,16 @@ export async function processWithCoherence(options: CoherenceOptions): Promise<v
   const totalChunks = Math.max(1, Math.ceil(targetWords / WORDS_PER_CHUNK));
   const wordsPerChunk = Math.ceil(targetWords / totalChunks);
 
-  sendSSE(res, `\n=== PHASE 1: EXTRACTING SKELETON ===\n`);
+  sendSSE(res, `\n=== PHASE 1: CREATING SESSION & EXTRACTING SKELETON ===\n`);
   sendSSE(res, `Target: ${targetWords.toLocaleString()} words in ${totalChunks} chunks\n\n`);
 
-  const skeleton = await extractGlobalSkeleton(userPrompt, thinkerName, databaseContent, model);
+  const sessionId = await createSession(options);
+  sendSSE(res, `Session ID: ${sessionId}\n`);
 
-  sendSSE(res, `SKELETON EXTRACTED:\n`);
+  const skeleton = await extractGlobalSkeleton(userPrompt, thinkerName, databaseContent, model);
+  await updateSessionSkeleton(sessionId, skeleton, totalChunks);
+
+  sendSSE(res, `SKELETON EXTRACTED & STORED IN DATABASE:\n`);
   sendSSE(res, `- Thesis: ${skeleton.thesis}\n`);
   sendSSE(res, `- Outline: ${skeleton.outline.length} sections\n`);
   sendSSE(res, `- Commitments: ${skeleton.commitments.length}\n`);
@@ -190,16 +310,22 @@ export async function processWithCoherence(options: CoherenceOptions): Promise<v
 
   await delay(2000);
 
-  sendSSE(res, `\n=== PHASE 2: GENERATING ${totalChunks} CHUNKS ===\n\n`);
+  sendSSE(res, `\n=== PHASE 2: GENERATING ${totalChunks} CHUNKS (with DB persistence) ===\n\n`);
 
-  const allDeltas: ChunkDelta[] = [];
   let totalOutput = "";
   let totalWordCount = 0;
 
   for (let i = 0; i < totalChunks; i++) {
     sendSSE(res, `\n--- CHUNK ${i + 1}/${totalChunks} (Target: ${wordsPerChunk} words) ---\n\n`);
 
-    const { system, user } = buildChunkPrompt(skeleton, i, totalChunks, wordsPerChunk, thinkerName, allDeltas);
+    const dbSkeleton = await getSessionSkeleton(sessionId);
+    if (!dbSkeleton) {
+      sendSSE(res, `ERROR: Could not retrieve skeleton from database\n`);
+      return;
+    }
+
+    const priorDeltas = await getPriorDeltas(sessionId);
+    const { system, user } = buildChunkPrompt(dbSkeleton, i, totalChunks, wordsPerChunk, thinkerName, priorDeltas);
 
     let chunkOutput = "";
     for await (const text of streamText({ model, systemPrompt: system, userPrompt: user, maxTokens: 4096 })) {
@@ -211,15 +337,14 @@ export async function processWithCoherence(options: CoherenceOptions): Promise<v
     totalOutput += chunkOutput + "\n\n";
     totalWordCount += chunkWords;
 
-    const delta: ChunkDelta = {
-      claimsAdded: [],
-      termsUsed: [],
-      conflictsDetected: [],
-      continuityNotes: `Chunk ${i + 1} completed`,
-    };
-    allDeltas.push(delta);
+    const delta = extractDeltaFromOutput(chunkOutput, dbSkeleton);
+    await saveChunk(sessionId, i, chunkOutput, delta, chunkWords);
 
-    sendSSE(res, `\n\n[Chunk ${i + 1} complete: ${chunkWords} words | Running total: ${totalWordCount}/${targetWords}]\n`);
+    sendSSE(res, `\n\n[Chunk ${i + 1} saved to DB: ${chunkWords} words | Running total: ${totalWordCount}/${targetWords}]\n`);
+
+    if (delta.conflictsDetected.length > 0) {
+      sendSSE(res, `[WARNING: ${delta.conflictsDetected.length} potential conflicts detected]\n`);
+    }
 
     if (i < totalChunks - 1) {
       sendSSE(res, `[Pausing 15 seconds for rate limit...]\n`);
@@ -227,55 +352,39 @@ export async function processWithCoherence(options: CoherenceOptions): Promise<v
     }
   }
 
-  sendSSE(res, `\n\n=== PHASE 3: STITCH CHECK ===\n`);
+  sendSSE(res, `\n\n=== PHASE 3: STITCH & VERIFY ===\n`);
   sendSSE(res, `Total generated: ${totalWordCount} words\n`);
   sendSSE(res, `Target: ${targetWords} words\n`);
-  sendSSE(res, `Status: ${totalWordCount >= targetWords * 0.9 ? "PASS" : "NEEDS MORE"}\n`);
+
+  const allDeltas = await getPriorDeltas(sessionId);
+  const allConflicts = allDeltas.flatMap(d => d.conflictsDetected || []);
+  
+  sendSSE(res, `Conflicts detected across chunks: ${allConflicts.length}\n`);
   
   if (totalWordCount < targetWords * 0.9) {
     const shortfall = targetWords - totalWordCount;
     sendSSE(res, `\nShortfall: ${shortfall} words. Generating additional content...\n\n`);
     
-    const supplementPrompt = buildChunkPrompt(skeleton, totalChunks, totalChunks + 1, shortfall, thinkerName, allDeltas);
-    for await (const text of streamText({ model, systemPrompt: supplementPrompt.system, userPrompt: supplementPrompt.user, maxTokens: 4096 })) {
-      totalOutput += text;
-      sendSSE(res, text);
+    const dbSkeleton = await getSessionSkeleton(sessionId);
+    if (dbSkeleton) {
+      const supplementPrompt = buildChunkPrompt(dbSkeleton, totalChunks, totalChunks + 1, shortfall, thinkerName, allDeltas);
+      let supplementOutput = "";
+      for await (const text of streamText({ model, systemPrompt: supplementPrompt.system, userPrompt: supplementPrompt.user, maxTokens: 4096 })) {
+        supplementOutput += text;
+        sendSSE(res, text);
+      }
+      totalOutput += supplementOutput;
+      totalWordCount = countWords(totalOutput);
+      
+      const delta = extractDeltaFromOutput(supplementOutput, dbSkeleton);
+      await saveChunk(sessionId, totalChunks, supplementOutput, delta, countWords(supplementOutput));
     }
-    totalWordCount = countWords(totalOutput);
   }
+
+  await saveStitchResult(sessionId, totalWordCount, allConflicts);
 
   sendSSE(res, `\n\n=== GENERATION COMPLETE ===\n`);
   sendSSE(res, `Final word count: ${totalWordCount}\n`);
-}
-
-export async function processSimpleChat(
-  thinkerName: string,
-  userPrompt: string,
-  model: ModelId,
-  databaseContent: CoherenceOptions["databaseContent"],
-  wordCount: number,
-  res: Response
-): Promise<void> {
-  const positionTexts = databaseContent.positions.slice(0, 20).map((p: any, i: number) => 
-    `[P${i + 1}] ${p.positionText || p.position_text}`
-  );
-  const quoteTexts = databaseContent.quotes.slice(0, 20).map((q: any, i: number) => 
-    `[Q${i + 1}] "${q.quoteText || q.quote_text}"`
-  );
-
-  const systemPrompt = `You are ${thinkerName}. Respond using the database content below.
-
-DATABASE CONTENT:
-${positionTexts.join("\n")}
-${quoteTexts.join("\n")}
-
-RULES:
-1. Start EVERY paragraph with [P#] or [Q#] citation
-2. Write AT LEAST ${wordCount} words
-3. NO markdown - plain text only
-4. 100% substance`;
-
-  for await (const text of streamText({ model, systemPrompt, userPrompt, maxTokens: 4096 })) {
-    sendSSE(res, text);
-  }
+  sendSSE(res, `Session ID: ${sessionId}\n`);
+  sendSSE(res, `Status: ${allConflicts.length === 0 ? "PASS" : "NEEDS_REVIEW"}\n`);
 }
