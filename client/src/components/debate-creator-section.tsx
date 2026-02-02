@@ -24,7 +24,7 @@ export function DebateCreatorSection() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [wordCount, setWordCount] = useState(2000);
   const [quoteCount, setQuoteCount] = useState(10);
-  const [enhanced, setEnhanced] = useState(false);
+  const [enhanced, setEnhanced] = useState(true);
 
   const addDebater = () => {
     if (currentDebater && !debaters.includes(currentDebater) && debaters.length < 4) {

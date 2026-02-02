@@ -28,7 +28,7 @@ export function MainChatSection() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [wordCount, setWordCount] = useState(2000);
   const [quoteCount, setQuoteCount] = useState(10);
-  const [enhanced, setEnhanced] = useState(false);
+  const [enhanced, setEnhanced] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { setModelBuilderInput } = useContentTransfer();
   const { toast } = useToast();

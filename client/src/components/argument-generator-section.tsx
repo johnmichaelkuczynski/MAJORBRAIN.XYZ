@@ -21,7 +21,7 @@ export function ArgumentGeneratorSection() {
   const [isLoading, setIsLoading] = useState(false);
   const [wordCount, setWordCount] = useState(2000);
   const [quoteCount, setQuoteCount] = useState(10);
-  const [enhanced, setEnhanced] = useState(false);
+  const [enhanced, setEnhanced] = useState(true);
 
   const handleFileContent = (content: string, fileName: string) => {
     setDocumentContent(content);

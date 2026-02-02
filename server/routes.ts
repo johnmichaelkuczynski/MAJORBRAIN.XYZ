@@ -275,7 +275,7 @@ CRITICAL INSTRUCTIONS:
 3. DO NOT make up philosophical positions - use ONLY what is in the database
 4. If asked about something not covered in the database, say you would need to consult your writings
 5. Speak in first person as ${name}
-6. ${enhanced ? "ENHANCED MODE: You may elaborate with historical/scientific/technological examples while staying true to the philosophical framework" : "STRICT MODE: Use ONLY the database content, elaborate with examples and illustrations"}
+6. ${enhanced ? "ENHANCED MODE (1:3 RATIO): Database content is the SCAFFOLDING (1 part). Your LLM elaboration is the FLESH (3 parts). For every database item referenced, add 3x the content with historical context, scientific parallels, technological applications, examples, and illustrations." : "STRICT MODE: Use ONLY the database content. Elaborate and explain the database items but do not add external content."}
 
 Database contains ${totalDbContent} items for ${name}.
 `;
@@ -476,8 +476,8 @@ CRITICAL: DO NOT USE ANY MARKDOWN FORMATTING. No # headers, no * bullets, no - l
     });
 
     const modeInstruction = enhanced 
-      ? "You may expand with historical/scientific/technological examples while staying true to each thinker's philosophy."
-      : "STRICT MODE: You must ONLY use content from the database. Elaborate with examples and illustrations.";
+      ? "ENHANCED MODE (1:3 RATIO): Database content is the SCAFFOLDING (1 part). LLM elaboration is the FLESH (3 parts). For every database item, add 3x content with historical context, scientific parallels, examples, and illustrations."
+      : "STRICT MODE: Use ONLY database content. Explain and elaborate on database items but do not add external content.";
 
     const systemPrompt = `You are creating a philosophical dialogue based ENTIRELY on database content.
 
@@ -566,8 +566,8 @@ Now write a ${wordCount}-word dialogue between ${thinkerNames.join(" and ")} on 
     });
 
     const modeInstruction = enhanced 
-      ? "You may expand with historical/scientific/technological examples while staying true to each thinker's philosophy."
-      : "STRICT MODE: You must ONLY use content from the database. Elaborate with examples and illustrations.";
+      ? "ENHANCED MODE (1:3 RATIO): Database content is the SCAFFOLDING (1 part). LLM elaboration is the FLESH (3 parts). For every database item, add 3x content with historical context, scientific parallels, examples, and illustrations."
+      : "STRICT MODE: Use ONLY database content. Explain and elaborate on database items but do not add external content.";
 
     const systemPrompt = `You are creating a formal philosophical debate based ENTIRELY on database content.
 
@@ -654,8 +654,8 @@ Now write a ${wordCount}-word debate between ${debaterNames.join(" and ")} on "$
     const skeleton = buildDatabaseSkeleton(context, intervieweeName, quoteCount);
     
     const modeInstruction = enhanced 
-      ? "You may expand with historical/scientific/technological examples while staying true to the thinker's philosophy."
-      : "STRICT MODE: You must ONLY use content from the database. Elaborate with examples and illustrations.";
+      ? "ENHANCED MODE (1:3 RATIO): Database content is the SCAFFOLDING (1 part). LLM elaboration is the FLESH (3 parts). For every database item, add 3x content with historical context, scientific parallels, examples, and illustrations."
+      : "STRICT MODE: Use ONLY database content. Explain and elaborate on database items but do not add external content.";
 
     const systemPrompt = `You are creating an in-depth interview based ENTIRELY on database content.
 
@@ -852,7 +852,7 @@ Now write a ${wordCount}-word interview with ${intervieweeName} on "${topic}" us
     const skeleton = buildDatabaseSkeleton(context, thinkerName, quoteCount);
     
     const modeInstruction = enhanced 
-      ? "You may add creative section ideas while staying true to the thinker's philosophy."
+      ? "ENHANCED MODE (1:3 RATIO): Database content is the SCAFFOLDING. Suggest additional sections with historical context, scientific parallels, and examples that expand on the database material."
       : "STRICT MODE: The outline must ONLY organize content from the database. Do NOT add topics not covered in the database.";
 
     const systemPrompt = `You are creating a detailed outline based ENTIRELY on database content.
@@ -918,8 +918,8 @@ Create a detailed outline for a paper on "${topic}" using the database content.`
                           (context.arguments?.length || 0) + (context.works?.length || 0);
     
     const modeInstruction = enhanced 
-      ? "You may expand with historical/scientific/technological examples while staying true to the thinker's philosophy."
-      : "STRICT MODE: You must ONLY use content from the database. Elaborate with examples and illustrations.";
+      ? "ENHANCED MODE (1:3 RATIO): Database content is the SCAFFOLDING (1 part). LLM elaboration is the FLESH (3 parts). For every database item, add 3x content with historical context, scientific parallels, examples, and illustrations."
+      : "STRICT MODE: Use ONLY database content. Explain and elaborate on database items but do not add external content.";
 
     const systemPrompt = `You are creating a comprehensive philosophical document based ENTIRELY on ${thinkerName}'s actual writings from the database.
 

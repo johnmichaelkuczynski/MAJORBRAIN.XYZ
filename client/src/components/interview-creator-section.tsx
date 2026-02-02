@@ -19,7 +19,7 @@ export function InterviewCreatorSection() {
   const [interviewer, setInterviewer] = useState("");
   const [wordCount, setWordCount] = useState(2000);
   const [quoteCount, setQuoteCount] = useState(10);
-  const [enhanced, setEnhanced] = useState(false);
+  const [enhanced, setEnhanced] = useState(true);
   const [selectedModel, setSelectedModel] = useState("gpt-4o");
   const [output, setOutput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
