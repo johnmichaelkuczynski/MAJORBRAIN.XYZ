@@ -1,0 +1,22 @@
+Extract Global Skeleton (extractGlobalSkeleton)
+
+Scans entire document first
+Captures thesis, main arguments, structure
+Creates a "map" that guides all chunk rewrites
+Smart Chunking (smartChunk)
+
+Splits document at natural boundaries (paragraph breaks, section headers)
+Respects argument units - doesn't cut in middle of a thought
+Each chunk gets target word count from your length config
+Reconstruct Each Chunk (reconstructChunkConstrained)
+
+Rewrites each chunk individually
+BUT constrained by the global skeleton from step 1
+Enforces target length per chunk
+Updates coherence state after each chunk (thesis drift, argument progression)
+Stitch & Validate (stitchAndValidate)
+
+Assembles all chunks back together
+Checks total length against target
+Quality checks, retries if needed
+Returns final coherent document

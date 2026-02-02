@@ -1,0 +1,123 @@
+GLOBAL COHERENCE FUNCTION WITH DATABASE ENFORCEMENT
+Trigger Condition
+Any document exceeding 1000 words (input or output) MUST use the three-pass architecture with Neon/Postgres enforcement. This is not optional. The database is not storage—it is the mechanism that makes coherence possible. Without it, each API call is stateless and chunks will contradict each other.
+Pass 1 — Build Global Skeleton
+Before any chunking or processing, run ONE call that extracts only:
+json{
+    "thesis": "Central claim or purpose (one sentence)",
+    "outline": ["Section 1 summary", "Section 2 summary", ...],
+    "key_terms": {"term": "definition", ...},
+    "commitments": ["We assert X", "We reject Y", "We assume Z"],
+    "entities": ["Person A", "Concept B", "Variable C"],
+    "methodology": "How arguments proceed or evidence is evaluated",
+    "target_conclusion": "What the final output must establish"
+}
+IMMEDIATELY write this to sessions.global_skeleton in Neon.
+Update sessions.status to 'skeleton_complete'.
+This pass is short because you are extracting constraints, not processing content.
+Pass 2 — Process Each Chunk With Skeleton Injected
+For each chunk (~1000 words), the API call MUST:
+
+RETRIEVE the skeleton from the database: SELECT global_skeleton FROM sessions WHERE id = $sessionId
+RETRIEVE prior chunk deltas from the database: SELECT chunk_delta FROM chunks WHERE session_id = $sessionId AND chunk_index < $currentIndex
+Include in the prompt:
+
+The chunk text
+The skeleton (from database, not from memory)
+Summary of prior deltas
+This instruction: "Do not contradict the skeleton. If you detect a conflict, flag it and propose a minimal repair. Never say you cannot proceed."
+
+
+
+Each chunk call MUST return:
+json{
+    "chunk_output": "Processed/generated text for this chunk",
+    "delta": {
+        "claims_added": ["claim 1", "claim 2"],
+        "claims_removed": [],
+        "terms_introduced": {"new_term": "definition"},
+        "conflicts_detected": ["conflict description if any"],
+        "continuity_notes": "How this chunk connects to prior chunks"
+    }
+}
+IMMEDIATELY after each chunk completes:
+
+Write chunk_output and chunk_delta to the chunks table
+Stream chunk_output to the frontend (user sees it now)
+Wait 15 seconds before processing next chunk
+
+Update sessions.status to 'chunking' when this pass begins.
+Pass 3 — Global Stitch
+After ALL chunks are processed, run ONE call that receives:
+
+The global skeleton (retrieved from database)
+All chunk deltas (retrieved from database—NOT full chunk text)
+
+This call produces:
+json{
+    "cross_chunk_conflicts": ["Chunk 3 claims X but Chunk 7 claims not-X"],
+    "term_drift": ["Term Y defined differently in Chunk 2 vs Chunk 5"],
+    "missing_premises": ["Conclusion Z assumes W but W never established"],
+    "repair_plan": [
+        {"chunk_index": 3, "issue": "...", "fix": "..."}
+    ],
+    "coherence_score": "pass" or "needs_repair"
+}
+Write this to stitch_results table.
+If coherence_score is "needs_repair", run micro-repair passes ONLY on flagged chunks (with 15-second pauses between each).
+Update sessions.status to 'complete'.
+Database Schema (Neon/Postgres)
+sqlCREATE TABLE sessions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+    session_type VARCHAR(50) NOT NULL,
+    user_prompt TEXT NOT NULL,
+    global_skeleton JSONB,
+    status VARCHAR(20) DEFAULT 'pending'
+);
+
+CREATE TABLE chunks (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    session_id UUID REFERENCES sessions(id) ON DELETE CASCADE,
+    chunk_index INTEGER NOT NULL,
+    chunk_type VARCHAR(10) NOT NULL,
+    chunk_text TEXT NOT NULL,
+    chunk_output TEXT,
+    chunk_delta JSONB,
+    processed_at TIMESTAMP,
+    UNIQUE(session_id, chunk_index, chunk_type)
+);
+
+CREATE TABLE stitch_results (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    session_id UUID REFERENCES sessions(id) ON DELETE CASCADE,
+    conflicts JSONB,
+    repairs JSONB,
+    final_validation JSONB,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+Critical Rules — Enforce Everywhere
+
+NEVER process a chunk without first retrieving the skeleton from the database. Do not pass the skeleton as a variable from a prior step. Always query the database.
+NEVER proceed to the next chunk without first writing the current chunk's output and delta to the database.
+ALWAYS inject the skeleton into every chunk processing call. The prompt must include the skeleton explicitly.
+ALWAYS wait 15 seconds between chunk operations.
+ALWAYS stream each chunk to the user immediately upon completion, before the pause.
+If a chunk conflicts with the skeleton, the model MUST return EITHER:
+
+A minimal repair that preserves intent, OR
+A specific flagged conflict with a proposed change
+
+NEVER allow the model to say "I cannot proceed" or silently drop the conflict.
+The stitch pass compares DELTAS, not full chunk text. This keeps it cheap.
+If the process fails mid-way, the system MUST resume from the last completed chunk using stored state. Query chunks for the highest chunk_index with processed_at not null and continue from there.
+If the database connection fails, DO NOT fall back to single-pass processing. Halt and report the error.
+
+Conflict Resolution Rule
+If a chunk conflicts with the global skeleton, the model must return:
+
+The closest adjacent repair that preserves intent, OR
+A specific flagged conflict with a proposed minimal change
+
+Never "can't." Never silent overwrite. Never proceed as if the conflict doesn't exist.

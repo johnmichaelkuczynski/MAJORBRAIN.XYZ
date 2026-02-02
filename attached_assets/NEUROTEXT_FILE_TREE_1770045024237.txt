@@ -1,0 +1,658 @@
+================================================================================
+          NEUROTEXT - COMPLETE PROJECT FILE TREE & COHERENCE SYSTEM
+          Multi-Model AI Text Reconstruction with Credit-Based Access
+================================================================================
+
+================================================================================
+FOLDER STRUCTURE OVERVIEW
+================================================================================
+
+neurotext/
+|
++-- client/                     FRONTEND (React + TypeScript + Vite)
++-- server/                     BACKEND (Express + Node.js)
++-- shared/                     SHARED TYPES (Database schemas, TypeScript types)
++-- attached_assets/            USER-UPLOADED ASSETS
++-- public/                     STATIC ASSETS
+
+
+================================================================================
+CLIENT FOLDER - FRONTEND (React + TypeScript)
+================================================================================
+
+client/src/
+|
++-- App.tsx
+|   Main application component. Sets up routing, sidebar, theme provider.
+|   Registers all pages and provides global layout structure.
+|   Contains credit balance display and authentication state.
+|
++-- main.tsx
+|   React entry point. Mounts App to DOM, initializes React Query.
+|
++-- index.css
+|   Global styles including dark mode variables, Tailwind customizations,
+|   color themes, and animation utilities.
+|
++-- components/
+|   |
+|   +-- CCStreamingUI.tsx
+|   |   Cross-Chunk Streaming UI component. Real-time streaming display
+|   |   for coherence processing with WebSocket connection to backend.
+|   |   Shows section-by-section progress and accumulated output.
+|   |
+|   +-- StreamingOutputModal.tsx
+|   |   Modal for displaying streaming LLM output during processing.
+|   |   Shows real-time generation progress with word counts.
+|   |
+|   +-- StreamingReconstruction.tsx
+|   |   Reconstruction interface with streaming support.
+|   |   Handles large document processing with progress indicators.
+|   |
+|   +-- JobViewerModal.tsx
+|   |   Persistent modal for viewing in-progress and completed jobs.
+|   |   Allows resuming interrupted jobs and viewing output history.
+|   |
+|   +-- TextStats.tsx
+|   |   Displays word/character counts and AI detection results.
+|   |   Integrates with GPTZero for AI content detection.
+|   |
+|   +-- PipelineUI.tsx
+|   |   Full Suite Pipeline interface for one-click execution of
+|   |   Reconstruction -> Objections -> Objection-Proof Version.
+|   |
+|   +-- ProviderSelector.tsx
+|   |   Dropdown for selecting LLM provider (OpenAI, Anthropic, DeepSeek, etc.)
+|   |   Shows credit costs per provider.
+|   |
+|   +-- CreditBalance.tsx
+|   |   Displays user credit balance in header.
+|   |   Updates every 3 seconds for real-time display.
+|   |   Shows "Unlimited" for JMK admin user.
+|   |
+|   +-- BuyCreditsDialog.tsx
+|   |   Stripe payment integration for purchasing credits.
+|   |   $1 = 1000 credits conversion.
+|   |
+|   +-- CognitiveEvaluationPanel.tsx
+|   |   Displays 17-dimension cognitive evaluation results.
+|   |   Uses radar charts for visualization.
+|   |
+|   +-- IntelligentRewriteButton.tsx
+|   |   MAXINTEL rewrite functionality trigger.
+|   |   Recursively optimizes text for intelligence scores.
+|   |
+|   +-- DocumentInput.tsx
+|   |   Main text input with file upload support (PDF, Word, TXT).
+|   |   Handles drag & drop and word count display.
+|   |
+|   +-- ui/
+|   |   Shadcn UI components (50+ components)
+|   |   button.tsx, card.tsx, dialog.tsx, sidebar.tsx, etc.
+|
++-- hooks/
+|   |
+|   +-- use-toast.ts
+|       Toast notification hook for user feedback.
+|
++-- lib/
+|   |
+|   +-- queryClient.ts
+|   |   TanStack Query setup with default fetcher.
+|   |
+|   +-- utils.ts
+|       Utility functions including cn() for class merging.
+|
++-- pages/
+    |
+    +-- home.tsx
+    |   Main reconstruction interface with text input,
+    |   provider selection, and streaming output display.
+    |
+    +-- job-history.tsx
+    |   View all processing jobs with status and results.
+    |   Resume interrupted jobs, download completed outputs.
+    |
+    +-- not-found.tsx
+        404 error page.
+
+
+================================================================================
+SERVER FOLDER - BACKEND (Express + Node.js)
+================================================================================
+
+server/
+|
++-- index.ts
+|   Server entry point. Configures Express, sessions, Stripe webhooks.
+|   Initializes database connection and WebSocket servers.
+|
++-- routes.ts
+|   API endpoints for all features. Key routes:
+|   - POST /api/analyze: Multi-model intelligence evaluation
+|   - POST /api/reconstruction/stream: SSE streaming reconstruction
+|   - POST /api/coherence-meter: Coherence analysis
+|   - POST /api/coherence-sequential: Sequential chunk processing
+|   - POST /api/objection-proof-rewrite: Bullet-proof rewrite
+|   - POST /api/intelligent-rewrite: MAXINTEL optimization
+|   - GET /api/credits/balance: User credit balance
+|
++-- db.ts
+|   PostgreSQL/Drizzle database connection (Neon-backed).
+|
++-- storage.ts
+|   Data storage interface for user operations.
+|
++-- auth.ts
+|   Google OAuth authentication and session management.
+|
++-- vite.ts
+|   Vite dev server integration for frontend serving.
+|
++-- lib/
+|   |
+|   +-- stripe-config.ts
+|   |   Stripe SDK initialization with API version.
+|   |
+|   +-- queryClient.ts
+|       Database query utilities.
+|
++-- routes/
+|   |
+|   +-- payments.ts
+|       Stripe webhook handling for credit purchases.
+|       Creates credit records on successful payments.
+|
++-- api/
+|   |
+|   +-- documentParser.ts
+|   |   PDF, Word, and text file parsing.
+|   |
+|   +-- simpleEmailService.ts
+|   |   SendGrid email integration for sharing.
+|   |
+|   +-- simpleSpeechToText.ts
+|       AssemblyAI speech transcription.
+
+
+================================================================================
+SERVER/SERVICES - CORE BUSINESS LOGIC
+================================================================================
+
+server/services/
+|
++==========================================================================+
+|                    COHERENCE SYSTEM (3-FILE ARCHITECTURE)                |
++==========================================================================+
+|
++-- coherenceDatabase.ts        [DATABASE LAYER]
+|   |
+|   |   PURPOSE: Persistent storage for coherence state across chunks.
+|   |   Enables interrupt/resume and state tracking for large documents.
+|   |
+|   |   TABLES USED:
+|   |   - coherence_documents: Stores document-level metadata and global state
+|   |   - coherence_chunks: Stores per-chunk evaluations and state snapshots
+|   |
+|   |   KEY FUNCTIONS:
+|   |   - createInitialState(mode): Creates empty state template for mode
+|   |   - generateDocumentId(): UUID for tracking document processing
+|   |   - initializeCoherenceRun(docId, mode, state): Insert new document run
+|   |   - readCoherenceState(docId, mode): Get current state from DB
+|   |   - updateCoherenceState(docId, mode, newState): Save updated state
+|   |   - writeChunkEvaluation(docId, mode, index, text, result, state): 
+|   |       Store chunk evaluation with state snapshot
+|   |   - readAllChunkEvaluations(docId, mode): Get all chunks for document
+|   |   - applyStateUpdate(currentState, update): Merge state updates
+|   |   - checkViolations(state, update): Detect coherence violations
+|   |
+|   |   STATE MODES (8 types with mode-specific state structures):
+|   |   1. logical-consistency: Track assertions, negations, disjoint pairs
+|   |   2. logical-cohesiveness: Track thesis, support queue, argument stage
+|   |   3. scientific-explanatory: Track causal graphs, mechanisms, feedback loops
+|   |   4. thematic-psychological: Track affect, tempo, stance
+|   |   5. instructional: Track goal, steps done, prerequisites, open loops
+|   |   6. motivational: Track direction, intensity, target
+|   |   7. mathematical: Track givens, proved lemmas, goal, proof method
+|   |   8. philosophical: Track core concepts, distinctions, dialectic
+|
++-- coherenceProcessor.ts       [PROCESSING LAYER]
+|   |
+|   |   PURPOSE: Sequential chunk-by-chunk coherence evaluation.
+|   |   Reads state from DB, evaluates chunk, writes updated state back.
+|   |
+|   |   KEY FUNCTIONS:
+|   |   - chunkText(text, maxWords): Split text into ~1000 word chunks
+|   |   - buildEvaluationPrompt(mode, state, chunk, index, total):
+|   |       Construct LLM prompt for chunk evaluation
+|   |   - getEvaluationCriteria(mode): Mode-specific PASS/FAIL criteria
+|   |   - autoDetectMode(firstChunk): Infer coherence mode from content
+|   |   - evaluateChunk(mode, state, chunk, index, total, provider):
+|   |       Call LLM to evaluate chunk against current state
+|   |       Returns: { status, violations, repairs, state_update }
+|   |   - extractInitialState(mode, firstChunk, provider):
+|   |       Extract initial state from first chunk
+|   |   - processDocumentSequentially(text, mode, provider):
+|   |       MAIN ENTRY POINT - processes entire document:
+|   |       1. Generate document ID
+|   |       2. Chunk the text
+|   |       3. Auto-detect mode (if not specified)
+|   |       4. Extract initial state from chunk 0
+|   |       5. Initialize coherence run in DB
+|   |       6. For each chunk 1..N:
+|   |          - READ current state from DB
+|   |          - Evaluate chunk against state
+|   |          - Check for violations
+|   |          - Apply state update
+|   |          - WRITE updated state to DB
+|   |          - Write chunk evaluation to DB
+|   |       7. Return final state and summary
+|   |
+|   |   DATABASE INTERACTION PATTERN:
+|   |   ┌─────────────────────────────────────────────────────────────┐
+|   |   │  For each chunk:                                           │
+|   |   │    1. READ state from coherence_documents                  │
+|   |   │    2. EVALUATE chunk with LLM (OpenAI/Anthropic)           │
+|   |   │    3. MERGE state_update into current state                │
+|   |   │    4. WRITE new state to coherence_documents               │
+|   |   │    5. WRITE chunk result to coherence_chunks               │
+|   |   └─────────────────────────────────────────────────────────────┘
+|
++-- coherenceMeter.ts           [ANALYSIS & REWRITE LAYER]
+|   |
+|   |   PURPOSE: High-level coherence analysis, scoring, and rewriting.
+|   |   Integrates with Cross-Chunk Coherence for large documents.
+|   |
+|   |   SIZE: ~158KB (3,600+ lines) - the most comprehensive service
+|   |
+|   |   KEY INTERFACES:
+|   |   - CoherenceAnalysisResult: { score, assessment, analysis, subscores }
+|   |   - CoherenceRewriteResult: { rewrittenText, changes }
+|   |   - ContentAnalysisResult: { richnessScore, pivotalPoints, salvageability }
+|   |   - GlobalContextObject: { coreTopics, centralFramework, keyConcepts }
+|   |
+|   |   STATE INTERFACES (8 coherence types):
+|   |   - LogicalConsistencyState: assertions[], negations[], disjoint_pairs[]
+|   |   - LogicalCohesivenessState: thesis, support_queue[], current_stage
+|   |   - ScientificExplanatoryState: causal_nodes[], causal_edges[], level
+|   |   - ThematicPsychologicalState: dominant_affect, tempo, stance
+|   |   - InstructionalState: goal, steps_done[], prereqs[], open_loops[]
+|   |   - MotivationalState: direction, intensity, target
+|   |   - MathematicalState: givens[], proved[], goal, proof_method
+|   |   - PhilosophicalState: core_concepts{}, distinctions[], dialectic{}
+|   |
+|   |   KEY FUNCTIONS:
+|   |   - analyzeCoherence(text): Full coherence analysis with subscores
+|   |   - rewriteForCoherence(text): Improve coherence while preserving content
+|   |   - analyzeContent(text): Evaluate content richness and salvageability
+|   |   - extractGlobalContext(text): Extract themes for cross-chunk coherence
+|   |
+|   |   THRESHOLD: Uses Cross-Chunk Coherence for texts >1200 words
+|
++==========================================================================+
+|                    SUPPORTING COHERENCE SERVICES                        |
++==========================================================================+
+|
++-- crossChunkCoherence.ts      [LARGE DOCUMENT PROCESSING]
+|   |
+|   |   PURPOSE: Handle documents too large for single-pass processing.
+|   |   Chunks document, processes each with coherence state, unifies output.
+|   |   SIZE: ~74KB
+|   |
+|   |   KEY FUNCTIONS:
+|   |   - crossChunkReconstruct(text, instructions, mode, onProgress):
+|   |       Main entry for large document reconstruction with coherence.
+|   |       Uses SSE streaming for real-time progress updates.
+|
++-- dbEnforcedReconstruction.ts [DATABASE-BACKED RECONSTRUCTION]
+|   |
+|   |   PURPOSE: Reconstruction with persistent storage for resume support.
+|   |   Stores all chunks and progress in database for reliability.
+|   |   SIZE: ~26KB
+|   |
+|   |   KEY FUNCTIONS:
+|   |   - shouldUseDBEnforced(text): Check if DB-backed mode needed
+|   |   - runFullReconstruction(text, instructions, onChunk):
+|   |       Full reconstruction with database persistence
+|   |   - abortSession(sessionId): Cancel in-progress reconstruction
+|   |   - getPartialOutput(sessionId): Retrieve partial results
+|
++-- ccStreamingService.ts       [WEBSOCKET STREAMING]
+|   |
+|   |   PURPOSE: WebSocket server for real-time streaming updates.
+|   |   Provides bidirectional communication for long-running jobs.
+|   |   SIZE: ~34KB
+|
++-- universalExpansion.ts       [DOCUMENT EXPANSION]
+|   |
+|   |   PURPOSE: Expand text according to user instructions.
+|   |   Handles very large documents with two-tier skeleton system.
+|   |   SIZE: ~40KB
+|   |
+|   |   TWO-TIER SKELETON SYSTEM (for 50k+ word documents):
+|   |   1. Tier 1: Generate skeleton for each 50k-word chunk
+|   |   2. Tier 2: Generate meta-skeleton unifying all chunk skeletons
+|   |   
+|   |   KEY FUNCTIONS:
+|   |   - generateChunkSkeleton(chunk, index, total, instructions):
+|   |       Extract key arguments, thesis, evidence from chunk
+|   |   - generateMetaSkeleton(chunkSkeletons, instructions, totalWords):
+|   |       Unify chunk skeletons into coherent whole
+|   |   - universalExpand(request): Main expansion entry point
+|
++==========================================================================+
+|                    OTHER CORE SERVICES                                  |
++==========================================================================+
+|
++-- fourPhaseProtocol.ts        [INTELLIGENCE EVALUATION]
+|   |   4-phase multi-model intelligence evaluation:
+|   |   Phase 1: 28 questions across 17 cognitive dimensions
+|   |   Phase 2: Score computation and calibration
+|   |   Phase 3: Report generation
+|   |   Phase 4: Cross-validation
+|
++-- aiProviders.ts              [LLM PROVIDER ABSTRACTION]
+|   |   Unified interface for OpenAI, Anthropic, DeepSeek, Perplexity, Grok.
+|   |   Handles API calls, rate limiting, and error handling.
+|
++-- creditManager.ts            [CREDIT SYSTEM]
+|   |   Credit checking and deduction for LLM calls.
+|   |   CREDIT_COSTS: DeepSeek=1, Grok=20, Perplexity=20, OpenAI=25, Claude=35
+|   |   JMK user bypasses credit checks (unlimited).
+|
++-- gptBypassHumanizer.ts       [AI DETECTION BYPASS]
+|   |   Transform AI-generated text to bypass GPTZero detection.
+|
++-- auditService.ts             [LOGGING & AUDIT]
+|   |   LLM call logging, audit events, job history tracking.
+|
++-- guaranteedParser.ts         [ROBUST TEXT PARSING]
+|   |   Parse LLM responses with fallbacks for malformed output.
+|
++-- hccService.ts               [HIERARCHICAL CHUNKING]
+|   |   Hierarchical Cross-Chunk service for very large documents.
+
+
+================================================================================
+SHARED FOLDER - DATABASE SCHEMA & TYPES
+================================================================================
+
+shared/
+|
++-- schema.ts
+    |
+    |   DRIZZLE ORM SCHEMA - PostgreSQL with Neon
+    |
+    |   COHERENCE TABLES:
+    |   
+    |   coherence_documents:
+    |   - id: serial PRIMARY KEY
+    |   - document_id: text (UUID for tracking)
+    |   - coherence_mode: text (one of 8 modes)
+    |   - global_state: jsonb (mode-specific state object)
+    |   - created_at: timestamp
+    |   - updated_at: timestamp
+    |   
+    |   coherence_chunks:
+    |   - id: serial PRIMARY KEY
+    |   - document_id: text (foreign key to document)
+    |   - coherence_mode: text
+    |   - chunk_index: integer (0-based position)
+    |   - chunk_text: text (the actual chunk content)
+    |   - evaluation_result: jsonb ({ status, violations, repairs, state_update })
+    |   - state_after: jsonb (snapshot of state after processing this chunk)
+    |   - created_at: timestamp
+    |   
+    |   OTHER TABLES:
+    |   - users: User accounts with credit balances
+    |   - user_credits: Per-provider credit allocations
+    |   - reconstruction_projects: Track reconstruction jobs
+    |   - documents, analyses: Intelligence evaluation results
+    |
+    |   COHERENCE STATE TYPES (exported for TypeScript):
+    |   
+    |   type CoherenceModeType = 
+    |     | "logical-consistency"
+    |     | "logical-cohesiveness"
+    |     | "scientific-explanatory"
+    |     | "thematic-psychological"
+    |     | "instructional"
+    |     | "motivational"
+    |     | "mathematical"
+    |     | "philosophical"
+    |   
+    |   interface LogicalConsistencyState {
+    |     mode: "logical-consistency";
+    |     assertions: string[];           // claims already asserted
+    |     negations: string[];            // claims explicitly denied
+    |     disjoint_pairs: [string, string][]; // mutually exclusive pairs
+    |   }
+    |   
+    |   interface LogicalCohesivenessState {
+    |     mode: "logical-cohesiveness";
+    |     thesis: string;                 // what argument establishes
+    |     support_queue: string[];        // claims promised but not supported
+    |     current_stage: "setup"|"support"|"objection"|"reply"|"synthesis"|"conclusion";
+    |     bridge_required: string;        // what must connect prior to next chunk
+    |   }
+    |   
+    |   interface ScientificExplanatoryState {
+    |     mode: "scientific-explanatory";
+    |     causal_nodes: string[];         // variables in causal graph
+    |     causal_edges: { from: string; to: string; direction: "+"|"-"; mechanism: string }[];
+    |     level: "physical"|"socio-economic"|"institutional"|"mixed";
+    |     active_feedback_loops: { name: string; participants: string[]; status: "active"|"resolved" }[];
+    |     mechanism_requirements: Record<string, string>;
+    |   }
+    |   
+    |   interface ChunkEvaluationResult {
+    |     status: "preserved" | "weakened" | "broken";
+    |     violations: { location: string; type: string; description: string }[];
+    |     repairs: { location: string; suggestion: string }[];
+    |     state_update: Partial<CoherenceState>;
+    |   }
+
+
+================================================================================
+HOW THE COHERENCE SYSTEM WORKS - DETAILED FLOW
+================================================================================
+
+                    ┌─────────────────────────────────────┐
+                    │          USER SUBMITS TEXT          │
+                    │       (e.g., 10,000 word essay)     │
+                    └───────────────┬─────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  STEP 1: INITIALIZATION (coherenceProcessor.ts)                            │
+│                                                                             │
+│  - Generate unique document_id (UUID)                                       │
+│  - Split text into ~1000-word chunks                                        │
+│  - Auto-detect coherence mode from first chunk content                      │
+│  - Create initial state template for detected mode                          │
+│  - INSERT into coherence_documents table                                    │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  STEP 2: CHUNK 0 PROCESSING                                                │
+│                                                                             │
+│  - Extract initial state from first chunk using LLM                         │
+│  - Populate state fields (thesis, assertions, etc.)                         │
+│  - WRITE initial state to database                                          │
+│  - WRITE chunk 0 evaluation to coherence_chunks                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  STEP 3: SEQUENTIAL CHUNK PROCESSING (chunks 1 to N)                       │
+│                                                                             │
+│  FOR EACH CHUNK:                                                            │
+│  ┌────────────────────────────────────────────────────────────────────┐    │
+│  │  3a. READ current state from coherence_documents                   │    │
+│  └────────────────────────────────────────────────────────────────────┘    │
+│                          │                                                  │
+│                          ▼                                                  │
+│  ┌────────────────────────────────────────────────────────────────────┐    │
+│  │  3b. BUILD EVALUATION PROMPT                                       │    │
+│  │                                                                    │    │
+│  │  COHERENCE MODE: logical-cohesiveness                              │    │
+│  │  CURRENT STATE: { thesis: "X", support_queue: [...], ... }         │    │
+│  │  CHUNK 3 OF 10: [chunk text]                                       │    │
+│  │                                                                    │    │
+│  │  TASK: Evaluate if chunk continues, refines, or breaks coherence   │    │
+│  └────────────────────────────────────────────────────────────────────┘    │
+│                          │                                                  │
+│                          ▼                                                  │
+│  ┌────────────────────────────────────────────────────────────────────┐    │
+│  │  3c. CALL LLM (OpenAI GPT-4 or Anthropic Claude)                   │    │
+│  │                                                                    │    │
+│  │  Returns JSON:                                                     │    │
+│  │  {                                                                 │    │
+│  │    "status": "preserved" | "weakened" | "broken",                  │    │
+│  │    "violations": [{ location, type, description }],                │    │
+│  │    "repairs": [{ location, suggestion }],                          │    │
+│  │    "state_update": { new claims, resolved items, etc. }            │    │
+│  │  }                                                                 │    │
+│  └────────────────────────────────────────────────────────────────────┘    │
+│                          │                                                  │
+│                          ▼                                                  │
+│  ┌────────────────────────────────────────────────────────────────────┐    │
+│  │  3d. CHECK VIOLATIONS (coherenceDatabase.ts)                       │    │
+│  │                                                                    │    │
+│  │  - Detect contradictions with prior assertions                     │    │
+│  │  - Check for thesis drift                                          │    │
+│  │  - Verify support queue is being discharged                        │    │
+│  │  - Validate stage progression                                      │    │
+│  └────────────────────────────────────────────────────────────────────┘    │
+│                          │                                                  │
+│                          ▼                                                  │
+│  ┌────────────────────────────────────────────────────────────────────┐    │
+│  │  3e. APPLY STATE UPDATE                                            │    │
+│  │                                                                    │    │
+│  │  - Merge new assertions into state                                 │    │
+│  │  - Remove satisfied support obligations                            │    │
+│  │  - Update argument stage if progressed                             │    │
+│  │  - Add new distinctions/objections                                 │    │
+│  └────────────────────────────────────────────────────────────────────┘    │
+│                          │                                                  │
+│                          ▼                                                  │
+│  ┌────────────────────────────────────────────────────────────────────┐    │
+│  │  3f. WRITE TO DATABASE                                             │    │
+│  │                                                                    │    │
+│  │  - UPDATE coherence_documents with new global state                │    │
+│  │  - INSERT coherence_chunks with chunk evaluation + state snapshot  │    │
+│  └────────────────────────────────────────────────────────────────────┘    │
+│                          │                                                  │
+│                          ▼                                                  │
+│  ┌────────────────────────────────────────────────────────────────────┐    │
+│  │  3g. CONTINUE TO NEXT CHUNK                                        │    │
+│  └────────────────────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  STEP 4: FINAL SUMMARY                                                     │
+│                                                                             │
+│  - Read all chunk evaluations from database                                 │
+│  - Compute overall status: "coherent" | "weakened" | "incoherent"           │
+│  - Generate summary of violations and suggested repairs                     │
+│  - Return final state and analysis to client                                │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+
+================================================================================
+DATABASE SCHEMA - COHERENCE TABLES
+================================================================================
+
+TABLE: coherence_documents
++------------------+-------------+-------------------------------------------+
+| Column           | Type        | Description                               |
++------------------+-------------+-------------------------------------------+
+| id               | serial      | Primary key                               |
+| document_id      | text        | UUID for tracking (matches coherence_chunks)|
+| coherence_mode   | text        | One of 8 mode types                       |
+| global_state     | jsonb       | Current state object (mode-specific)      |
+| created_at       | timestamp   | When document processing started          |
+| updated_at       | timestamp   | Last state update time                    |
++------------------+-------------+-------------------------------------------+
+UNIQUE CONSTRAINT: (document_id, coherence_mode)
+
+TABLE: coherence_chunks
++------------------+-------------+-------------------------------------------+
+| Column           | Type        | Description                               |
++------------------+-------------+-------------------------------------------+
+| id               | serial      | Primary key                               |
+| document_id      | text        | FK to coherence_documents                 |
+| coherence_mode   | text        | Mode for this evaluation                  |
+| chunk_index      | integer     | 0-based position in document              |
+| chunk_text       | text        | The actual chunk content                  |
+| evaluation_result| jsonb       | { status, violations, repairs, state_update }|
+| state_after      | jsonb       | State snapshot after this chunk processed |
+| created_at       | timestamp   | When chunk was processed                  |
++------------------+-------------+-------------------------------------------+
+UNIQUE CONSTRAINT: (document_id, coherence_mode, chunk_index)
+
+
+================================================================================
+IMPLEMENTING COHERENCE IN OTHER APPS - CHECKLIST
+================================================================================
+
+1. DATABASE SETUP
+   - Create coherence_documents table (document_id, mode, global_state, timestamps)
+   - Create coherence_chunks table (document_id, chunk_index, evaluation, state_after)
+   - Add unique constraints for upsert support
+
+2. COHERENCE DATABASE SERVICE (coherenceDatabase.ts equivalent)
+   - createInitialState(mode): Return empty state template for mode
+   - initializeCoherenceRun(docId, mode, state): Insert document record
+   - readCoherenceState(docId, mode): SELECT global_state FROM coherence_documents
+   - updateCoherenceState(docId, mode, newState): UPDATE global_state
+   - writeChunkEvaluation(docId, mode, index, text, result, state): INSERT chunk record
+   - applyStateUpdate(currentState, update): Mode-specific state merging
+
+3. COHERENCE PROCESSOR SERVICE (coherenceProcessor.ts equivalent)
+   - chunkText(text, maxWords): Split into manageable chunks
+   - buildEvaluationPrompt(mode, state, chunk, index, total): LLM prompt
+   - evaluateChunk(mode, state, chunk, index, total): Call LLM, parse JSON response
+   - processDocumentSequentially(text, mode): Main orchestration loop
+
+4. API ROUTES
+   - POST /api/coherence-sequential: Process document with coherence tracking
+   - GET /api/coherence/:documentId: Retrieve document state and chunks
+   - POST /api/coherence/:documentId/resume: Continue interrupted processing
+
+5. FRONTEND
+   - Streaming display for chunk-by-chunk progress
+   - WebSocket connection for real-time updates
+   - Job viewer for resume/history functionality
+
+
+================================================================================
+CONFIG FILES
+================================================================================
+
+package.json                    Node dependencies
+tsconfig.json                   TypeScript config
+vite.config.ts                  Vite bundler config
+tailwind.config.ts              Tailwind CSS config
+drizzle.config.ts               Drizzle ORM config
+replit.md                       Project documentation
+
+
+================================================================================
+ENVIRONMENT VARIABLES (SECRETS)
+================================================================================
+
+OPENAI_API_KEY                  OpenAI GPT-4 access
+ANTHROPIC_API_KEY               Anthropic Claude access
+DEEPSEEK_API_KEY                DeepSeek API access
+GROK_API_KEY                    xAI Grok access
+STRIPE_SECRET_KEY               Stripe payments
+STRIPE_WEBHOOK_SECRET           Stripe webhook verification
+DATABASE_URL                    PostgreSQL connection string (Neon)
+
+
+================================================================================
+END OF FILE
+================================================================================

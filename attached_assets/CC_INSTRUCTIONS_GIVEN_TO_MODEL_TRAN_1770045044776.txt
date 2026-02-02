@@ -1,0 +1,574 @@
+CC INSTRUCTIONS GIVEN TO MODEL TRANSFORMAT 
+
+═══════════════════════════════════════════════════════════════════════════════
+CROSS-CHUNK COHERENCE (CC) FOR MODEL TRANSFORMER
+Implementation Instructions for Replit Agent
+═══════════════════════════════════════════════════════════════════════════════
+
+OVERVIEW
+────────
+Model Transformer performs formal logical operations: transforming axiom sets,
+comparing theories, finding interpretations across domains, analyzing extensions.
+These operations have RIGID CONSISTENCY REQUIREMENTS. Unlike natural language
+apps where slight drift is tolerable, formal systems require absolute precision.
+A single inconsistency invalidates everything downstream.
+
+When inputs are large (50+ axioms, multiple theories, batch runs across 23
+domains), chunking is necessary. But naive chunking destroys formal validity.
+
+CC ensures:
+- Signatures stay stable across all chunks
+- Transformation rules apply consistently
+- Mappings don't contradict each other
+- All source axioms are addressed in every output
+- No cross-contamination between batch items
+
+WITHOUT CC: Outputs may be formally invalid, contain circular definitions,
+miss axioms, or produce contradictory mappings. Useless for real applications.
+
+WITH CC: Outputs are provably correct, complete, and consistent.
+
+═══════════════════════════════════════════════════════════════════════════════
+THE THREE-PASS ARCHITECTURE (applies to all functions)
+═══════════════════════════════════════════════════════════════════════════════
+
+PASS 1: SKELETON EXTRACTION
+───────────────────────────
+Before any transformation, extract the formal skeleton:
+
+```javascript
+async function extractFormalSkeleton(input, functionType) {
+    const skeleton = {
+        // Universal fields (all functions)
+        source_signature: {
+            sorts: [],           // e.g., ["individual", "set"]
+            constants: [],       // e.g., ["e", "0", "1"]
+            functions: [],       // e.g., [{name: "f", arity: 2, domain: [...], range: "..."}]
+            relations: [],       // e.g., [{name: "R", arity: 2}]
+        },
+        source_axioms: [],       // List of all axioms, numbered
+        axiom_count: 0,          // How many axioms must be addressed
+        
+        // Function-specific fields (populated based on functionType)
+        // See per-function specifications below
+    };
+    
+    // Extract via LLM call with strict formatting requirements
+    const prompt = buildSkeletonPrompt(input, functionType);
+    const result = await callLLM(prompt, { max_tokens: 3000 });
+    
+    // Parse and validate
+    const parsed = parseSkeletonResponse(result);
+    validateSkeleton(parsed, functionType);
+    
+    return parsed;
+}
+```
+
+PASS 2: CONSTRAINED CHUNK PROCESSING
+────────────────────────────────────
+Process in chunks, each constrained by skeleton:
+
+```javascript
+async function processChunk(chunkInput, skeleton, chunkIndex, functionType) {
+    const prompt = buildChunkPrompt({
+        chunkInput,
+        skeleton,
+        chunkIndex,
+        functionType,
+        constraints: getConstraintsForFunction(functionType)
+    });
+    
+    const result = await callLLM(prompt, { max_tokens: 4000 });
+    
+    // Extract delta: what this chunk produced
+    const delta = {
+        mappings_added: [],      // New symbol mappings
+        axioms_addressed: [],    // Which axioms this chunk handled
+        definitions_added: [],   // New definitions introduced
+        verifications: [],       // What was verified
+        warnings: [],            // Potential issues detected
+    };
+    
+    // Validate chunk output against skeleton
+    validateChunkOutput(result, skeleton, delta);
+    
+    return { output: result, delta };
+}
+```
+
+PASS 3: STITCH AND VERIFY
+─────────────────────────
+After all chunks, verify global consistency:
+
+```javascript
+async function stitchAndVerify(skeleton, allDeltas, functionType) {
+    const violations = [];
+    
+    // CHECK 1: All axioms addressed
+    const axiomsAddressed = new Set();
+    for (const delta of allDeltas) {
+        delta.axioms_addressed.forEach(a => axiomsAddressed.add(a));
+    }
+    for (let i = 1; i <= skeleton.axiom_count; i++) {
+        if (!axiomsAddressed.has(i)) {
+            violations.push({
+                type: 'axiom_not_addressed',
+                axiom: i,
+                severity: 'error'
+            });
+        }
+    }
+    
+    // CHECK 2: No contradictory mappings
+    const mappings = {};
+    for (const delta of allDeltas) {
+        for (const m of delta.mappings_added) {
+            if (mappings[m.source] && mappings[m.source] !== m.target) {
+                violations.push({
+                    type: 'contradictory_mapping',
+                    source: m.source,
+                    existing_target: mappings[m.source],
+                    new_target: m.target,
+                    severity: 'error'
+                });
+            }
+            mappings[m.source] = m.target;
+        }
+    }
+    
+    // CHECK 3: Signature consistency
+    // (verify all referenced symbols exist in skeleton)
+    
+    // CHECK 4: No circular definitions
+    // (verify definition graph is acyclic)
+    
+    // CHECK 5: Function-specific checks
+    runFunctionSpecificChecks(skeleton, allDeltas, functionType, violations);
+    
+    if (violations.filter(v => v.severity === 'error').length > 0) {
+        // Attempt repair
+        return await repairViolations(skeleton, allDeltas, violations);
+    }
+    
+    // Assemble final output
+    return assembleFinalOutput(skeleton, allDeltas, functionType);
+}
+```
+
+═══════════════════════════════════════════════════════════════════════════════
+FUNCTION-SPECIFIC CC REQUIREMENTS
+═══════════════════════════════════════════════════════════════════════════════
+
+───────────────────────────────────────────────────────────────────────────────
+FUNCTION 1: AXIOM-SET / THEORY TRANSFORMATION
+───────────────────────────────────────────────────────────────────────────────
+
+PURPOSE: Rewrite theory by altering primitive vocabulary or structure
+
+SKELETON ADDITIONS:
+```
+transformation_type: "primitive_swap" | "signature_change" | "compression" | ...
+source_primitives: ["P", "Q", "R"]
+target_primitives: ["P'", "Q'", "R'"]  // may differ in number
+transformation_rules: [
+    { from: "P(x,y)", to: "P'(y,x)" },  // example: swap argument order
+    { from: "Q(x)", to: "∃y R'(x,y)" }, // example: define in terms of new primitive
+]
+invariants: ["theorem_preservation", "consistency_preservation"]
+```
+
+CHUNK CONSTRAINTS:
+- Apply transformation_rules identically in every chunk
+- Track which axioms have been transformed
+- Do not invent new transformation rules mid-process
+- Preserve variable binding (∀x in source → corresponding quantifier in target)
+
+STITCH VERIFICATION:
+- All source axioms transformed?
+- Transformation rules applied consistently?
+- Result is well-formed (no free variables, no undefined symbols)?
+- If theorem_preservation required, spot-check key theorems?
+
+───────────────────────────────────────────────────────────────────────────────
+FUNCTION 2: SCHEMA EQUIVALENCE
+───────────────────────────────────────────────────────────────────────────────
+
+PURPOSE: Determine if two theories have same models up to vocabulary renaming
+
+SKELETON ADDITIONS:
+```
+theory_a: {
+    signature: {...},
+    axioms: [...],
+    axiom_count: N
+}
+theory_b: {
+    signature: {...},
+    axioms: [...],
+    axiom_count: M
+}
+candidate_mapping: {
+    "P_a" → "Q_b",
+    "R_a" → "S_b",
+    ...
+}
+mapping_constraints: [
+    "arity_preserving",      // functions must map to functions of same arity
+    "type_preserving",       // sorts must map to sorts
+]
+```
+
+CHUNK CONSTRAINTS:
+- When analyzing Theory A, do not confuse with Theory B symbols
+- When proposing mappings, verify type/arity compatibility
+- Track which axioms have been checked under the mapping
+- If obstruction found, record precisely (which axiom, which mapping fails)
+
+STITCH VERIFICATION:
+- All axioms of both theories analyzed?
+- Mapping is complete (all primitives mapped)?
+- Mapping is consistent (no symbol mapped to two different targets)?
+- Mapping is type-correct (arities preserved)?
+- Verdict (equivalent/not equivalent) supported by evidence?
+
+───────────────────────────────────────────────────────────────────────────────
+FUNCTION 3: DEFINITIONAL EQUIVALENCE
+───────────────────────────────────────────────────────────────────────────────
+
+PURPOSE: Determine if two theories can mutually define each other's primitives
+
+SKELETON ADDITIONS:
+```
+theory_a_primitives: ["P", "Q"]
+theory_b_primitives: ["R", "S", "T"]
+definitions_a_to_b: {
+    "P": null,  // to be found
+    "Q": null,
+}
+definitions_b_to_a: {
+    "R": null,
+    "S": null,
+    "T": null,
+}
+definability_constraints: ["explicit", "conservative"]
+```
+
+CHUNK CONSTRAINTS:
+- Definitions must use only target theory primitives (no circularity)
+- Track which primitives have definitions, which are pending
+- Verify each definition preserves relevant theorems
+- Do not redefine a primitive that already has a definition
+
+STITCH VERIFICATION:
+- All primitives in both directions have definitions (or explicit "not definable")?
+- No circular definitions?
+- Definitions are conservative (don't add new theorems)?
+- Mutual definability verdict supported?
+
+───────────────────────────────────────────────────────────────────────────────
+FUNCTION 5: CONSERVATIVE EXTENSION ANALYSIS
+───────────────────────────────────────────────────────────────────────────────
+
+PURPOSE: Determine if T2 is conservative over T1 (no new theorems in L1)
+
+SKELETON ADDITIONS:
+```
+base_theory: {
+    signature: {...},
+    axioms: [...],
+    language: ["P", "Q", "R"]  // L1
+}
+extended_theory: {
+    signature: {...},
+    axioms: [...],
+    new_symbols: ["S", "T"],   // symbols in T2 not in T1
+    new_axioms: [...]          // axioms in T2 not in T1
+}
+test_type: "new_primitives" | "new_axioms" | "weak_extension"
+```
+
+CHUNK CONSTRAINTS:
+- Clearly distinguish L1 (base language) from extended language
+- When checking theorems, track whether they're in L1 or not
+- If a new theorem in L1 is found, record precisely
+- Do not confuse T1 axioms with T2 axioms
+
+STITCH VERIFICATION:
+- All T2 axioms analyzed?
+- All potential new L1 theorems checked?
+- Verdict (conservative/non-conservative) supported?
+- If non-conservative, witness theorem identified?
+
+───────────────────────────────────────────────────────────────────────────────
+FUNCTION 10: FIND AN INTERPRETATION (BATCH MODE)
+───────────────────────────────────────────────────────────────────────────────
+
+PURPOSE: Find true models across 23 domains (Mathematical, Biological, Economic, etc.)
+
+THIS IS THE MOST CC-CRITICAL FUNCTION because batch mode generates 20+ 
+interpretations from the same source. Cross-contamination is the main risk.
+
+SKELETON ADDITIONS:
+```
+source_theory: {
+    signature: {...},
+    axioms: [...],
+    axiom_count: N
+}
+domains_to_interpret: [
+    "Mathematical", "Computational", "Philosophical",
+    "Physical_everyday", "Physics_scientific", "Chemical", "Biological",
+    "Economic", "Social", "Psychological", "Linguistic", "Organizational",
+    "Geographical", "Home_economics", "Engineering", "Network",
+    "Market_microstructure", "Portfolio_risk", "Credit_fixed_income",
+    "MA_corporate", "Derivatives", "Private_equity", "Macro_intermarket"
+]
+interpretations: {
+    // Populated during processing
+    "Mathematical": {
+        domain: null,
+        symbol_mapping: {},
+        axiom_verifications: [],
+        status: "pending"
+    },
+    // ... one entry per domain
+}
+```
+
+CHUNK CONSTRAINTS:
+- Each interpretation chunk receives ONLY its assigned domain
+- Do not copy mappings from other domains (each must be independent)
+- Every interpretation must map ALL source primitives
+- Every interpretation must verify ALL source axioms
+- Use domain-appropriate terminology (don't use "Sharpe ratio" in Biological)
+
+CHUNK PROMPT FOR BATCH INTERPRETATIONS:
+```
+You are finding an interpretation of a formal theory in the {DOMAIN} domain.
+
+SOURCE THEORY (you must interpret ALL of this):
+Signature: {signature}
+Axioms:
+1. {axiom_1}
+2. {axiom_2}
+...
+N. {axiom_N}
+
+YOUR TASK:
+Find a {DOMAIN} interpretation where all axioms come out TRUE.
+
+CONSTRAINTS:
+- Map EVERY primitive symbol to something in the {DOMAIN} domain
+- Verify EVERY axiom (show why it's true under your interpretation)
+- Use terminology appropriate to {DOMAIN} (not other domains)
+- Do not leave any primitive unmapped
+- Do not skip any axiom
+
+OUTPUT FORMAT:
+DOMAIN: {DOMAIN}
+
+UNIVERSE: [What the domain of individuals is]
+
+SYMBOL MAPPINGS:
+- {primitive_1} → [your interpretation]
+- {primitive_2} → [your interpretation]
+...
+
+AXIOM VERIFICATIONS:
+- Axiom 1: [Why it's true under this interpretation]
+- Axiom 2: [Why it's true under this interpretation]
+...
+- Axiom N: [Why it's true under this interpretation]
+
+INTERPRETATION SUMMARY: [One paragraph describing the model]
+```
+
+STITCH VERIFICATION FOR BATCH:
+- All 23 (or selected subset) domains have interpretations?
+- Each interpretation maps ALL primitives?
+- Each interpretation verifies ALL axioms?
+- No cross-contamination (domain A doesn't use domain B terminology)?
+- Each interpretation is genuinely distinct (not just relabeling)?
+
+───────────────────────────────────────────────────────────────────────────────
+FUNCTIONS 6, 7, 8, 9: CONCEPTUAL ANALYSIS FUNCTIONS
+───────────────────────────────────────────────────────────────────────────────
+
+These functions analyze conceptual structure of theories. CC requirements:
+
+SKELETON ADDITIONS:
+```
+primitives_inventory: ["P", "Q", "R"]
+derived_concepts: ["D1 := ...", "D2 := ..."]
+dependency_graph: {
+    "D1": ["P", "Q"],      // D1 depends on P and Q
+    "D2": ["D1", "R"],     // D2 depends on D1 and R
+}
+analysis_type: "depth_map" | "bottleneck" | "rebalancing" | ...
+```
+
+CHUNK CONSTRAINTS:
+- Dependency graph must be acyclic (no circular dependencies)
+- When analyzing dependencies, use consistent definition of "depends on"
+- Track which concepts have been analyzed
+- Do not reclassify a primitive as derived (or vice versa) mid-process
+
+STITCH VERIFICATION:
+- All concepts analyzed?
+- Dependency graph consistent and acyclic?
+- Classifications (primitive vs. derived) stable?
+- Analysis conclusions supported by dependency structure?
+
+═══════════════════════════════════════════════════════════════════════════════
+DATABASE SCHEMA FOR MODEL TRANSFORMER CC
+═══════════════════════════════════════════════════════════════════════════════
+
+```sql
+CREATE TABLE IF NOT EXISTS mt_jobs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id TEXT,
+    
+    -- Input
+    function_type TEXT,           -- "F1", "F2", ..., "F10"
+    subfunction TEXT,             -- "F1-A", "F10-Q", etc.
+    input_text TEXT,
+    input_box_b TEXT,             -- For two-theory functions
+    
+    -- Skeleton
+    skeleton JSONB,
+    
+    -- Batch mode
+    is_batch BOOLEAN DEFAULT FALSE,
+    batch_domains TEXT[],         -- For F10 batch: which domains
+    
+    -- Progress
+    status TEXT DEFAULT 'pending',
+    chunks_total INTEGER,
+    chunks_completed INTEGER DEFAULT 0,
+    
+    -- Output
+    final_output TEXT,
+    violations_found JSONB,
+    
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS mt_chunks (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    job_id UUID REFERENCES mt_jobs(id) ON DELETE CASCADE,
+    chunk_index INTEGER,
+    
+    -- For batch mode: which domain this chunk handles
+    domain TEXT,
+    
+    -- Input/output
+    chunk_input TEXT,
+    chunk_output TEXT,
+    
+    -- Delta tracking
+    mappings_added JSONB,
+    axioms_addressed INTEGER[],
+    definitions_added JSONB,
+    warnings TEXT[],
+    
+    -- Status
+    status TEXT DEFAULT 'pending',
+    retry_count INTEGER DEFAULT 0,
+    
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS mt_interpretations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    job_id UUID REFERENCES mt_jobs(id) ON DELETE CASCADE,
+    domain TEXT,
+    
+    universe_description TEXT,
+    symbol_mappings JSONB,
+    axiom_verifications JSONB,
+    interpretation_summary TEXT,
+    
+    -- Validation
+    all_primitives_mapped BOOLEAN,
+    all_axioms_verified BOOLEAN,
+    
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Indexes
+CREATE INDEX IF NOT EXISTS idx_mt_jobs_status ON mt_jobs(status);
+CREATE INDEX IF NOT EXISTS idx_mt_chunks_job ON mt_chunks(job_id);
+CREATE INDEX IF NOT EXISTS idx_mt_interpretations_job ON mt_interpretations(job_id);
+```
+
+═══════════════════════════════════════════════════════════════════════════════
+IMPLEMENTATION PRIORITIES
+═══════════════════════════════════════════════════════════════════════════════
+
+PHASE 1 (Critical for launch):
+□ Function 10 batch mode CC (most visible feature, highest risk)
+□ Function 1 CC (core transformation functionality)
+□ Function 2 CC (two-theory comparison)
+
+PHASE 2 (Post-launch):
+□ Function 3 CC (definitional equivalence)
+□ Function 5 CC (conservative extension)
+□ Functions 6-9 CC (conceptual analysis)
+
+PHASE 3 (Optimization):
+□ Caching of skeleton extractions for repeated runs
+□ Parallel processing of independent batch items (with CC verification after)
+□ Incremental updates (add one domain to existing batch)
+
+═══════════════════════════════════════════════════════════════════════════════
+CRITICAL RULES
+═══════════════════════════════════════════════════════════════════════════════
+
+1. NEVER skip skeleton extraction. Every run starts with skeleton.
+
+2. NEVER process chunks without injecting skeleton as constraint.
+
+3. NEVER deliver output without stitch verification.
+
+4. In batch mode, NEVER let one domain's chunk see another domain's output.
+
+5. If axiom_count = N, final output MUST address exactly N axioms.
+
+6. If primitives = [P, Q, R], every interpretation MUST map all three.
+
+7. Mappings are IMMUTABLE once established. Chunk 47 cannot change what
+   chunk 12 decided about symbol P.
+
+8. Formal validity is BINARY. Either the output is correct or it's garbage.
+   There is no "mostly correct" in formal logic.
+
+9. ALWAYS save intermediate state to database. Formal transformations are
+   expensive; losing progress is unacceptable.
+
+10. If stitch finds violations, REPAIR before delivering. An inconsistent
+    output is worse than no output.
+
+═══════════════════════════════════════════════════════════════════════════════
+TESTING CHECKLIST
+═══════════════════════════════════════════════════════════════════════════════
+
+For each function, test with:
+
+□ Small input (3 axioms) — verify basic correctness
+□ Medium input (10 axioms) — verify chunking works
+□ Large input (30+ axioms) — verify CC maintains consistency
+□ Batch mode (if applicable) — verify no cross-contamination
+
+Specific tests:
+
+□ F1: Transform partial order to strict order. Verify all 3 axioms transformed.
+□ F2: Compare partial order to equivalence relation. Verify correct "not equivalent."
+□ F2: Compare two equivalent formulations of groups. Verify correct "equivalent."
+□ F5: Test ZFC as extension of Z. Verify conservativity analysis.
+□ F10 batch: Interpret partial order in 5 domains. Verify each is distinct and complete.
+
+═══════════════════════════════════════════════════════════════════════════════
+END OF MODEL TRANSFORMER CC INSTRUCTIONS
+═══════════════════════════════════════════════════════════════════════════════

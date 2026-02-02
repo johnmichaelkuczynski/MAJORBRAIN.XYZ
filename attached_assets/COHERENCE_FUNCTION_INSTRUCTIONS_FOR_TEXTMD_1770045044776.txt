@@ -1,0 +1,908 @@
+═══════════════════════════════════════════════════════════════════════════════
+FULL PIPELINE CROSS-CHUNK COHERENCE (CC) ARCHITECTURE
+Including Vertical Coherence (VC) for Each Stage
+and Horizontal Coherence (HC) Across Stages
+═══════════════════════════════════════════════════════════════════════════════
+
+OVERVIEW
+────────
+The full Model Wiz pipeline consists of four stages:
+
+1. RECONSTRUCTION — Transform input into rigorous analytical piece
+2. OBJECTIONS — Generate 25 systematic objections to the reconstruction
+3. RESPONSES — Generate compelling counter-arguments to each objection
+4. BULLET-PROOF VERSION — Rewrite incorporating responses to forestall objections
+
+Each stage requires its own Vertical Coherence (VC) to maintain internal
+consistency. Additionally, Horizontal Coherence (HC) ensures that later
+stages actually engage with the content of earlier stages.
+
+WITHOUT VC: Each stage produces Frankenstein output with internal contradictions
+WITHOUT HC: Later stages address phantom content, not actual earlier output
+
+═══════════════════════════════════════════════════════════════════════════════
+PIPELINE FLOW DIAGRAM
+═══════════════════════════════════════════════════════════════════════════════
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              ORIGINAL INPUT                                  │
+│                           (User's document)                                  │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         STAGE 1: RECONSTRUCTION                              │
+│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐                      │
+│  │  Skeleton   │───▶│   Chunks    │───▶│   Stitch    │                      │
+│  │ Extraction  │    │ Processing  │    │    Pass     │                      │
+│  └─────────────┘    └─────────────┘    └─────────────┘                      │
+│         │                                     │                              │
+│         ▼                                     ▼                              │
+│  ┌─────────────┐                      ┌─────────────┐                       │
+│  │  SKELETON_1 │                      │  OUTPUT_1   │                       │
+│  │  (stored)   │                      │(Reconstruction)                     │
+│  └─────────────┘                      └─────────────┘                       │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                    ┌───────────────┴───────────────┐
+                    │                               │
+                    ▼                               ▼
+            ┌─────────────┐                 ┌─────────────┐
+            │  SKELETON_1 │                 │  OUTPUT_1   │
+            │ (inherited) │                 │  (input)    │
+            └─────────────┘                 └─────────────┘
+                    │                               │
+                    └───────────────┬───────────────┘
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          STAGE 2: OBJECTIONS                                 │
+│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐                      │
+│  │  Skeleton   │───▶│   Chunks    │───▶│   Stitch    │                      │
+│  │ Extraction  │    │ Processing  │    │    Pass     │                      │
+│  │(+SKELETON_1)│    │             │    │             │                      │
+│  └─────────────┘    └─────────────┘    └─────────────┘                      │
+│         │                                     │                              │
+│         ▼                                     ▼                              │
+│  ┌─────────────┐                      ┌─────────────┐                       │
+│  │  SKELETON_2 │                      │  OUTPUT_2   │                       │
+│  │  (stored)   │                      │(25 Objections)                      │
+│  └─────────────┘                      └─────────────┘                       │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                    ┌───────────────┴───────────────┐
+                    │                               │
+                    ▼                               ▼
+            ┌─────────────┐                 ┌─────────────┐
+            │SKELETON_1+2 │                 │  OUTPUT_2   │
+            │ (inherited) │                 │  (input)    │
+            └─────────────┘                 └─────────────┘
+                    │                               │
+                    └───────────────┬───────────────┘
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          STAGE 3: RESPONSES                                  │
+│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐                      │
+│  │  Skeleton   │───▶│   Chunks    │───▶│   Stitch    │                      │
+│  │ Extraction  │    │ Processing  │    │    Pass     │                      │
+│  │(+SKEL_1+2)  │    │             │    │             │                      │
+│  └─────────────┘    └─────────────┘    └─────────────┘                      │
+│         │                                     │                              │
+│         ▼                                     ▼                              │
+│  ┌─────────────┐                      ┌─────────────┐                       │
+│  │  SKELETON_3 │                      │  OUTPUT_3   │                       │
+│  │  (stored)   │                      │(25 Responses)                       │
+│  └─────────────┘                      └─────────────┘                       │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                    ┌───────────────┴───────────────┐
+                    │                               │
+                    ▼                               ▼
+            ┌─────────────┐                 ┌─────────────┐
+            │SKELETON_1-3 │                 │ OUTPUT_1+3  │
+            │ (inherited) │                 │  (input)    │
+            └─────────────┘                 └─────────────┘
+                    │                               │
+                    └───────────────┬───────────────┘
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      STAGE 4: BULLET-PROOF VERSION                           │
+│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐                      │
+│  │  Skeleton   │───▶│   Chunks    │───▶│   Stitch    │                      │
+│  │ Extraction  │    │ Processing  │    │    Pass     │                      │
+│  │(+SKEL_1-3)  │    │             │    │             │                      │
+│  └─────────────┘    └─────────────┘    └─────────────┘                      │
+│         │                                     │                              │
+│         ▼                                     ▼                              │
+│  ┌─────────────┐                      ┌─────────────┐                       │
+│  │  SKELETON_4 │                      │  OUTPUT_4   │                       │
+│  │  (final)    │                      │(Bullet-proof)                       │
+│  └─────────────┘                      └─────────────┘                       │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      HORIZONTAL COHERENCE CHECK                              │
+│                                                                              │
+│  Verify: SKELETON_4 commitments ⊇ SKELETON_1 commitments                    │
+│  Verify: All Stage 1 claims either defended or explicitly revised           │
+│  Verify: All Stage 2 objections addressed in Stage 4                        │
+│  Verify: No contradictions between Stage 1 and Stage 4                      │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+                        ┌─────────────────────┐
+                        │    FINAL OUTPUT     │
+                        │  (Bullet-proof doc) │
+                        └─────────────────────┘
+
+═══════════════════════════════════════════════════════════════════════════════
+STAGE 1: RECONSTRUCTION (Already Implemented ✓)
+═══════════════════════════════════════════════════════════════════════════════
+
+See CC_COMPLETE_INSTRUCTIONS.txt for full details.
+
+SKELETON_1 contains:
+- THESIS: Central argument of the reconstructed document
+- OUTLINE: 8-20 major claims/sections
+- KEY_TERMS: Important terms with definitions
+- COMMITMENT_LEDGER: What the document asserts, rejects, assumes
+- ENTITIES: People, concepts, technical terms
+
+OUTPUT_1: The reconstructed document
+
+═══════════════════════════════════════════════════════════════════════════════
+STAGE 2: OBJECTIONS
+═══════════════════════════════════════════════════════════════════════════════
+
+PURPOSE
+───────
+Generate 25 systematic objections to the reconstruction. Each objection must
+target an ACTUAL claim in OUTPUT_1, not a phantom claim or strawman.
+
+INPUTS
+──────
+- OUTPUT_1 (the reconstruction)
+- SKELETON_1 (inherited from Stage 1)
+- User parameters: Target Audience, Objective, Custom Instructions
+
+SKELETON_2 EXTRACTION
+─────────────────────
+Before generating objections, extract SKELETON_2 from OUTPUT_1:
+
+1. CLAIMS_TO_TARGET (list): The 25 specific claims from OUTPUT_1 that will
+   receive objections. Each claim must be:
+   - Actually present in OUTPUT_1 (verified against SKELETON_1)
+   - Substantive (not trivial or definitional)
+   - Distinct (no two objections target the same claim)
+   
+2. CLAIM_LOCATIONS (map): For each claim, the section/paragraph where it appears
+   
+3. OBJECTION_TYPES (distribution): Ensure variety:
+   - Logical objections (5-7): Internal contradictions, invalid inferences
+   - Empirical objections (5-7): Counter-evidence, factual challenges
+   - Conceptual objections (5-7): Definitional problems, category errors
+   - Methodological objections (3-5): Procedural flaws, scope issues
+   - Practical objections (3-5): Implementation problems, unintended consequences
+   
+4. SEVERITY_DISTRIBUTION: Mix of:
+   - Fatal objections (3-5): If true, destroys the argument
+   - Serious objections (8-10): Requires significant revision
+   - Moderate objections (8-10): Requires clarification or minor revision
+   - Minor objections (2-4): Stylistic or peripheral concerns
+
+5. INHERITED_COMMITMENTS: Compressed SKELETON_1 commitments that objections
+   must accurately represent (no strawmanning)
+
+CHUNK PROCESSING FOR OBJECTIONS
+───────────────────────────────
+Unlike reconstruction, objections are discrete units. Process 5 objections
+per chunk (5 chunks total for 25 objections).
+
+For each chunk:
+- Input: 5 target claims from CLAIMS_TO_TARGET + SKELETON_2 constraints
+- Output: 5 objections with responses
+- Each objection must include:
+  - CLAIM_TARGETED: Exact quote or precise paraphrase from OUTPUT_1
+  - OBJECTION_TYPE: From the distribution above
+  - OBJECTION_TEXT: The objection itself (150-300 words)
+  - RESPONSE_TEXT: Counter-argument (150-300 words)
+  - SEVERITY: Fatal/Serious/Moderate/Minor
+
+Chunk prompt must include:
+```
+You are generating objections to a philosophical/analytical document.
+
+DOCUMENT SKELETON (the claims you must accurately represent):
+{skeleton_1}
+
+TARGET CLAIMS FOR THIS CHUNK:
+{claims_5_through_10}
+
+OBJECTION TYPES REQUIRED FOR THIS CHUNK:
+{assigned_types}
+
+CONSTRAINT: Your objections must target what the document ACTUALLY says.
+Do not strawman. Do not invent claims not present in the document.
+Quote or precisely paraphrase the targeted claim before objecting.
+
+For each objection, provide:
+1. CLAIM_TARGETED: [exact quote or precise paraphrase]
+2. OBJECTION_TYPE: [logical/empirical/conceptual/methodological/practical]
+3. OBJECTION: [the objection, 150-300 words]
+4. RESPONSE: [counter-argument, 150-300 words]
+5. SEVERITY: [fatal/serious/moderate/minor]
+```
+
+STITCH PASS FOR OBJECTIONS
+──────────────────────────
+After all 5 chunks processed, stitch pass verifies:
+
+1. NO DUPLICATE TARGETS: Each of the 25 objections targets a distinct claim
+2. NO STRAWMEN: Each objection accurately represents the targeted claim
+3. TYPE DISTRIBUTION: Objection types match the planned distribution
+4. SEVERITY DISTRIBUTION: Severity levels match the planned distribution
+5. NO CONTRADICTORY OBJECTIONS: Objection 7 doesn't contradict Objection 12
+6. RESPONSE CONSISTENCY: Responses don't contradict each other
+
+If violations found:
+- Identify which objections need revision
+- Re-process only those objections with correction instructions
+- Re-run stitch until constraints satisfied
+
+OUTPUT_2: 25 numbered objections with responses
+
+SKELETON_2 FINAL (stored for Stage 3):
+- List of 25 objection summaries (one sentence each)
+- List of 25 response summaries (one sentence each)
+- Map: objection_id → claim_targeted
+- Inherited: SKELETON_1 commitments
+
+═══════════════════════════════════════════════════════════════════════════════
+STAGE 3: RESPONSES (Enhanced Counter-Arguments)
+═══════════════════════════════════════════════════════════════════════════════
+
+PURPOSE
+───────
+If Stage 2 already includes responses, Stage 3 ENHANCES those responses with
+deeper analysis, additional evidence, and more compelling counter-arguments.
+Alternatively, Stage 3 can generate responses if Stage 2 produced only objections.
+
+For this architecture, we assume Stage 2 produces objections + initial responses,
+and Stage 3 produces ENHANCED responses that are more thorough.
+
+INPUTS
+──────
+- OUTPUT_2 (25 objections with initial responses)
+- SKELETON_1 (original commitments)
+- SKELETON_2 (objection/response summaries)
+
+SKELETON_3 EXTRACTION
+─────────────────────
+Extract from OUTPUT_2:
+
+1. OBJECTIONS_TO_ADDRESS (list): All 25 objections, summarized
+2. INITIAL_RESPONSES (list): The 25 initial responses from Stage 2
+3. RESPONSE_GAPS (list): Where initial responses are weak or incomplete
+4. ENHANCEMENT_STRATEGY (per objection):
+   - Additional evidence needed
+   - Deeper philosophical analysis needed
+   - Practical examples needed
+   - Concession + rebuttal structure needed
+5. INHERITED_COMMITMENTS: SKELETON_1 + SKELETON_2 commitments
+
+CHUNK PROCESSING FOR RESPONSES
+──────────────────────────────
+Process 5 enhanced responses per chunk.
+
+For each chunk:
+- Input: 5 objections + initial responses + enhancement strategy
+- Output: 5 enhanced responses (300-500 words each)
+- Each enhanced response must:
+  - Address the ACTUAL objection (verified against SKELETON_2)
+  - Not contradict SKELETON_1 commitments
+  - Not contradict other responses
+  - Be substantively stronger than the initial response
+
+Chunk prompt:
+```
+You are enhancing responses to objections against a philosophical document.
+
+ORIGINAL DOCUMENT COMMITMENTS (you must not contradict these):
+{skeleton_1_commitments}
+
+OBJECTIONS AND INITIAL RESPONSES TO ENHANCE:
+{objections_6_through_10_with_initial_responses}
+
+ENHANCEMENT STRATEGY:
+{enhancement_notes}
+
+For each objection, provide an ENHANCED RESPONSE that:
+1. Acknowledges the objection's strongest form (no strawmanning)
+2. Provides deeper analysis than the initial response
+3. Includes additional evidence or examples where appropriate
+4. Does NOT contradict the original document's core commitments
+5. Does NOT contradict other responses in this set
+
+ENHANCED RESPONSE format (300-500 words each):
+- OBJECTION ADDRESSED: [summary of objection]
+- ENHANCED RESPONSE: [your improved counter-argument]
+```
+
+STITCH PASS FOR RESPONSES
+─────────────────────────
+Verify:
+1. All 25 objections have enhanced responses
+2. No response contradicts SKELETON_1 commitments
+3. No response contradicts another response
+4. Each response is substantively stronger than initial
+5. Responses don't introduce new commitments that conflict with original
+
+OUTPUT_3: 25 enhanced responses
+
+SKELETON_3 FINAL (stored for Stage 4):
+- List of 25 enhanced response summaries
+- New commitments introduced (if any)
+- Concessions made (if any)
+- Inherited: SKELETON_1 + SKELETON_2
+
+═══════════════════════════════════════════════════════════════════════════════
+STAGE 4: BULLET-PROOF VERSION
+═══════════════════════════════════════════════════════════════════════════════
+
+PURPOSE
+───────
+Rewrite OUTPUT_1 to incorporate the enhanced responses from OUTPUT_3,
+forestalling objections before they arise. The bullet-proof version should
+read as a stronger, more defensible document that anticipates and addresses
+challenges without appearing defensive.
+
+INPUTS
+──────
+- OUTPUT_1 (original reconstruction)
+- OUTPUT_3 (25 enhanced responses)
+- SKELETON_1, SKELETON_2, SKELETON_3 (all inherited)
+
+SKELETON_4 EXTRACTION
+─────────────────────
+This is the most complex skeleton because it must integrate all prior stages:
+
+1. ORIGINAL_STRUCTURE: Section/paragraph structure of OUTPUT_1
+2. INTEGRATION_MAP: For each section of OUTPUT_1, which responses to integrate
+   - Section 1: Responses 3, 7, 12 address claims in this section
+   - Section 2: Responses 1, 5, 8, 15 address claims in this section
+   - etc.
+3. INTEGRATION_STRATEGY (per response):
+   - PREEMPTIVE: Address objection before making claim
+   - INLINE: Address objection immediately after claim
+   - FOOTNOTE: Address in extended discussion
+   - STRUCTURAL: Reorganize section to make objection irrelevant
+4. CONCESSIONS_TO_INCORPORATE: Where responses conceded points
+5. STRENGTHENING_ADDITIONS: New arguments/evidence from responses
+6. COMMITMENT_RECONCILIATION: Ensure all commitments from SKELETON_1 are
+   either preserved, explicitly revised, or defended
+7. LENGTH_TARGET: Usually 110-130% of OUTPUT_1 length (expansion for integration)
+
+CHUNK PROCESSING FOR BULLET-PROOF
+─────────────────────────────────
+Process by SECTION of OUTPUT_1, not by fixed word count.
+
+For each section:
+- Input: Original section text + relevant responses + integration strategy
+- Output: Bullet-proofed section
+- Constraints:
+  - Preserve original argument flow
+  - Integrate responses naturally (not as bolted-on additions)
+  - Maintain original voice and style
+  - Honor all SKELETON_1 commitments (or explicitly revise)
+
+Chunk prompt:
+```
+You are creating a bullet-proof version of a document section by integrating
+responses to anticipated objections.
+
+ORIGINAL SECTION:
+{section_text}
+
+RESPONSES TO INTEGRATE INTO THIS SECTION:
+{relevant_responses}
+
+INTEGRATION STRATEGY:
+{integration_notes}
+
+ORIGINAL DOCUMENT COMMITMENTS (must be preserved or explicitly revised):
+{skeleton_1_commitments}
+
+CONSTRAINTS:
+- The integrated text should read naturally, not defensively
+- Anticipate objections rather than responding to them
+- Preserve the original argument's flow and voice
+- Do not contradict any commitment from the original document
+- If a response requires revising an original claim, do so explicitly
+
+OUTPUT: The bullet-proofed section with responses integrated
+```
+
+STITCH PASS FOR BULLET-PROOF
+────────────────────────────
+This is the most critical stitch pass. Verify:
+
+1. ALL RESPONSES INTEGRATED: Each of the 25 responses appears somewhere
+2. COMMITMENT PRESERVATION: All SKELETON_1 commitments either:
+   - Preserved verbatim
+   - Explicitly revised with justification
+   - Defended against objection
+3. NO NEW CONTRADICTIONS: Integrated text doesn't create new internal conflicts
+4. NATURAL FLOW: Integration doesn't make document read as defensive patchwork
+5. OBJECTION FORESTALLING: A reader encountering the objections would find
+   them already addressed
+
+OUTPUT_4: The bullet-proof version
+
+═══════════════════════════════════════════════════════════════════════════════
+HORIZONTAL COHERENCE (HC) CHECK
+═══════════════════════════════════════════════════════════════════════════════
+
+After Stage 4 completes, run a final HC verification:
+
+HC CHECK 1: COMMITMENT TRACING
+──────────────────────────────
+For each commitment C in SKELETON_1:
+- Is C present in OUTPUT_4? (preserved)
+- Is C explicitly revised in OUTPUT_4? (modified)
+- Is C defended against objection in OUTPUT_4? (defended)
+- Is C absent without explanation? (ERROR - violation)
+
+HC CHECK 2: OBJECTION COVERAGE
+──────────────────────────────
+For each objection O in OUTPUT_2:
+- Is O addressed in OUTPUT_4? (forestalled)
+- Is O's target claim revised in OUTPUT_4? (preempted)
+- Is O unaddressed? (ERROR - violation)
+
+HC CHECK 3: RESPONSE INTEGRATION
+────────────────────────────────
+For each response R in OUTPUT_3:
+- Is R's content present in OUTPUT_4? (integrated)
+- Is R contradicted by OUTPUT_4? (ERROR - violation)
+- Is R missing? (ERROR - violation)
+
+HC CHECK 4: CROSS-STAGE CONSISTENCY
+───────────────────────────────────
+- Does OUTPUT_4 contradict OUTPUT_1 without justification? (ERROR)
+- Does OUTPUT_4 introduce claims not in OUTPUT_1 or OUTPUT_3? (WARNING)
+- Does OUTPUT_4 use terminology inconsistently with SKELETON_1? (ERROR)
+
+HC REPAIR PROCESS
+─────────────────
+If HC violations found:
+1. Identify specific violations
+2. Determine which Stage 4 sections need revision
+3. Re-process those sections with explicit instructions to fix violations
+4. Re-run HC check
+5. Repeat until all checks pass
+
+═══════════════════════════════════════════════════════════════════════════════
+DATABASE SCHEMA ADDITIONS
+═══════════════════════════════════════════════════════════════════════════════
+
+Extend the existing schema to support full pipeline:
+
+```sql
+-- Pipeline job tracking (extends reconstruction_jobs)
+CREATE TABLE IF NOT EXISTS pipeline_jobs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id TEXT,
+    
+    -- Original input
+    original_text TEXT,
+    original_word_count INTEGER,
+    
+    -- User parameters
+    custom_instructions TEXT,
+    target_audience TEXT,
+    objective TEXT,
+    
+    -- Stage outputs
+    reconstruction_output TEXT,
+    objections_output TEXT,
+    responses_output TEXT,
+    bulletproof_output TEXT,
+    
+    -- Skeletons (JSONB for flexibility)
+    skeleton_1 JSONB,
+    skeleton_2 JSONB,
+    skeleton_3 JSONB,
+    skeleton_4 JSONB,
+    
+    -- Progress tracking
+    current_stage INTEGER DEFAULT 1,  -- 1-4
+    stage_status TEXT DEFAULT 'pending',
+    
+    -- HC check results
+    hc_check_results JSONB,
+    hc_violations TEXT[],
+    
+    -- Final status
+    status TEXT DEFAULT 'pending',
+    error_message TEXT,
+    
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Stage-specific chunk tracking
+CREATE TABLE IF NOT EXISTS pipeline_chunks (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    job_id UUID REFERENCES pipeline_jobs(id) ON DELETE CASCADE,
+    stage INTEGER,  -- 1-4
+    chunk_index INTEGER,
+    
+    chunk_input_text TEXT,
+    chunk_output_text TEXT,
+    chunk_delta JSONB,
+    
+    target_words INTEGER,
+    actual_words INTEGER,
+    
+    status TEXT DEFAULT 'pending',
+    retry_count INTEGER DEFAULT 0,
+    
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Objection tracking (for Stage 2-4 coherence)
+CREATE TABLE IF NOT EXISTS pipeline_objections (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    job_id UUID REFERENCES pipeline_jobs(id) ON DELETE CASCADE,
+    objection_index INTEGER,  -- 1-25
+    
+    claim_targeted TEXT,
+    claim_location TEXT,
+    objection_type TEXT,
+    objection_text TEXT,
+    initial_response TEXT,
+    enhanced_response TEXT,
+    severity TEXT,
+    
+    integrated_in_section TEXT,  -- Where it appears in bullet-proof
+    integration_verified BOOLEAN DEFAULT FALSE,
+    
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Indexes
+CREATE INDEX IF NOT EXISTS idx_pipeline_jobs_status ON pipeline_jobs(status);
+CREATE INDEX IF NOT EXISTS idx_pipeline_chunks_job ON pipeline_chunks(job_id, stage);
+CREATE INDEX IF NOT EXISTS idx_pipeline_objections_job ON pipeline_objections(job_id);
+```
+
+═══════════════════════════════════════════════════════════════════════════════
+ORCHESTRATION: FULL PIPELINE EXECUTION
+═══════════════════════════════════════════════════════════════════════════════
+
+```javascript
+async function runFullPipeline(originalText, params, userId) {
+    // Create pipeline job
+    const job = await db.pipeline_jobs.create({
+        user_id: userId,
+        original_text: originalText,
+        original_word_count: countWords(originalText),
+        custom_instructions: params.customInstructions,
+        target_audience: params.targetAudience,
+        objective: params.objective,
+        status: 'running',
+        current_stage: 1
+    });
+    
+    try {
+        // ══════════════════════════════════════════════════════════════
+        // STAGE 1: RECONSTRUCTION
+        // ══════════════════════════════════════════════════════════════
+        console.log(`[Pipeline ${job.id}] Starting Stage 1: Reconstruction`);
+        
+        const stage1Result = await runReconstruction(
+            originalText, 
+            params.customInstructions,
+            job.id
+        );
+        
+        await db.pipeline_jobs.update({
+            id: job.id,
+            reconstruction_output: stage1Result.output,
+            skeleton_1: stage1Result.skeleton,
+            current_stage: 2,
+            updated_at: new Date()
+        });
+        
+        // ══════════════════════════════════════════════════════════════
+        // STAGE 2: OBJECTIONS
+        // ══════════════════════════════════════════════════════════════
+        console.log(`[Pipeline ${job.id}] Starting Stage 2: Objections`);
+        
+        const stage2Result = await runObjections(
+            stage1Result.output,
+            stage1Result.skeleton,
+            params,
+            job.id
+        );
+        
+        await db.pipeline_jobs.update({
+            id: job.id,
+            objections_output: stage2Result.output,
+            skeleton_2: stage2Result.skeleton,
+            current_stage: 3,
+            updated_at: new Date()
+        });
+        
+        // Store individual objections for tracking
+        for (const obj of stage2Result.objections) {
+            await db.pipeline_objections.create({
+                job_id: job.id,
+                objection_index: obj.index,
+                claim_targeted: obj.claimTargeted,
+                claim_location: obj.claimLocation,
+                objection_type: obj.type,
+                objection_text: obj.objection,
+                initial_response: obj.response,
+                severity: obj.severity
+            });
+        }
+        
+        // ══════════════════════════════════════════════════════════════
+        // STAGE 3: ENHANCED RESPONSES
+        // ══════════════════════════════════════════════════════════════
+        console.log(`[Pipeline ${job.id}] Starting Stage 3: Enhanced Responses`);
+        
+        const stage3Result = await runEnhancedResponses(
+            stage2Result.output,
+            stage1Result.skeleton,
+            stage2Result.skeleton,
+            job.id
+        );
+        
+        await db.pipeline_jobs.update({
+            id: job.id,
+            responses_output: stage3Result.output,
+            skeleton_3: stage3Result.skeleton,
+            current_stage: 4,
+            updated_at: new Date()
+        });
+        
+        // Update objections with enhanced responses
+        for (const resp of stage3Result.responses) {
+            await db.pipeline_objections.update({
+                job_id: job.id,
+                objection_index: resp.index,
+                enhanced_response: resp.enhancedResponse
+            });
+        }
+        
+        // ══════════════════════════════════════════════════════════════
+        // STAGE 4: BULLET-PROOF VERSION
+        // ══════════════════════════════════════════════════════════════
+        console.log(`[Pipeline ${job.id}] Starting Stage 4: Bullet-proof Version`);
+        
+        const stage4Result = await runBulletproof(
+            stage1Result.output,
+            stage3Result.output,
+            {
+                skeleton1: stage1Result.skeleton,
+                skeleton2: stage2Result.skeleton,
+                skeleton3: stage3Result.skeleton
+            },
+            job.id
+        );
+        
+        await db.pipeline_jobs.update({
+            id: job.id,
+            bulletproof_output: stage4Result.output,
+            skeleton_4: stage4Result.skeleton,
+            updated_at: new Date()
+        });
+        
+        // ══════════════════════════════════════════════════════════════
+        // HORIZONTAL COHERENCE CHECK
+        // ══════════════════════════════════════════════════════════════
+        console.log(`[Pipeline ${job.id}] Running Horizontal Coherence Check`);
+        
+        const hcResult = await runHorizontalCoherenceCheck(job.id);
+        
+        if (hcResult.violations.length > 0) {
+            console.log(`[Pipeline ${job.id}] HC violations found: ${hcResult.violations.length}`);
+            
+            // Attempt repair
+            const repairResult = await repairHCViolations(job.id, hcResult.violations);
+            
+            if (!repairResult.success) {
+                await db.pipeline_jobs.update({
+                    id: job.id,
+                    hc_violations: hcResult.violations,
+                    status: 'completed_with_warnings',
+                    updated_at: new Date()
+                });
+            }
+        }
+        
+        // ══════════════════════════════════════════════════════════════
+        // COMPLETE
+        // ══════════════════════════════════════════════════════════════
+        await db.pipeline_jobs.update({
+            id: job.id,
+            hc_check_results: hcResult,
+            status: 'complete',
+            updated_at: new Date()
+        });
+        
+        console.log(`[Pipeline ${job.id}] Complete`);
+        
+        return {
+            success: true,
+            jobId: job.id,
+            reconstruction: stage1Result.output,
+            objections: stage2Result.output,
+            responses: stage3Result.output,
+            bulletproof: stage4Result.output
+        };
+        
+    } catch (error) {
+        console.error(`[Pipeline ${job.id}] Failed: ${error.message}`);
+        
+        await db.pipeline_jobs.update({
+            id: job.id,
+            status: 'failed',
+            error_message: error.message,
+            updated_at: new Date()
+        });
+        
+        return { success: false, error: error.message, jobId: job.id };
+    }
+}
+```
+
+═══════════════════════════════════════════════════════════════════════════════
+HORIZONTAL COHERENCE CHECK IMPLEMENTATION
+═══════════════════════════════════════════════════════════════════════════════
+
+```javascript
+async function runHorizontalCoherenceCheck(jobId) {
+    const job = await db.pipeline_jobs.findOne({ id: jobId });
+    const objections = await db.pipeline_objections.find({ job_id: jobId });
+    
+    const violations = [];
+    
+    // ──────────────────────────────────────────────────────────────────
+    // HC CHECK 1: COMMITMENT TRACING
+    // ──────────────────────────────────────────────────────────────────
+    const skeleton1Commitments = job.skeleton_1.commitment_ledger || [];
+    const bulletproofText = job.bulletproof_output;
+    
+    for (const commitment of skeleton1Commitments) {
+        const preserved = bulletproofText.includes(commitment.claim) ||
+                          fuzzyMatch(bulletproofText, commitment.claim, 0.8);
+        const revised = bulletproofText.includes(`revised: ${commitment.claim}`) ||
+                        bulletproofText.includes(`instead of ${commitment.claim}`);
+        const defended = bulletproofText.includes(`defend`) && 
+                         fuzzyMatch(bulletproofText, commitment.claim, 0.7);
+        
+        if (!preserved && !revised && !defended) {
+            violations.push({
+                type: 'commitment_missing',
+                commitment: commitment.claim,
+                severity: 'error'
+            });
+        }
+    }
+    
+    // ──────────────────────────────────────────────────────────────────
+    // HC CHECK 2: OBJECTION COVERAGE
+    // ──────────────────────────────────────────────────────────────────
+    for (const obj of objections) {
+        const addressed = fuzzyMatch(bulletproofText, obj.objection_text, 0.6) ||
+                          fuzzyMatch(bulletproofText, obj.enhanced_response, 0.7);
+        
+        if (!addressed) {
+            violations.push({
+                type: 'objection_not_addressed',
+                objection_index: obj.objection_index,
+                objection_summary: obj.objection_text.substring(0, 100),
+                severity: 'error'
+            });
+        }
+    }
+    
+    // ──────────────────────────────────────────────────────────────────
+    // HC CHECK 3: RESPONSE INTEGRATION
+    // ──────────────────────────────────────────────────────────────────
+    for (const obj of objections) {
+        if (obj.enhanced_response) {
+            // Check if key phrases from response appear in bullet-proof
+            const keyPhrases = extractKeyPhrases(obj.enhanced_response);
+            const integrated = keyPhrases.some(phrase => 
+                fuzzyMatch(bulletproofText, phrase, 0.7)
+            );
+            
+            if (!integrated) {
+                violations.push({
+                    type: 'response_not_integrated',
+                    objection_index: obj.objection_index,
+                    severity: 'warning'
+                });
+            }
+        }
+    }
+    
+    // ──────────────────────────────────────────────────────────────────
+    // HC CHECK 4: CROSS-STAGE CONSISTENCY
+    // ──────────────────────────────────────────────────────────────────
+    const skeleton1Terms = job.skeleton_1.key_terms || [];
+    const skeleton4Terms = job.skeleton_4?.key_terms || [];
+    
+    for (const term of skeleton1Terms) {
+        const s4Term = skeleton4Terms.find(t => t.term === term.term);
+        if (s4Term && s4Term.definition !== term.definition) {
+            violations.push({
+                type: 'terminology_drift',
+                term: term.term,
+                original_definition: term.definition,
+                new_definition: s4Term.definition,
+                severity: 'warning'
+            });
+        }
+    }
+    
+    return {
+        passed: violations.filter(v => v.severity === 'error').length === 0,
+        violations: violations,
+        summary: {
+            total: violations.length,
+            errors: violations.filter(v => v.severity === 'error').length,
+            warnings: violations.filter(v => v.severity === 'warning').length
+        }
+    };
+}
+```
+
+═══════════════════════════════════════════════════════════════════════════════
+TIMING EXPECTATIONS FOR FULL PIPELINE
+═══════════════════════════════════════════════════════════════════════════════
+
+For a 36,000 word input with 15,000 word reconstruction:
+
+STAGE 1: Reconstruction
+- ~70 chunks at 500 words
+- ~20-30 minutes
+
+STAGE 2: Objections
+- 5 chunks (5 objections each)
+- ~10-15 minutes
+
+STAGE 3: Enhanced Responses  
+- 5 chunks (5 responses each)
+- ~10-15 minutes
+
+STAGE 4: Bullet-proof Version
+- ~40 chunks (section-based, 110-130% of reconstruction)
+- ~25-35 minutes
+
+HC Check: ~2-5 minutes
+
+TOTAL: 70-100 minutes for full pipeline
+
+If any stage completes significantly faster, something is wrong.
+
+═══════════════════════════════════════════════════════════════════════════════
+CRITICAL RULES FOR FULL PIPELINE
+═══════════════════════════════════════════════════════════════════════════════
+
+1. SKELETON INHERITANCE: Each stage MUST receive all prior skeletons
+2. NO STRAWMANNING: Objections must target ACTUAL claims from Stage 1
+3. RESPONSE CONSISTENCY: Responses must not contradict each other or Stage 1
+4. INTEGRATION VERIFICATION: Every response must appear in bullet-proof version
+5. COMMITMENT PRESERVATION: Stage 1 commitments persist unless explicitly revised
+6. SEQUENTIAL PROCESSING: Do not parallelize stages (HC depends on prior stages)
+7. CHECKPOINT AFTER EACH STAGE: Save all outputs before proceeding
+8. HC CHECK IS MANDATORY: Never deliver bullet-proof without HC verification
+
+═══════════════════════════════════════════════════════════════════════════════
+END OF FULL PIPELINE ARCHITECTURE
+═══════════════════════════════════════════════════════════════════════════════
