@@ -168,19 +168,23 @@ export function SkeletonPopup({
       {!isMinimized && (
         <>
           <div className="flex-1 overflow-auto p-4 bg-background space-y-4" data-testid="skeleton-content">
-            <div className="bg-muted/50 rounded-lg p-3 border border-border">
-              <h4 className="font-bold text-sm text-primary mb-2">THESIS</h4>
-              <p className="text-sm" data-testid="text-skeleton-thesis">{skeleton.thesis}</p>
-            </div>
+            {skeleton.thesis && (
+              <div className="bg-muted/50 rounded-lg p-3 border border-border">
+                <h4 className="font-bold text-sm text-primary mb-2">THESIS</h4>
+                <p className="text-sm" data-testid="text-skeleton-thesis">{skeleton.thesis}</p>
+              </div>
+            )}
 
-            <div className="bg-muted/50 rounded-lg p-3 border border-border">
-              <h4 className="font-bold text-sm text-primary mb-2">OUTLINE</h4>
-              <ol className="list-decimal list-inside text-sm space-y-1" data-testid="list-skeleton-outline">
-                {skeleton.outline.map((item, i) => (
-                  <li key={i}>{item}</li>
-                ))}
-              </ol>
-            </div>
+            {skeleton.outline && skeleton.outline.length > 0 && (
+              <div className="bg-muted/50 rounded-lg p-3 border border-border">
+                <h4 className="font-bold text-sm text-primary mb-2">OUTLINE</h4>
+                <ol className="list-decimal list-inside text-sm space-y-1" data-testid="list-skeleton-outline">
+                  {skeleton.outline.map((item, i) => (
+                    <li key={i}>{item}</li>
+                  ))}
+                </ol>
+              </div>
+            )}
 
             {skeleton.commitments?.length > 0 && (
               <div className="bg-muted/50 rounded-lg p-3 border border-border">
