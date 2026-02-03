@@ -207,8 +207,10 @@ export function MainChatSection() {
         <div className="flex items-center gap-4 mb-6">
           <ThinkerAvatar 
             thinkerId={selectedThinker} 
+            name={thinker?.name}
             size="xl" 
             isAnimating={isStreaming}
+            showName={true}
           />
           <div className="flex-1">
             <h2 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent flex items-center gap-2">
