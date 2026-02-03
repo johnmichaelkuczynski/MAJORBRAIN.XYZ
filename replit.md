@@ -15,10 +15,8 @@ ASK THEM is a comprehensive philosophical AI platform that allows users to inter
 - Thinker avatars with spinning animation during response streaming
 
 ### Thinker Avatars
-- Avatar images stored in `client/src/assets/thinkers/`
-- Supported thinkers: Adler, Aesop, Aristotle, Bacon, Bergler, Bergson, Berkeley, Confucius, Darwin, Descartes, Dewey, Dworkin, Engels, Freud
+- Gradient circle avatars showing thinker's initial
 - Avatars spin during AI response streaming
-- Fallback to gradient circle with initial if no avatar available
 
 ### Backend (Express + TypeScript)
 - All endpoints stream responses using Server-Sent Events (SSE)
