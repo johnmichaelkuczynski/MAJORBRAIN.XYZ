@@ -32,6 +32,7 @@ export interface CoherenceOptions {
   userPrompt: string;
   targetWords: number;
   model: ModelId;
+  enhanced: boolean;
   databaseContent: {
     positions: any[];
     quotes: any[];
@@ -216,39 +217,97 @@ function buildChunkPrompt(
   totalChunks: number,
   targetWordsPerChunk: number,
   thinkerName: string,
-  priorDeltas: ChunkDelta[]
+  priorDeltas: ChunkDelta[],
+  enhanced: boolean = true
 ): { system: string; user: string } {
   const priorClaimsStr = priorDeltas.flatMap(d => d.claimsAdded || []).join("; ");
   const priorTermsStr = priorDeltas.flatMap(d => d.termsUsed || []).join(", ");
   
-  const system = `You are ${thinkerName}. You MUST write AT LEAST ${targetWordsPerChunk} words for this chunk.
+  // Enhanced mode: 1 part database scaffolding, 3 parts creative elaboration
+  // Standard mode: Strict database regurgitation with citations
+  
+  const minWords = Math.ceil(targetWordsPerChunk * 1.2); // 20% buffer to ensure target is met
+  
+  let system: string;
+  
+  if (enhanced) {
+    system = `You are ${thinkerName}, a profound thinker writing an extended philosophical essay. This is ENHANCED MODE.
 
-GLOBAL SKELETON FROM DATABASE (DO NOT CONTRADICT):
-- THESIS: ${skeleton.thesis}
-- COMMITMENTS: ${skeleton.commitments.join("; ")}
-- KEY TERMS: ${Object.entries(skeleton.keyTerms).map(([k, v]) => `${k}: ${v}`).join("; ")}
+CRITICAL WORD COUNT: You MUST write AT LEAST ${minWords} words. This is NON-NEGOTIABLE. Count as you write. If unsure, write MORE.
 
-DATABASE CONTENT TO CITE (USE THESE CODES):
+THE 1:3 RATIO (ENHANCED MODE):
+- 1 PART: Database content as SCAFFOLDING (the skeleton, anchor points, citations)
+- 3 PARTS: YOUR CREATIVE ELABORATION including:
+  * Historical context (connect to other philosophers, movements, eras)
+  * Scientific parallels (draw from physics, biology, cognitive science, mathematics)
+  * Concrete examples and thought experiments
+  * Contemporary applications and implications
+  * Extended analysis and original insights
+  * Counter-arguments and responses
+
+DATABASE SCAFFOLDING (cite with [P#], [Q#], [A#], [W#] but ELABORATE extensively):
+${skeleton.databaseContent.positions.slice(0, 8).join("\n")}
+${skeleton.databaseContent.quotes.slice(0, 6).join("\n")}
+${skeleton.databaseContent.arguments.slice(0, 4).join("\n")}
+
+THESIS TO DEVELOP: ${skeleton.thesis}
+
+COMMITMENTS (must honor): ${skeleton.commitments.join("; ")}
+
+${priorClaimsStr ? `CONTINUITY - Claims already made: ${priorClaimsStr}` : ""}
+
+WRITING STYLE:
+- Write as if for an educated general audience, not specialists
+- Use vivid language, concrete imagery, and compelling examples
+- Build arguments through sustained reasoning, not just assertion
+- Connect ideas across domains - philosophy, science, history, culture
+- NO markdown formatting - pure flowing prose
+- NO meta-commentary about what you're doing - just DO IT
+- NEVER say "In this section I will..." - just write the content
+
+REMEMBER: ${minWords} WORDS MINIMUM. Dense, substantive, creative content.`;
+  } else {
+    system = `You are ${thinkerName}. Write in STANDARD MODE - strict database-grounded content.
+
+WORD COUNT: AT LEAST ${minWords} words.
+
+DATABASE CONTENT TO CITE (prefix paragraphs with codes):
 ${skeleton.databaseContent.positions.slice(0, 10).join("\n")}
 ${skeleton.databaseContent.quotes.slice(0, 10).join("\n")}
 ${skeleton.databaseContent.arguments.slice(0, 5).join("\n")}
 
-${priorClaimsStr ? `PRIOR CLAIMS ALREADY MADE (DO NOT CONTRADICT): ${priorClaimsStr}` : ""}
-${priorTermsStr ? `TERMS ALREADY USED: ${priorTermsStr}` : ""}
+THESIS: ${skeleton.thesis}
+COMMITMENTS: ${skeleton.commitments.join("; ")}
+KEY TERMS: ${Object.entries(skeleton.keyTerms).map(([k, v]) => `${k}: ${v}`).join("; ")}
+
+${priorClaimsStr ? `PRIOR CLAIMS: ${priorClaimsStr}` : ""}
 
 RULES:
-1. Start EVERY paragraph with a citation [P#], [Q#], [A#], or [W#]
-2. Write AT LEAST ${targetWordsPerChunk} words - NO EXCEPTIONS
-3. Do NOT contradict the skeleton commitments or prior claims
-4. Do NOT use markdown - plain text only
-5. 100% substance - NO filler, NO disclaimers`;
+1. Start paragraphs with citations [P#], [Q#], [A#], [W#]
+2. Write AT LEAST ${minWords} words
+3. Do NOT contradict commitments
+4. No markdown - plain text only`;
+  }
 
   const outlineSection = skeleton.outline[chunkIndex] || `Part ${chunkIndex + 1}`;
   
-  const user = `This is chunk ${chunkIndex + 1} of ${totalChunks}.
-Focus on: ${outlineSection}
+  const user = enhanced 
+    ? `CHUNK ${chunkIndex + 1} OF ${totalChunks}: "${outlineSection}"
 
-Write AT LEAST ${targetWordsPerChunk} words. Start every paragraph with a database citation.`;
+Write AT LEAST ${minWords} words of dense, creative philosophical content.
+
+Use the database content as SCAFFOLDING (1 part) but add extensive creative elaboration (3 parts):
+- Historical connections to other thinkers and movements
+- Scientific analogies and parallels  
+- Concrete examples and thought experiments
+- Extended analysis with original insights
+- Contemporary implications
+
+Cite database items with [P#], [Q#], [A#], [W#] codes, then ELABORATE extensively on each point.
+
+BEGIN WRITING NOW. No preamble. ${minWords}+ words required.`
+    : `Chunk ${chunkIndex + 1} of ${totalChunks}: ${outlineSection}
+Write AT LEAST ${minWords} words with database citations.`;
 
   return { system, user };
 }
@@ -287,7 +346,7 @@ function extractDeltaFromOutput(output: string, skeleton: GlobalSkeleton): Chunk
 }
 
 export async function processWithCoherence(options: CoherenceOptions): Promise<void> {
-  const { sessionType, thinkerId, thinkerName, userPrompt, targetWords, model, databaseContent, res } = options;
+  const { sessionType, thinkerId, thinkerName, userPrompt, targetWords, model, enhanced, databaseContent, res } = options;
 
   const WORDS_PER_CHUNK = 1000;
   const totalChunks = Math.max(1, Math.ceil(targetWords / WORDS_PER_CHUNK));
@@ -355,7 +414,7 @@ export async function processWithCoherence(options: CoherenceOptions): Promise<v
     }
 
     const priorDeltas = await getPriorDeltas(sessionId);
-    const { system, user } = buildChunkPrompt(dbSkeleton, i, totalChunks, wordsPerChunk, thinkerName, priorDeltas);
+    const { system, user } = buildChunkPrompt(dbSkeleton, i, totalChunks, wordsPerChunk, thinkerName, priorDeltas, enhanced);
 
     let chunkOutput = "";
     for await (const text of streamText({ model, systemPrompt: system, userPrompt: user, maxTokens: 4096 })) {
@@ -397,7 +456,7 @@ export async function processWithCoherence(options: CoherenceOptions): Promise<v
     
     const dbSkeleton = await getSessionSkeleton(sessionId);
     if (dbSkeleton) {
-      const supplementPrompt = buildChunkPrompt(dbSkeleton, totalChunks, totalChunks + 1, shortfall, thinkerName, allDeltas);
+      const supplementPrompt = buildChunkPrompt(dbSkeleton, totalChunks, totalChunks + 1, shortfall, thinkerName, allDeltas, enhanced);
       let supplementOutput = "";
       for await (const text of streamText({ model, systemPrompt: supplementPrompt.system, userPrompt: supplementPrompt.user, maxTokens: 4096 })) {
         supplementOutput += text;

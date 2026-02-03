@@ -382,6 +382,7 @@ export async function registerRoutes(
           userPrompt: message,
           targetWords: wordCount,
           model: model as any,
+          enhanced: enhanced !== false,
           databaseContent: {
             positions: context.positions || [],
             quotes: context.quotes || [],
@@ -577,6 +578,7 @@ CRITICAL: DO NOT USE ANY MARKDOWN FORMATTING. No # headers, no * bullets, no - l
         userPrompt: `Create a philosophical dialogue on "${topic}" between ${thinkerNames.join(" and ")}. Each speaker should present and defend their actual philosophical positions.`,
         targetWords: wordCount,
         model: model as any,
+        enhanced: true,
         databaseContent: combinedContent,
         res,
       });
@@ -672,6 +674,7 @@ Now write a ${wordCount}-word dialogue between ${thinkerNames.join(" and ")} on 
         userPrompt: `Create a formal debate on "${topic}" between ${debaterNames.join(" and ")}. Structure: Opening Statements, Rebuttals, Cross-Examination, Closing Arguments.`,
         targetWords: wordCount,
         model: model as any,
+        enhanced: true,
         databaseContent: combinedContent,
         res,
       });
@@ -764,6 +767,7 @@ Now write a ${wordCount}-word debate between ${debaterNames.join(" and ")} on "$
         userPrompt: `Create an in-depth interview with ${intervieweeName} on "${topic}". The interviewer is ${interviewerName}. Format: Q&A with probing follow-up questions.`,
         targetWords: wordCount,
         model: model as any,
+        enhanced: true,
         databaseContent: {
           positions: context.positions || [],
           quotes: context.quotes || [],
@@ -1030,6 +1034,7 @@ Create a detailed outline for a paper on "${topic}" using the database content.`
         userPrompt: `Create a comprehensive philosophical document on "${topic}" based on ${thinkerName}'s actual writings.`,
         targetWords: wordCount,
         model: model as any,
+        enhanced: true,
         databaseContent: {
           positions: context.positions || [],
           quotes: context.quotes || [],

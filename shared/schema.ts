@@ -140,6 +140,9 @@ export const chatRequestSchema = z.object({
   message: z.string().min(1),
   conversationId: z.string().optional(),
   model: z.enum(["gpt-4o", "gpt-4o-mini", "claude-3-5-sonnet-20241022", "claude-3-opus-20240229"]).optional(),
+  wordCount: z.number().min(100).max(50000).optional(),
+  quoteCount: z.number().min(1).max(100).optional(),
+  enhanced: z.boolean().optional(),
 });
 
 export type ChatRequest = z.infer<typeof chatRequestSchema>;

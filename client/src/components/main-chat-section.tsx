@@ -1,37 +1,50 @@
 import { useState, useRef } from "react";
-import { Send, Loader2, Copy, Download, ArrowRight, FileText } from "lucide-react";
+import { Send, Loader2, Trash2, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { SectionHeader } from "./section-header";
 import { ThinkerSelect } from "./thinker-select";
 import { ModelSelect } from "./model-select";
 import { GenerationControls } from "./generation-controls";
 import { FileUpload } from "./file-upload";
-import { streamResponse, downloadText, copyToClipboard } from "@/lib/streaming";
-import { useContentTransfer } from "@/lib/content-transfer";
+import { ThinkerAvatar } from "./thinker-avatar";
+import { SkeletonPopup } from "./skeleton-popup";
+import { StreamingPopup } from "./streaming-popup";
+import { streamResponse } from "@/lib/streaming";
 import { useToast } from "@/hooks/use-toast";
 import { THINKERS } from "@shared/schema";
 
-interface Message {
-  role: "user" | "assistant";
-  content: string;
-  skeleton?: string;
+interface SkeletonData {
+  thesis: string;
+  outline: string[];
+  commitments: string[];
+  keyTerms: Record<string, string>;
+  databaseContent?: {
+    positions: string[];
+    quotes: string[];
+    arguments: string[];
+    works: string[];
+  };
 }
 
 export function MainChatSection() {
   const [selectedThinker, setSelectedThinker] = useState("kuczynski");
   const [selectedModel, setSelectedModel] = useState("gpt-4o");
-  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [documentContent, setDocumentContent] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [wordCount, setWordCount] = useState(2000);
   const [quoteCount, setQuoteCount] = useState(10);
   const [enhanced, setEnhanced] = useState(true);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { setModelBuilderInput } = useContentTransfer();
+  
+  const [showSkeletonPopup, setShowSkeletonPopup] = useState(false);
+  const [showOutputPopup, setShowOutputPopup] = useState(false);
+  const [skeleton, setSkeleton] = useState<SkeletonData | null>(null);
+  const [streamingContent, setStreamingContent] = useState("");
+  const [pendingMessage, setPendingMessage] = useState("");
+  
+  const abortControllerRef = useRef<AbortController | null>(null);
   const { toast } = useToast();
 
   const thinker = THINKERS.find(t => t.id === selectedThinker);
@@ -51,222 +64,242 @@ export function MainChatSection() {
       ? `${input.trim()}\n\n--- DOCUMENT TO DISCUSS ---\n${documentContent}` 
       : input.trim();
     
-    await generateResponse(userMessage);
+    setPendingMessage(userMessage);
+    setIsStreaming(true);
+    setStreamingContent("");
+    
+    if (wordCount > 500) {
+      await fetchSkeletonAndShow(userMessage);
+    } else {
+      await generateDirectly(userMessage);
+    }
   };
 
-  const generateResponse = async (userMessage: string) => {
-    const userInput = input.trim();
+  const fetchSkeletonAndShow = async (message: string) => {
+    try {
+      const response = await fetch(`/api/figures/${selectedThinker}/skeleton`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topic: message, quoteCount }),
+      });
+      
+      if (!response.ok) throw new Error("Failed to fetch skeleton");
+      const data = await response.json();
+      
+      setSkeleton(data.skeleton);
+      setShowSkeletonPopup(true);
+      setIsStreaming(false);
+    } catch (error) {
+      console.error("Skeleton error:", error);
+      toast({ title: "Error", description: "Failed to generate skeleton. Proceeding directly.", variant: "destructive" });
+      await generateDirectly(message);
+    }
+  };
+
+  const handleSkeletonFeedback = async (feedback: string) => {
+    setIsStreaming(true);
+    try {
+      const response = await fetch(`/api/figures/${selectedThinker}/skeleton`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          topic: pendingMessage, 
+          quoteCount,
+          feedback 
+        }),
+      });
+      
+      if (!response.ok) throw new Error("Failed to regenerate skeleton");
+      const data = await response.json();
+      setSkeleton(data.skeleton);
+      toast({ title: "Skeleton Regenerated", description: "Updated based on your feedback" });
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to regenerate skeleton", variant: "destructive" });
+    } finally {
+      setIsStreaming(false);
+    }
+  };
+
+  const handleProceedFromSkeleton = async () => {
+    setShowSkeletonPopup(false);
+    setShowOutputPopup(true);
+    await generateWithSkeleton(pendingMessage);
+  };
+
+  const generateDirectly = async (message: string) => {
+    setShowOutputPopup(true);
+    await streamContent(message);
+  };
+
+  const generateWithSkeleton = async (message: string) => {
+    await streamContent(message);
+  };
+
+  const streamContent = async (message: string) => {
+    setIsStreaming(true);
+    setStreamingContent("");
     setInput("");
     setDocumentContent("");
-    setMessages(prev => [...prev, { role: "user", content: userInput + (documentContent ? ` [Document attached]` : "") }]);
-    setIsStreaming(true);
+
+    abortControllerRef.current = new AbortController();
 
     try {
       const response = await fetch(`/api/figures/${selectedThinker}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
-          message: userMessage,
+          message,
           model: selectedModel,
           wordCount,
           quoteCount,
           enhanced
         }),
+        signal: abortControllerRef.current.signal,
       });
 
       if (!response.ok) throw new Error("Failed to get response");
 
-      let assistantContent = "";
-      let extractedSkeleton = "";
-      setMessages(prev => [...prev, { role: "assistant", content: "" }]);
-
+      let content = "";
       for await (const chunk of streamResponse(response)) {
-        assistantContent += chunk;
-        
-        // Extract skeleton JSON from stream (hidden from display)
         const startMarker = "[SKELETON_JSON]";
         const endMarker = "[/SKELETON_JSON]";
-        const startIdx = assistantContent.indexOf(startMarker);
-        const endIdx = assistantContent.indexOf(endMarker);
-        if (startIdx !== -1 && endIdx !== -1) {
-          extractedSkeleton = assistantContent.substring(startIdx + startMarker.length, endIdx);
-        }
         
-        // Remove skeleton JSON marker from display
-        let displayContent = assistantContent;
+        content += chunk;
+        
+        let displayContent = content;
+        const startIdx = displayContent.indexOf(startMarker);
         if (startIdx !== -1) {
+          const endIdx = displayContent.indexOf(endMarker);
           if (endIdx !== -1) {
-            displayContent = assistantContent.substring(0, startIdx) + assistantContent.substring(endIdx + endMarker.length);
+            displayContent = displayContent.substring(0, startIdx) + displayContent.substring(endIdx + endMarker.length);
           } else {
-            displayContent = assistantContent.substring(0, startIdx);
+            displayContent = displayContent.substring(0, startIdx);
           }
         }
         
-        setMessages(prev => {
-          const newMessages = [...prev];
-          newMessages[newMessages.length - 1] = {
-            role: "assistant",
-            content: displayContent,
-            skeleton: extractedSkeleton
-          };
-          return newMessages;
-        });
+        setStreamingContent(displayContent);
       }
-    } catch (error) {
-      console.error("Chat error:", error);
-      setMessages(prev => [...prev, { 
-        role: "assistant", 
-        content: "I apologize, but I encountered an error. Please try again." 
-      }]);
+    } catch (error: any) {
+      if (error.name !== "AbortError") {
+        console.error("Chat error:", error);
+        toast({ title: "Error", description: "Failed to generate response", variant: "destructive" });
+      }
     } finally {
       setIsStreaming(false);
     }
   };
 
-  const handleDownloadSkeleton = (skeletonJson: string) => {
-    try {
-      const skeleton = JSON.parse(skeletonJson);
-      let text = "SKELETON\n========\n\n";
-      text += `THESIS:\n${skeleton.thesis || ""}\n\n`;
-      text += `OUTLINE:\n${(skeleton.outline || []).map((s: string, i: number) => `  ${i + 1}. ${s}`).join("\n")}\n\n`;
-      if (skeleton.commitments?.length > 0) {
-        text += `COMMITMENTS:\n${skeleton.commitments.map((c: string, i: number) => `  ${i + 1}. ${c}`).join("\n")}\n\n`;
-      }
-      if (skeleton.keyTerms && Object.keys(skeleton.keyTerms).length > 0) {
-        text += `KEY TERMS:\n${Object.entries(skeleton.keyTerms).map(([k, v]) => `  - ${k}: ${v}`).join("\n")}\n\n`;
-      }
-      downloadText(text, `skeleton-${selectedThinker}-${Date.now()}.txt`);
-      toast({ title: "Downloaded", description: "Skeleton downloaded" });
-    } catch (e) {
-      downloadText(skeletonJson, `skeleton-${selectedThinker}-${Date.now()}.json`);
-      toast({ title: "Downloaded", description: "Skeleton downloaded as JSON" });
+  const handleClear = () => {
+    setInput("");
+    setDocumentContent("");
+    setStreamingContent("");
+    setSkeleton(null);
+    setShowSkeletonPopup(false);
+    setShowOutputPopup(false);
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
     }
   };
 
-  const handleClear = () => {
-    setMessages([]);
-    setInput("");
-    setDocumentContent("");
-  };
-
-  const handleCopy = () => {
-    const text = messages.map(m => `${m.role.toUpperCase()}: ${m.content}`).join("\n\n");
-    copyToClipboard(text);
-  };
-
-  const handleDownload = () => {
-    const text = messages.map(m => `${m.role.toUpperCase()}: ${m.content}`).join("\n\n");
-    downloadText(text, `chat-with-${selectedThinker}-${Date.now()}.txt`);
-  };
-
-  const handleCopyMessage = (content: string) => {
-    copyToClipboard(content);
-    toast({ title: "Copied", description: "Message copied to clipboard" });
-  };
-
-  const handleDownloadMessage = (content: string, index: number) => {
-    downloadText(content, `${thinker?.name}-response-${index}-${Date.now()}.txt`);
-    toast({ title: "Downloaded", description: "Message downloaded" });
-  };
-
-  const handleSendToModelBuilder = (content: string) => {
-    setModelBuilderInput(content);
-    toast({ title: "Sent to Model Builder", description: "Content transferred. Scroll down to Model Builder section." });
-    document.getElementById("model-builder-section")?.scrollIntoView({ behavior: "smooth" });
-  };
-
   return (
-    <Card className="p-6">
-      <SectionHeader
-        title={`Main Chat - ${thinker?.name || "Kuczynski"}`}
-        subtitle="Ask philosophical questions grounded in actual writings"
-        onClear={handleClear}
-        onCopy={handleCopy}
-        onDownload={handleDownload}
-        hasContent={messages.length > 0}
-      />
-
-      <div className="flex flex-wrap gap-4 mb-4">
-        <ThinkerSelect value={selectedThinker} onChange={setSelectedThinker} className="w-64" />
-        <ModelSelect value={selectedModel} onChange={setSelectedModel} className="w-48" />
-      </div>
-
-      <GenerationControls
-        wordCount={wordCount}
-        onWordCountChange={setWordCount}
-        quoteCount={quoteCount}
-        onQuoteCountChange={setQuoteCount}
-        enhanced={enhanced}
-        onEnhancedChange={setEnhanced}
-      />
-
-      <div className="min-h-[400px] max-h-[600px] overflow-y-auto rounded-md border bg-muted/20 p-4 my-4">
-        {messages.length === 0 ? (
-          <div className="flex items-center justify-center h-full text-muted-foreground">
-            <p>Start a conversation with {thinker?.name}...</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {messages.map((message, index) => (
-              <div key={index} className={`flex flex-col ${message.role === "user" ? "items-end" : "items-start"}`}>
-                <div
-                  className={`max-w-[80%] rounded-lg p-3 ${message.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted"}`}
-                  data-testid={`message-${message.role}-${index}`}
-                >
-                  <p className="text-sm font-medium mb-1">{message.role === "user" ? "You" : thinker?.name}</p>
-                  <p className="whitespace-pre-wrap">{message.content}</p>
-                  {isStreaming && message.role === "assistant" && index === messages.length - 1 && (
-                    <span className="inline-block w-2 h-4 bg-foreground animate-pulse ml-1" />
-                  )}
-                </div>
-                {message.role === "assistant" && message.content && !isStreaming && (
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    <Button variant="ghost" size="sm" onClick={() => handleCopyMessage(message.content)} data-testid={`button-copy-message-${index}`}>
-                      <Copy className="h-3 w-3 mr-1" /> Copy
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={() => handleDownloadMessage(message.content, index)} data-testid={`button-download-message-${index}`}>
-                      <Download className="h-3 w-3 mr-1" /> Download
-                    </Button>
-                    {message.skeleton && (
-                      <Button variant="ghost" size="sm" onClick={() => handleDownloadSkeleton(message.skeleton!)} data-testid={`button-download-skeleton-${index}`}>
-                        <FileText className="h-3 w-3 mr-1" /> Download Skeleton
-                      </Button>
-                    )}
-                    <Button variant="ghost" size="sm" onClick={() => handleSendToModelBuilder(message.content)} data-testid={`button-send-to-model-${index}`}>
-                      <ArrowRight className="h-3 w-3 mr-1" /> To Model Builder
-                    </Button>
-                  </div>
-                )}
-              </div>
-            ))}
-            <div ref={messagesEndRef} />
-          </div>
-        )}
-      </div>
-
-      <div className="space-y-4">
-        <div>
-          <Label className="mb-2 block">Upload Document to Discuss (Optional)</Label>
-          <FileUpload onFileContent={handleFileContent} disabled={isStreaming} />
-          {documentContent && (
-            <p className="text-xs text-muted-foreground mt-1">Document loaded: {documentContent.split(/\s+/).length.toLocaleString()} words - will be included in next message</p>
-          )}
-        </div>
-
-        <div className="flex gap-2">
-          <Textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder={`Ask ${thinker?.name} a question, or upload a document and ask them to discuss it...`}
-            className="min-h-[120px] text-base"
-            disabled={isStreaming}
-            data-testid="input-chat-message"
+    <>
+      <Card className="p-6 border-2 border-primary/20 shadow-lg">
+        <div className="flex items-center gap-4 mb-6">
+          <ThinkerAvatar 
+            thinkerId={selectedThinker} 
+            size="xl" 
+            isAnimating={isStreaming}
           />
-          <Button onClick={handleSubmit} disabled={!input.trim() || isStreaming} className="min-h-[120px]" data-testid="button-send-message">
-            {isStreaming ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
+          <div className="flex-1">
+            <h2 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent flex items-center gap-2">
+              <MessageSquare className="h-6 w-6 text-primary" />
+              Ask {thinker?.name || "a Thinker"}
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Engage in philosophical dialogue grounded in actual writings
+            </p>
+          </div>
+          <Button variant="outline" size="sm" onClick={handleClear} disabled={isStreaming}>
+            <Trash2 className="h-4 w-4 mr-1" /> Clear
           </Button>
         </div>
-      </div>
-    </Card>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <ThinkerSelect value={selectedThinker} onChange={setSelectedThinker} className="w-full" />
+          <ModelSelect value={selectedModel} onChange={setSelectedModel} className="w-full" />
+        </div>
+
+        <GenerationControls
+          wordCount={wordCount}
+          onWordCountChange={setWordCount}
+          quoteCount={quoteCount}
+          onQuoteCountChange={setQuoteCount}
+          enhanced={enhanced}
+          onEnhancedChange={setEnhanced}
+        />
+
+        <div className="space-y-4 mt-4">
+          <div>
+            <Label className="mb-2 block text-sm font-medium">Upload Document (Optional)</Label>
+            <FileUpload onFileContent={handleFileContent} disabled={isStreaming} />
+            {documentContent && (
+              <p className="text-xs text-secondary mt-1 font-medium">
+                Document loaded: {documentContent.split(/\s+/).length.toLocaleString()} words
+              </p>
+            )}
+          </div>
+
+          <div className="flex gap-2">
+            <Textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder={`Ask ${thinker?.name || "a thinker"} a question...`}
+              className="min-h-[120px] text-base border-2 focus:border-primary"
+              disabled={isStreaming}
+              data-testid="input-chat-message"
+            />
+            <Button 
+              onClick={handleSubmit} 
+              disabled={!input.trim() || isStreaming} 
+              className="min-h-[120px] w-20 bg-gradient-to-b from-primary to-accent hover:from-primary/90 hover:to-accent/90"
+              data-testid="button-send-message"
+            >
+              {isStreaming ? (
+                <Loader2 className="h-6 w-6 animate-spin" />
+              ) : (
+                <Send className="h-6 w-6" />
+              )}
+            </Button>
+          </div>
+        </div>
+      </Card>
+
+      <SkeletonPopup
+        isOpen={showSkeletonPopup}
+        onClose={() => {
+          setShowSkeletonPopup(false);
+          setIsStreaming(false);
+        }}
+        skeleton={skeleton}
+        onFeedback={handleSkeletonFeedback}
+        onProceed={handleProceedFromSkeleton}
+        isLoading={isStreaming}
+      />
+
+      <StreamingPopup
+        isOpen={showOutputPopup}
+        onClose={() => {
+          setShowOutputPopup(false);
+          if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+          }
+          setIsStreaming(false);
+        }}
+        title={`Response from ${thinker?.name || "Thinker"}`}
+        content={streamingContent}
+        isStreaming={isStreaming}
+        targetWordCount={wordCount}
+      />
+    </>
   );
 }

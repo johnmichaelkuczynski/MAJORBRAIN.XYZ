@@ -9,8 +9,16 @@ ASK THEM is a comprehensive philosophical AI platform that allows users to inter
 - Single-page application with all features visible on one scrollable page
 - All sections support: streaming output, copy to clipboard, download, and clear functionality
 - Content transfer between sections (e.g., send chat response to Model Builder)
-- Uses Tailwind CSS for styling with dark/light mode support
+- Uses Tailwind CSS for styling with sharp vibrant blue/purple/teal color scheme
 - TanStack Query for data fetching
+- Draggable/resizable popup windows for streaming output and skeleton preview
+- Thinker avatars with spinning animation during response streaming
+
+### Thinker Avatars
+- Avatar images stored in `client/src/assets/thinkers/`
+- Supported thinkers: Adler, Aesop, Aristotle, Bacon, Bergler, Bergson, Berkeley, Confucius, Darwin, Descartes, Dewey, Dworkin, Engels, Freud
+- Avatars spin during AI response streaming
+- Fallback to gradient circle with initial if no avatar available
 
 ### Backend (Express + TypeScript)
 - All endpoints stream responses using Server-Sent Events (SSE)
