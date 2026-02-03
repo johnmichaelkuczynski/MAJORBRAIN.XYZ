@@ -1,10 +1,8 @@
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import adlerImg from "../assets/thinkers/adler.png";
-import kuczynskiImg from "../assets/thinkers/kuczynski.png";
 
 const THINKER_AVATARS: Record<string, string> = {
   adler: adlerImg,
-  kuczynski: kuczynskiImg,
 };
 
 interface ThinkerAvatarProps {
