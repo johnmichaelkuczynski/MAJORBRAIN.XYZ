@@ -49,6 +49,18 @@ function sendSSE(res: Response, data: string) {
   }
 }
 
+async function streamTokensVisibly(res: Response, text: string, delayMs: number = 10) {
+  const words = text.split(/(\s+)/);
+  for (const word of words) {
+    if (word) {
+      sendSSE(res, word);
+      if (delayMs > 0) {
+        await delay(delayMs);
+      }
+    }
+  }
+}
+
 async function createSession(options: CoherenceOptions): Promise<string> {
   const result = await db.insert(coherenceSessions).values({
     sessionType: options.sessionType,
@@ -419,7 +431,7 @@ export async function processWithCoherence(options: CoherenceOptions): Promise<v
     let chunkOutput = "";
     for await (const text of streamText({ model, systemPrompt: system, userPrompt: user, maxTokens: 4096 })) {
       chunkOutput += text;
-      sendSSE(res, text);
+      await streamTokensVisibly(res, text, 15);
     }
 
     const chunkWords = countWords(chunkOutput);
@@ -460,7 +472,7 @@ export async function processWithCoherence(options: CoherenceOptions): Promise<v
       let supplementOutput = "";
       for await (const text of streamText({ model, systemPrompt: supplementPrompt.system, userPrompt: supplementPrompt.user, maxTokens: 4096 })) {
         supplementOutput += text;
-        sendSSE(res, text);
+        await streamTokensVisibly(res, text, 15);
       }
       totalOutput += supplementOutput;
       totalWordCount = countWords(totalOutput);

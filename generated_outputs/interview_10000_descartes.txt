@@ -8,7 +8,7 @@ data: "                    SKELETON (Downloadable)\n"
 
 data: "──────────────────────────────────────────────────────────────\n\n"
 
-data: "THESIS:\nDescartes explores the nature of consciousness and the mind-body problem through methodical doubt and the distinction between mind and body.\n\n"
+data: "THESIS:\nDescartes explores the nature of consciousness and the mind-body problem, asserting the distinctness of mind and body.\n\n"
 
 data: "OUTLINE:\n"
 
@@ -28,15 +28,17 @@ data: "\nCOMMITMENTS:\n"
 
 data: "  1. Descartes asserts that all beliefs based on the senses are potentially false.\n"
 
-data: "  2. Descartes rejects the notion that the mind requires spatial extension.\n"
+data: "  2. Descartes asserts that the mind is a thinking substance that does not require spatial extension.\n"
+
+data: "  3. Descartes rejects the idea that the mind and body are the same substance.\n"
 
 data: "\nKEY TERMS:\n"
 
-data: "  - Methodic Doubt: A systematic process of being skeptical about the truth of one's beliefs.\n"
+data: "  - Methodic Doubt: A systematic approach to questioning beliefs to find certainty.\n"
 
-data: "  - Cogito: The philosophical assertion 'I think, therefore I am' establishing self-awareness.\n"
+data: "  - Cogito: The assertion 'I think, therefore I am' establishing self-awareness.\n"
 
-data: "  - Mind-Body Distinction: The concept that the mind and body are fundamentally different substances.\n"
+data: "  - Mind-Body Distinction: The philosophical separation between mental and physical substances.\n"
 
 data: "\nDATABASE ITEMS:\n"
 
@@ -50,631 +52,1021 @@ data: "  Works: 5\n"
 
 data: "\n──────────────────────────────────────────────────────────────\n\n"
 
-data: "[SKELETON_JSON]{\"thesis\":\"Descartes explores the nature of consciousness and the mind-body problem through methodical doubt and the distinction between mind and body.\",\"outline\":[\"Introduction to Consciousness\",\"Methodic Doubt and Certainty\",\"The Cogito and Self-Existence\",\"Nature of the Mind\",\"Mind-Body Distinction\",\"Conclusion on Consciousness\"],\"keyTerms\":{\"Methodic Doubt\":\"A systematic process of being skeptical about the truth of one's beliefs.\",\"Cogito\":\"The philosophical assertion 'I think, therefore I am' establishing self-awareness.\",\"Mind-Body Distinction\":\"The concept that the mind and body are fundamentally different substances.\"},\"commitments\":[\"Descartes asserts that all beliefs based on the senses are potentially false.\",\"Descartes rejects the notion that the mind requires spatial extension.\"],\"entities\":[\"Consciousness\",\"Mind\",\"Body\",\"Doubt\",\"Self\"],\"databaseContent\":{\"positions\":[\"[P1] descartes | All beliefs based on the senses are potentially false | Methodic Doubt\",\"[P2] descartes | Systematic doubt is necessary to find certainty | Methodic Doubt\",\"[P3] descartes | Doubt must extend to mathematics because of the evil-demon hypothesis | Methodic Doubt\",\"[P4] descartes | One should suspend assent to any proposition that can be doubted | Methodic Doubt\",\"[P5] descartes | Doubt is a methodological tool, not a permanent philosophical position | Methodic Doubt\",\"[P6] descartes | Thinking cannot occur without a thinker | Cogito\",\"[P7] descartes | Doubt itself proves the existence of the doubter | Cogito\",\"[P8] descartes | The Cogito is self-evident once considered | Cogito\",\"[P9] descartes | The Cogito is known by intuition, not deduction | Cogito\",\"[P10] descartes | The Cogito establishes the first indubitable truth | Cogito\",\"[P11] descartes | The mind is a thinking substance | Nature of the Mind\",\"[P12] descartes | The mind's essence is thought alone | Nature of the Mind\",\"[P13] descartes | The mind is indivisible | Nature of the Mind\",\"[P14] descartes | The mind is known more clearly than the body | Nature of the Mind\",\"[P15] descartes | The mind does not require spatial extension | Nature of the Mind\",\"[P16] descartes | The mind and body are distinct substances | Mind-Body Distinction\",\"[P17] descartes | The mind can exist without the body | Mind-Body Distinction\",\"[P18] descartes | Bodies are divisible; minds are not | Mind-Body Distinction\",\"[P19] descartes | Clear and distinct conception of each shows they are separable | Mind-Body Distinction\",\"[P20] descartes | The self is essentially mental, not corporeal | Mind-Body Distinction\"],\"quotes\":[\"[Q1] \\\"descartes | he does not will the evil of sin, seeing this is but the negation of being | Part IV: Metaphysical Meditations\\\"\",\"[Q2] \\\"descartes | when we do not extend it beyond the objects we clearly know | Part IV: Metaphysical Meditations\\\"\",\"[Q3] \\\"descartes | If this Discourse appear too long to be read at once, it may be divided into six Parts: and, in the first, will be found various considerations touching the Sciences; in the second, the principal rules of the Method which the Author has discovered, in the third, certain of the rules of Morals which he has deduced from this Method; in the fourth, the reasonings by which he establishes the existence of God and of the Human Soul, which are the foundations of his Metaphysic; in the fifth, the order of the Physical questions which he has investigated, and, in particular, the explication of the motion of the heart and of some other difficulties pertaining to Medicine, as also the difference between the soul of man and that of the brutes; and, in the last, what the Author believes to be required in order to greater advancement in the investigation of Nature than has yet been made, with the reasons that have induced him to write. | Prefatory Note by the Author\\\"\",\"[Q4] \\\"descartes | Good sense is, of all things among men, the most equally distributed; for every one thinks himself so abundantly provided with it, that those even who are the most difficult to satisfy in everything else, do not usually desire a larger measure of this quality than they already possess. | Prefatory Note by the Author\\\"\",\"[Q5] \\\"descartes | For myself, I have never fancied my mind to be in any respect more perfect than those of the generality; on the contrary, I have often wished that I were equal to some others in promptitude of thought, or in clearness and distinctness of imagination, or in fullness and readiness of memory. | Prefatory Note by the Author\\\"\",\"[Q6] \\\"descartes | After all, it is possible I may be mistaken; and it is but a little copper and glass, perhaps, that I take for gold and diamonds. | Prefatory Note by the Author\\\"\",\"[Q7] \\\"descartes | My present design, then, is not to teach the method which each ought to follow for the right conduct of his reason, but solely to describe the way in which I have endeavored to conduct my own. | Prefatory Note by the Author\\\"\",\"[Q8] \\\"descartes | I esteemed eloquence highly, and was in raptures with poesy; but I thought that both were gifts of nature rather than fruits of study. | Prefatory Note by the Author\\\"\",\"[Q9] \\\"descartes | I was especially delighted with the mathematics, on account of the certitude and evidence of their reasonings; but I had not as yet a precise knowledge of their true use; and thinking that they but contributed to the advancement of the mechanical arts, I was astonished that foundations, so strong and solid, should have had no loftier superstructure reared on them. | Prefatory Note by the Author\\\"\",\"[Q10] \\\"descartes | I revered our theology, and aspired as much as any one to reach heaven: but being given assuredly to understand that the way is not less open to the most ignorant than to the most learned, and that the revealed truths which lead to heaven are above our comprehension, I did not presume to subject them to the impotency of my reason; and I thought that in order competently to undertake their examination, there was need of some special help from heaven, and of being more than man. | Prefatory Note by the Author\\\"\",\"[Q11] \\\"descartes | I judged that no solid superstructures could be reared on foundations so infirm; and neither the honor nor the gain held out | Prefatory Note by the Author\\\"\",\"[Q12] \\\"descartes | I entirely abandoned the study of letters, and resolved no longer to seek any other science than the knowledge of myself, or of the great book of the world. | Part I: The Distribution of Good Sense\\\"\",\"[Q13] \\\"descartes | I had always a most earnest desire to know how to distinguish the true from the false, in order that I might be able clearly to discriminate the right path in life, and proceed in it with confidence. | Part I: The Distribution of Good Sense\\\"\",\"[Q14] \\\"descartes | observing many things which, however extravagant and ridiculous to our apprehension, are yet by common consent received and approved by other great nations, I learned to entertain too decided a belief in regard to nothing of the truth of which I had been persuaded merely by example and custom | Part I: The Distribution of Good Sense\\\"\",\"[Q15] \\\"descartes | I thought that the sciences contained in books are farther removed from truth than the simple inferences which a man of good sense using his natural and unprejudiced judgment draws respecting the matters of his experience. | Part I: The Distribution of Good Sense\\\"\",\"[Q16] \\\"descartes | I was persuaded that it would indeed be preposterous for a private individual to think of reforming a state by fundamentally changing it throughout, and overturning it in order to set it up amended; | Part I: The Distribution of Good Sense\\\"\",\"[Q17] \\\"descartes | I could not do better than resolve at once to sweep them wholly away, that I might afterwards be in a position to admit either others more correct, or even perhaps the same when they had undergone the scrutiny of reason. | Part I: The Distribution of Good Sense\\\"\",\"[Q18] \\\"descartes | but for the opinions which up to that time I had embraced, I thought that I could not do better than resolve at once to sweep them wholly away | Part I: The Distribution of Good Sense\\\"\",\"[Q19] \\\"descartes | Hence it is that I cannot in any degree approve of those restless and busy meddlers who, called neither by birth nor fortune to take part in the management of public affairs, are yet always projecting reforms; | Part I: The Distribution of Good Sense\\\"\",\"[Q20] \\\"descartes | And, finally, although such be the ground of our opinions, I remarked that a plurality of suffrages is no guarantee of truth where it is at all of difficult discovery, as in such cases it is much more likely that it will be found by one than by many. | Part I: The Distribution of Good Sense\\\"\"],\"arguments\":[\"[A1] **Premises:**\",\"[A2] ---\",\"[A3] # Extracted Arguments (62 total)\",\"[A4] ## Prefatory Note and Introduction\",\"[A5] ### Argument 1 (inductive)\",\"[A6] **Author:** descartes\",\"[A7] **Premises:**\",\"[A8] - Good sense is, of all things among men, the most equally distributed; for every one thinks himself so abundantly provided with it, that those even who are the most difficult to satisfy in everything else, do not usually desire a larger measure of this quality than they already possess.\",\"[A9] - In this it is not likely that all are mistaken the conviction is rather to be held as testifying that the power of judging aright and of distinguishing truth from error, which is properly what is called good sense or reason, is by nature equal in all men.\",\"[A10] **→ Conclusion:** The power of judging aright and of distinguishing truth from error, which is properly what is called good sense or reason, is by nature equal in all men.\"],\"works\":[\"[W1] BY...\",\"[W2] THE...\",\"[W3] AND...\",\"[W4] my...\",\"[W5] as...\"]}}[/SKELETON_JSON]\n\n"
+data: "[SKELETON_JSON]{\"thesis\":\"Descartes explores the nature of consciousness and the mind-body problem, asserting the distinctness of mind and body.\",\"outline\":[\"Introduction to Consciousness\",\"Methodic Doubt and Certainty\",\"The Cogito and Self-Existence\",\"Nature of the Mind\",\"Mind-Body Distinction\",\"Conclusion on Consciousness\"],\"keyTerms\":{\"Methodic Doubt\":\"A systematic approach to questioning beliefs to find certainty.\",\"Cogito\":\"The assertion 'I think, therefore I am' establishing self-awareness.\",\"Mind-Body Distinction\":\"The philosophical separation between mental and physical substances.\"},\"commitments\":[\"Descartes asserts that all beliefs based on the senses are potentially false.\",\"Descartes asserts that the mind is a thinking substance that does not require spatial extension.\",\"Descartes rejects the idea that the mind and body are the same substance.\"],\"entities\":[\"Consciousness\",\"Mind\",\"Body\",\"Doubt\",\"Self\"],\"databaseContent\":{\"positions\":[\"[P1] descartes | All beliefs based on the senses are potentially false | Methodic Doubt\",\"[P2] descartes | Systematic doubt is necessary to find certainty | Methodic Doubt\",\"[P3] descartes | Doubt must extend to mathematics because of the evil-demon hypothesis | Methodic Doubt\",\"[P4] descartes | One should suspend assent to any proposition that can be doubted | Methodic Doubt\",\"[P5] descartes | Doubt is a methodological tool, not a permanent philosophical position | Methodic Doubt\",\"[P6] descartes | Thinking cannot occur without a thinker | Cogito\",\"[P7] descartes | Doubt itself proves the existence of the doubter | Cogito\",\"[P8] descartes | The Cogito is self-evident once considered | Cogito\",\"[P9] descartes | The Cogito is known by intuition, not deduction | Cogito\",\"[P10] descartes | The Cogito establishes the first indubitable truth | Cogito\",\"[P11] descartes | The mind is a thinking substance | Nature of the Mind\",\"[P12] descartes | The mind's essence is thought alone | Nature of the Mind\",\"[P13] descartes | The mind is indivisible | Nature of the Mind\",\"[P14] descartes | The mind is known more clearly than the body | Nature of the Mind\",\"[P15] descartes | The mind does not require spatial extension | Nature of the Mind\",\"[P16] descartes | The mind and body are distinct substances | Mind-Body Distinction\",\"[P17] descartes | The mind can exist without the body | Mind-Body Distinction\",\"[P18] descartes | Bodies are divisible; minds are not | Mind-Body Distinction\",\"[P19] descartes | Clear and distinct conception of each shows they are separable | Mind-Body Distinction\",\"[P20] descartes | The self is essentially mental, not corporeal | Mind-Body Distinction\"],\"quotes\":[\"[Q1] \\\"descartes | he does not will the evil of sin, seeing this is but the negation of being | Part IV: Metaphysical Meditations\\\"\",\"[Q2] \\\"descartes | when we do not extend it beyond the objects we clearly know | Part IV: Metaphysical Meditations\\\"\",\"[Q3] \\\"descartes | If this Discourse appear too long to be read at once, it may be divided into six Parts: and, in the first, will be found various considerations touching the Sciences; in the second, the principal rules of the Method which the Author has discovered, in the third, certain of the rules of Morals which he has deduced from this Method; in the fourth, the reasonings by which he establishes the existence of God and of the Human Soul, which are the foundations of his Metaphysic; in the fifth, the order of the Physical questions which he has investigated, and, in particular, the explication of the motion of the heart and of some other difficulties pertaining to Medicine, as also the difference between the soul of man and that of the brutes; and, in the last, what the Author believes to be required in order to greater advancement in the investigation of Nature than has yet been made, with the reasons that have induced him to write. | Prefatory Note by the Author\\\"\",\"[Q4] \\\"descartes | Good sense is, of all things among men, the most equally distributed; for every one thinks himself so abundantly provided with it, that those even who are the most difficult to satisfy in everything else, do not usually desire a larger measure of this quality than they already possess. | Prefatory Note by the Author\\\"\",\"[Q5] \\\"descartes | For myself, I have never fancied my mind to be in any respect more perfect than those of the generality; on the contrary, I have often wished that I were equal to some others in promptitude of thought, or in clearness and distinctness of imagination, or in fullness and readiness of memory. | Prefatory Note by the Author\\\"\",\"[Q6] \\\"descartes | After all, it is possible I may be mistaken; and it is but a little copper and glass, perhaps, that I take for gold and diamonds. | Prefatory Note by the Author\\\"\",\"[Q7] \\\"descartes | My present design, then, is not to teach the method which each ought to follow for the right conduct of his reason, but solely to describe the way in which I have endeavored to conduct my own. | Prefatory Note by the Author\\\"\",\"[Q8] \\\"descartes | I esteemed eloquence highly, and was in raptures with poesy; but I thought that both were gifts of nature rather than fruits of study. | Prefatory Note by the Author\\\"\",\"[Q9] \\\"descartes | I was especially delighted with the mathematics, on account of the certitude and evidence of their reasonings; but I had not as yet a precise knowledge of their true use; and thinking that they but contributed to the advancement of the mechanical arts, I was astonished that foundations, so strong and solid, should have had no loftier superstructure reared on them. | Prefatory Note by the Author\\\"\",\"[Q10] \\\"descartes | I revered our theology, and aspired as much as any one to reach heaven: but being given assuredly to understand that the way is not less open to the most ignorant than to the most learned, and that the revealed truths which lead to heaven are above our comprehension, I did not presume to subject them to the impotency of my reason; and I thought that in order competently to undertake their examination, there was need of some special help from heaven, and of being more than man. | Prefatory Note by the Author\\\"\",\"[Q11] \\\"descartes | I judged that no solid superstructures could be reared on foundations so infirm; and neither the honor nor the gain held out | Prefatory Note by the Author\\\"\",\"[Q12] \\\"descartes | I entirely abandoned the study of letters, and resolved no longer to seek any other science than the knowledge of myself, or of the great book of the world. | Part I: The Distribution of Good Sense\\\"\",\"[Q13] \\\"descartes | I had always a most earnest desire to know how to distinguish the true from the false, in order that I might be able clearly to discriminate the right path in life, and proceed in it with confidence. | Part I: The Distribution of Good Sense\\\"\",\"[Q14] \\\"descartes | observing many things which, however extravagant and ridiculous to our apprehension, are yet by common consent received and approved by other great nations, I learned to entertain too decided a belief in regard to nothing of the truth of which I had been persuaded merely by example and custom | Part I: The Distribution of Good Sense\\\"\",\"[Q15] \\\"descartes | I thought that the sciences contained in books are farther removed from truth than the simple inferences which a man of good sense using his natural and unprejudiced judgment draws respecting the matters of his experience. | Part I: The Distribution of Good Sense\\\"\",\"[Q16] \\\"descartes | I was persuaded that it would indeed be preposterous for a private individual to think of reforming a state by fundamentally changing it throughout, and overturning it in order to set it up amended; | Part I: The Distribution of Good Sense\\\"\",\"[Q17] \\\"descartes | I could not do better than resolve at once to sweep them wholly away, that I might afterwards be in a position to admit either others more correct, or even perhaps the same when they had undergone the scrutiny of reason. | Part I: The Distribution of Good Sense\\\"\",\"[Q18] \\\"descartes | but for the opinions which up to that time I had embraced, I thought that I could not do better than resolve at once to sweep them wholly away | Part I: The Distribution of Good Sense\\\"\",\"[Q19] \\\"descartes | Hence it is that I cannot in any degree approve of those restless and busy meddlers who, called neither by birth nor fortune to take part in the management of public affairs, are yet always projecting reforms; | Part I: The Distribution of Good Sense\\\"\",\"[Q20] \\\"descartes | And, finally, although such be the ground of our opinions, I remarked that a plurality of suffrages is no guarantee of truth where it is at all of difficult discovery, as in such cases it is much more likely that it will be found by one than by many. | Part I: The Distribution of Good Sense\\\"\"],\"arguments\":[\"[A1] **Premises:**\",\"[A2] ---\",\"[A3] # Extracted Arguments (62 total)\",\"[A4] ## Prefatory Note and Introduction\",\"[A5] ### Argument 1 (inductive)\",\"[A6] **Author:** descartes\",\"[A7] **Premises:**\",\"[A8] - Good sense is, of all things among men, the most equally distributed; for every one thinks himself so abundantly provided with it, that those even who are the most difficult to satisfy in everything else, do not usually desire a larger measure of this quality than they already possess.\",\"[A9] - In this it is not likely that all are mistaken the conviction is rather to be held as testifying that the power of judging aright and of distinguishing truth from error, which is properly what is called good sense or reason, is by nature equal in all men.\",\"[A10] **→ Conclusion:** The power of judging aright and of distinguishing truth from error, which is properly what is called good sense or reason, is by nature equal in all men.\"],\"works\":[\"[W1] we...\",\"[W2] he...\",\"[W3] was...\",\"[W4] so...\",\"[W5] we...\"]}}[/SKELETON_JSON]\n\n"
 
 data: "\n=== PHASE 2: GENERATING 10 CHUNKS (with DB persistence) ===\n\n"
 
 data: "\n--- CHUNK 1/10 (Target: 1000 words) ---\n\n"
 
+data: "The"
+
+data: " "
+
+data: "essence"
+
+data: " "
+
+data: "of"
+
+data: " "
+
+data: "consciousness"
+
+data: " "
+
+data: "has"
+
+data: " "
+
+data: "long"
+
+data: " "
+
+data: "captivated"
+
+data: " "
+
+data: "the"
+
+data: " "
+
+data: "minds"
+
+data: " "
+
+data: "of"
+
+data: " "
+
+data: "philosophers"
+
+data: ","
+
+data: " "
+
+data: "scientists"
+
+data: ","
+
+data: " "
+
+data: "and"
+
+data: " "
+
+data: "thinkers"
+
+data: " "
+
+data: "throughout"
+
+data: " "
+
+data: "history"
+
+data: "."
+
+data: " "
+
 data: "In"
 
-data: " the"
+data: " "
 
-data: " labyrinth"
+data: "the"
 
-data: "ine"
+data: " "
 
-data: " corridors"
+data: "realm"
 
-data: " of"
+data: " "
 
-data: " philosophy"
+data: "of"
 
-data: ","
+data: " "
 
-data: " few"
-
-data: " concepts"
-
-data: " have"
-
-data: " occupied"
-
-data: " as"
-
-data: " central"
-
-data: " a"
-
-data: " space"
-
-data: " as"
-
-data: " that"
-
-data: " of"
-
-data: " consciousness"
-
-data: "."
-
-data: " The"
-
-data: " inquiry"
-
-data: " into"
-
-data: " what"
-
-data: " it"
-
-data: " means"
-
-data: " to"
-
-data: " be"
-
-data: " conscious"
-
-data: " has"
-
-data: " engaged"
-
-data: " thinkers"
-
-data: " from"
-
-data: " the"
-
-data: " anc"
-
-data: "ients"
-
-data: " through"
-
-data: " to"
-
-data: " the"
-
-data: " present"
-
-data: " day"
+data: "philosophy"
 
 data: ","
 
-data: " with"
+data: " "
 
-data: " René"
+data: "René"
 
-data: " Des"
+data: " "
+
+data: "Des"
 
 data: "cart"
 
 data: "es"
 
-data: " standing"
+data: " "
 
-data: " as"
+data: "stands"
 
-data: " a"
+data: " "
 
-data: " towering"
+data: "as"
 
-data: " figure"
+data: " "
 
-data: " in"
+data: "a"
 
-data: " this"
+data: " "
 
-data: " discourse"
+data: "monumental"
 
-data: "."
+data: " "
 
-data: " His"
+data: "figure"
 
-data: " explor"
+data: " "
 
-data: "ations"
+data: "whose"
 
-data: " of"
+data: " "
 
-data: " the"
-
-data: " mind"
-
-data: "-body"
-
-data: " relationship"
-
-data: " and"
-
-data: " the"
-
-data: " nature"
-
-data: " of"
-
-data: " doubt"
-
-data: " and"
-
-data: " certainty"
-
-data: " illuminate"
-
-data: " the"
-
-data: " profound"
-
-data: " intric"
-
-data: "acies"
-
-data: " of"
-
-data: " consciousness"
-
-data: "."
-
-data: " Des"
-
-data: "cart"
-
-data: "es"
-
-data: "'"
-
-data: " med"
+data: "med"
 
 data: "itations"
 
-data: " compel"
+data: " "
 
-data: " us"
+data: "on"
 
-data: " not"
+data: " "
 
-data: " only"
+data: "the"
 
-data: " to"
+data: " "
 
-data: " question"
+data: "nature"
 
-data: " the"
+data: " "
 
-data: " ver"
+data: "of"
 
-data: "acity"
+data: " "
 
-data: " of"
+data: "consciousness"
 
-data: " our"
+data: " "
 
-data: " senses"
+data: "and"
 
-data: " but"
+data: " "
 
-data: " also"
+data: "the"
 
-data: " to"
+data: " "
 
-data: " contemplate"
+data: "mind"
 
-data: " the"
+data: "-body"
 
-data: " very"
+data: " "
 
-data: " essence"
+data: "problem"
 
-data: " of"
+data: " "
 
-data: " our"
+data: "continue"
 
-data: " existence"
+data: " "
+
+data: "to"
+
+data: " "
+
+data: "resonate"
+
+data: " "
+
+data: "today"
 
 data: "."
 
-data: " As"
+data: " "
 
-data: " we"
+data: "His"
 
-data: " embark"
+data: " "
 
-data: " on"
+data: "assertion"
 
-data: " this"
+data: " "
 
-data: " philosophical"
+data: "that"
 
-data: " journey"
+data: " "
 
-data: ","
+data: "all"
 
-data: " we"
+data: " "
 
-data: " shall"
+data: "beliefs"
 
-data: " scrutin"
+data: " "
 
-data: "ize"
+data: "based"
 
-data: " the"
+data: " "
 
-data: " conceptual"
+data: "on"
 
-data: " architecture"
+data: " "
 
-data: " built"
+data: "the"
 
-data: " upon"
+data: " "
 
-data: " Des"
+data: "senses"
 
-data: "cart"
+data: " "
 
-data: "es"
+data: "are"
 
-data: "'"
+data: " "
 
-data: " ideas"
+data: "potentially"
 
-data: ","
+data: " "
 
-data: " drawing"
+data: "false"
 
-data: " connections"
+data: " "
 
-data: " to"
-
-data: " historical"
-
-data: " context"
-
-data: ","
-
-data: " scientific"
-
-data: " parallels"
-
-data: ","
-
-data: " and"
-
-data: " contemporary"
-
-data: " implications"
-
-data: ".\n\n"
-
-data: "Desc"
-
-data: "art"
-
-data: "es"
-
-data: "’"
-
-data: " philosophical"
-
-data: " od"
-
-data: "yssey"
-
-data: " begins"
-
-data: " with"
-
-data: " the"
-
-data: " radical"
-
-data: " premise"
-
-data: " of"
-
-data: " method"
-
-data: "ical"
-
-data: " doubt"
-
-data: "."
-
-data: " He"
-
-data: " pos"
-
-data: "its"
-
-data: " that"
-
-data: " all"
-
-data: " beliefs"
-
-data: " based"
-
-data: " on"
-
-data: " the"
-
-data: " senses"
-
-data: " are"
-
-data: " potentially"
-
-data: " false"
-
-data: ","
-
-data: " leading"
-
-data: " to"
-
-data: " a"
-
-data: " radical"
-
-data: " questioning"
-
-data: " of"
-
-data: " the"
-
-data: " reliability"
-
-data: " of"
-
-data: " empirical"
-
-data: " knowledge"
-
-data: " ["
+data: "["
 
 data: "P"
 
 data: "1"
 
-data: "]."
+data: "]"
 
-data: " This"
+data: " "
 
-data: " skepticism"
+data: "invites"
 
-data: " can"
+data: " "
 
-data: " be"
+data: "us"
 
-data: " traced"
+data: " "
 
-data: " back"
+data: "to"
 
-data: " to"
+data: " "
 
-data: " the"
+data: "explore"
 
-data: " ancient"
+data: " "
 
-data: " Greek"
+data: "the"
 
-data: " philosophers"
+data: " "
 
-data: ","
+data: "intric"
 
-data: " particularly"
+data: "acies"
 
-data: " the"
+data: " "
 
-data: " Ske"
+data: "of"
 
-data: "pt"
+data: " "
 
-data: "ics"
+data: "our"
 
-data: ","
+data: " "
 
-data: " who"
+data: "perceptions"
 
-data: " argued"
+data: " "
 
-data: " that"
+data: "and"
 
-data: " the"
+data: " "
 
-data: " senses"
+data: "the"
 
-data: " could"
+data: " "
 
-data: " deceive"
+data: "very"
+
+data: " "
+
+data: "nature"
+
+data: " "
+
+data: "of"
+
+data: " "
+
+data: "existence"
 
 data: "."
 
-data: " However"
+data: " "
 
-data: ","
-
-data: " Des"
+data: "Des"
 
 data: "cart"
 
 data: "es"
 
-data: " took"
+data: "'"
 
-data: " this"
+data: " "
 
-data: " skepticism"
+data: "systematic"
 
-data: " to"
+data: " "
 
-data: " a"
-
-data: " new"
-
-data: " level"
+data: "doubt"
 
 data: ","
 
-data: " systematically"
+data: " "
 
-data: " doub"
+data: "which"
 
-data: "ting"
+data: " "
 
-data: " everything"
+data: "he"
 
-data: ","
+data: " "
 
-data: " including"
+data: "employed"
 
-data: " the"
+data: " "
 
-data: " mathematical"
+data: "as"
 
-data: " truths"
+data: " "
 
-data: " he"
+data: "a"
 
-data: " once"
+data: " "
 
-data: " held"
+data: "methodological"
 
-data: " sacred"
+data: " "
 
-data: "."
+data: "tool"
 
-data: " He"
+data: " "
 
-data: " reason"
+data: "to"
 
-data: "ed"
+data: " "
 
-data: " that"
+data: "un"
 
-data: " if"
+data: "earth"
 
-data: " an"
+data: " "
 
-data: " evil"
+data: "certainty"
 
-data: " demon"
+data: " "
 
-data: " were"
-
-data: " to"
-
-data: " manipulate"
-
-data: " his"
-
-data: " perceptions"
-
-data: ","
-
-data: " even"
-
-data: " the"
-
-data: " most"
-
-data: " certain"
-
-data: " beliefs"
-
-data: " could"
-
-data: " be"
-
-data: " called"
-
-data: " into"
-
-data: " question"
-
-data: " ["
+data: "["
 
 data: "P"
 
-data: "3"
+data: "2"
 
-data: "]."
+data: "],"
 
-data: " This"
+data: " "
 
-data: " radical"
+data: "serves"
 
-data: " skepticism"
+data: " "
 
-data: " serves"
+data: "as"
 
-data: " as"
+data: " "
 
-data: " a"
+data: "the"
 
-data: " tool"
+data: " "
 
-data: " for"
+data: "backbone"
 
-data: " reaching"
+data: " "
 
-data: " a"
+data: "of"
 
-data: " bed"
+data: " "
 
-data: "rock"
+data: "his"
 
-data: " of"
+data: " "
 
-data: " certainty"
+data: "philosophical"
+
+data: " "
+
+data: "inquiry"
+
+data: "."
+
+data: " \n\n"
+
+data: "To"
+
+data: " "
+
+data: "delve"
+
+data: " "
+
+data: "into"
+
+data: " "
+
+data: "the"
+
+data: " "
+
+data: "intric"
+
+data: "acies"
+
+data: " "
+
+data: "of"
+
+data: " "
+
+data: "consciousness"
 
 data: ","
 
-data: " and"
+data: " "
 
-data: " in"
+data: "we"
 
-data: " this"
+data: " "
 
-data: " process"
+data: "must"
 
-data: ","
+data: " "
 
-data: " Des"
+data: "first"
+
+data: " "
+
+data: "establish"
+
+data: " "
+
+data: "the"
+
+data: " "
+
+data: "historical"
+
+data: " "
+
+data: "context"
+
+data: " "
+
+data: "that"
+
+data: " "
+
+data: "shaped"
+
+data: " "
+
+data: "Des"
 
 data: "cart"
 
 data: "es"
 
-data: " famously"
+data: "'"
 
-data: " asserts"
+data: " "
 
-data: " the"
+data: "thought"
 
-data: " cog"
+data: "."
 
-data: "ito"
+data: " "
 
-data: ":"
+data: "The"
 
-data: " \""
+data: " "
 
-data: "I"
+data: "17"
 
-data: " think"
+data: "th"
+
+data: " "
+
+data: "century"
+
+data: " "
+
+data: "was"
+
+data: " "
+
+data: "a"
+
+data: " "
+
+data: "period"
+
+data: " "
+
+data: "of"
+
+data: " "
+
+data: "significant"
+
+data: " "
+
+data: "uphe"
+
+data: "aval"
 
 data: ","
 
-data: " therefore"
+data: " "
 
-data: " I"
+data: "marked"
 
-data: " am"
+data: " "
+
+data: "by"
+
+data: " "
+
+data: "the"
+
+data: " "
+
+data: "Scientific"
+
+data: " "
+
+data: "Revolution"
+
+data: ","
+
+data: " "
+
+data: "which"
+
+data: " "
+
+data: "saw"
+
+data: " "
+
+data: "figures"
+
+data: " "
+
+data: "such"
+
+data: " "
+
+data: "as"
+
+data: " "
+
+data: "Galileo"
+
+data: " "
+
+data: "and"
+
+data: " "
+
+data: "Newton"
+
+data: " "
+
+data: "challenge"
+
+data: " "
+
+data: "the"
+
+data: " "
+
+data: "prevailing"
+
+data: " "
+
+data: "Arist"
+
+data: "otel"
+
+data: "ian"
+
+data: " "
+
+data: "worldview"
+
+data: "."
+
+data: " "
+
+data: "This"
+
+data: " "
+
+data: "transition"
+
+data: " "
+
+data: "laid"
+
+data: " "
+
+data: "the"
+
+data: " "
+
+data: "groundwork"
+
+data: " "
+
+data: "for"
+
+data: " "
+
+data: "a"
+
+data: " "
+
+data: "new"
+
+data: " "
+
+data: "understanding"
+
+data: " "
+
+data: "of"
+
+data: " "
+
+data: "the"
+
+data: " "
+
+data: "universe"
+
+data: ","
+
+data: " "
+
+data: "one"
+
+data: " "
+
+data: "dominated"
+
+data: " "
+
+data: "by"
+
+data: " "
+
+data: "empirical"
+
+data: " "
+
+data: "observation"
+
+data: " "
+
+data: "and"
+
+data: " "
+
+data: "rational"
+
+data: " "
+
+data: "inquiry"
+
+data: "."
+
+data: " "
+
+data: "Des"
+
+data: "cart"
+
+data: "es"
+
+data: ","
+
+data: " "
+
+data: "a"
+
+data: " "
+
+data: "contemporary"
+
+data: " "
+
+data: "of"
+
+data: " "
+
+data: "these"
+
+data: " "
+
+data: "scientists"
+
+data: ","
+
+data: " "
+
+data: "synthesized"
+
+data: " "
+
+data: "this"
+
+data: " "
+
+data: "emerging"
+
+data: " "
+
+data: "scientific"
+
+data: " "
+
+data: "perspective"
+
+data: " "
+
+data: "with"
+
+data: " "
+
+data: "philosophical"
+
+data: " "
+
+data: "rigor"
+
+data: "."
+
+data: " "
+
+data: "His"
+
+data: " "
+
+data: "work"
+
+data: " "
+
+data: "can"
+
+data: " "
+
+data: "be"
+
+data: " "
+
+data: "seen"
+
+data: " "
+
+data: "as"
+
+data: " "
+
+data: "a"
+
+data: " "
+
+data: "bridge"
+
+data: " "
+
+data: "between"
+
+data: " "
+
+data: "classical"
+
+data: " "
+
+data: "philosophy"
+
+data: " "
+
+data: "and"
+
+data: " "
+
+data: "modern"
+
+data: " "
+
+data: "scientific"
+
+data: " "
+
+data: "thought"
+
+data: ","
+
+data: " "
+
+data: "drawing"
+
+data: " "
+
+data: "on"
+
+data: " "
+
+data: "the"
+
+data: " "
+
+data: "rational"
+
+data: "ism"
+
+data: " "
+
+data: "of"
+
+data: " "
+
+data: "earlier"
+
+data: " "
+
+data: "thinkers"
+
+data: " "
+
+data: "like"
+
+data: " "
+
+data: "Plato"
+
+data: " "
+
+data: "while"
+
+data: " "
+
+data: "also"
+
+data: " "
+
+data: "grap"
+
+data: "pling"
+
+data: " "
+
+data: "with"
+
+data: " "
+
+data: "the"
+
+data: " "
+
+data: "empirical"
+
+data: " "
+
+data: "revolution"
+
+data: " "
+
+data: "that"
+
+data: " "
+
+data: "was"
+
+data: " "
+
+data: "unfolding"
+
+data: "."
+
+data: "\n\n"
+
+data: "In"
+
+data: " "
+
+data: "his"
+
+data: " "
+
+data: "quest"
+
+data: " "
+
+data: "for"
+
+data: " "
+
+data: "certainty"
+
+data: ","
+
+data: " "
+
+data: "Des"
+
+data: "cart"
+
+data: "es"
+
+data: " "
+
+data: "famously"
+
+data: " "
+
+data: "declared"
+
+data: ","
+
+data: " "
 
 data: "\""
 
-data: " ["
+data: "Cog"
+
+data: "ito"
+
+data: ","
+
+data: " "
+
+data: "ergo"
+
+data: " "
+
+data: "sum"
+
+data: "\""
+
+data: " "
+
+data: "or"
+
+data: " "
+
+data: "\""
+
+data: "I"
+
+data: " "
+
+data: "think"
+
+data: ","
+
+data: " "
+
+data: "therefore"
+
+data: " "
+
+data: "I"
+
+data: " "
+
+data: "am"
+
+data: "\""
+
+data: " "
+
+data: "["
 
 data: "P"
 
@@ -682,565 +1074,133 @@ data: "6"
 
 data: "]."
 
-data: " Here"
-
-data: ","
-
-data: " he"
-
-data: " establishes"
-
-data: " the"
-
-data: " existence"
-
-data: " of"
-
-data: " the"
-
-data: " self"
-
-data: " as"
-
-data: " the"
-
-data: " first"
-
-data: " ind"
-
-data: "ub"
-
-data: "itable"
-
-data: " truth"
-
-data: ","
-
-data: " one"
-
-data: " that"
-
-data: " transc"
-
-data: "ends"
-
-data: " the"
-
-data: " fall"
-
-data: "ibility"
-
-data: " of"
-
-data: " the"
-
-data: " senses"
-
-data: ".\n\n"
+data: " "
 
 data: "This"
 
-data: " foundational"
+data: " "
 
-data: " assertion"
+data: "realization"
 
-data: " has"
+data: " "
 
-data: " far"
+data: "emerges"
 
-data: "-reaching"
+data: " "
 
-data: " implications"
+data: "from"
 
-data: " for"
+data: " "
 
-data: " the"
+data: "the"
 
-data: " nature"
+data: " "
 
-data: " of"
+data: "act"
 
-data: " consciousness"
+data: " "
 
-data: "."
+data: "of"
 
-data: " Conscious"
+data: " "
 
-data: "ness"
+data: "doubt"
 
-data: ","
+data: " "
 
-data: " at"
+data: "itself"
 
-data: " its"
+data: ";"
 
-data: " core"
+data: " "
 
-data: ","
+data: "the"
 
-data: " is"
+data: " "
 
-data: " a"
+data: "very"
 
-data: " reflective"
+data: " "
 
-data: " state"
+data: "act"
 
-data: " of"
+data: " "
 
-data: " awareness"
+data: "of"
 
-data: " that"
+data: " "
 
-data: " requires"
+data: "questioning"
 
-data: " a"
+data: " "
 
-data: " thinker"
+data: "one's"
 
-data: " to"
+data: " "
 
-data: " exist"
+data: "existence"
 
-data: "."
+data: " "
 
-data: " The"
+data: "implies"
 
-data: " act"
+data: " "
 
-data: " of"
+data: "the"
 
-data: " doub"
+data: " "
 
-data: "ting"
+data: "presence"
 
-data: " is"
+data: " "
 
-data: " itself"
+data: "of"
 
-data: " a"
+data: " "
 
-data: " form"
+data: "a"
 
-data: " of"
+data: " "
 
-data: " thinking"
+data: "thinker"
 
-data: ","
+data: "—"
 
-data: " and"
+data: "an"
 
-data: " thus"
+data: " "
 
-data: ","
+data: "undeniable"
 
-data: " doubt"
+data: " "
 
-data: " becomes"
+data: "proof"
 
-data: " a"
+data: " "
 
-data: " methodological"
+data: "of"
 
-data: " tool"
+data: " "
 
-data: " rather"
+data: "consciousness"
 
-data: " than"
+data: " "
 
-data: " a"
-
-data: " permanent"
-
-data: " philosophical"
-
-data: " position"
-
-data: " ["
+data: "["
 
 data: "P"
 
-data: "5"
+data: "7"
 
 data: "]."
 
-data: " This"
+data: " "
 
-data: " insight"
+data: "This"
 
-data: " invites"
+data: " "
 
-data: " us"
-
-data: " to"
-
-data: " consider"
-
-data: " consciousness"
-
-data: " not"
-
-data: " merely"
-
-data: " as"
-
-data: " a"
-
-data: " passive"
-
-data: " recept"
-
-data: "acle"
-
-data: " of"
-
-data: " sensory"
-
-data: " information"
-
-data: " but"
-
-data: " as"
-
-data: " an"
-
-data: " active"
-
-data: " engagement"
-
-data: " with"
-
-data: " the"
-
-data: " world"
-
-data: "."
-
-data: " It"
-
-data: " pos"
-
-data: "its"
-
-data: " that"
-
-data: " the"
-
-data: " essence"
-
-data: " of"
-
-data: " being"
-
-data: " is"
-
-data: " found"
-
-data: " in"
-
-data: " the"
-
-data: " act"
-
-data: " of"
-
-data: " thinking"
-
-data: ","
-
-data: " suggesting"
-
-data: " that"
-
-data: " consciousness"
-
-data: " is"
-
-data: " intrins"
-
-data: "ically"
-
-data: " tied"
-
-data: " to"
-
-data: " self"
-
-data: "-awareness"
-
-data: " and"
-
-data: " reflection"
-
-data: "."
-
-data: " The"
-
-data: " implications"
-
-data: " of"
-
-data: " this"
-
-data: " view"
-
-data: " extend"
-
-data: " beyond"
-
-data: " philosophy"
-
-data: " into"
-
-data: " cognitive"
-
-data: " science"
-
-data: ","
-
-data: " where"
-
-data: " researchers"
-
-data: " explore"
-
-data: " the"
-
-data: " neural"
-
-data: " correl"
-
-data: "ates"
-
-data: " of"
-
-data: " consciousness"
-
-data: " and"
-
-data: " the"
-
-data: " mechanisms"
-
-data: " through"
-
-data: " which"
-
-data: " self"
-
-data: "-awareness"
-
-data: " arises"
-
-data: ".\n\n"
-
-data: "In"
-
-data: " the"
-
-data: " contemporary"
-
-data: " realm"
-
-data: " of"
-
-data: " cognitive"
-
-data: " science"
-
-data: ","
-
-data: " parallels"
-
-data: " can"
-
-data: " be"
-
-data: " drawn"
-
-data: " between"
-
-data: " Des"
-
-data: "cart"
-
-data: "es"
-
-data: "'"
-
-data: " philosophical"
-
-data: " explor"
-
-data: "ations"
-
-data: " and"
-
-data: " modern"
-
-data: " theories"
-
-data: " of"
-
-data: " consciousness"
-
-data: "."
-
-data: " For"
-
-data: " instance"
-
-data: ","
-
-data: " the"
-
-data: " Global"
-
-data: " Workspace"
-
-data: " Theory"
-
-data: " ("
-
-data: "G"
-
-data: "WT"
-
-data: ")"
-
-data: " pos"
-
-data: "its"
-
-data: " that"
-
-data: " consciousness"
-
-data: " arises"
-
-data: " from"
-
-data: " the"
-
-data: " integration"
-
-data: " of"
-
-data: " information"
-
-data: " across"
-
-data: " various"
-
-data: " cognitive"
-
-data: " processes"
-
-data: ","
-
-data: " akin"
-
-data: " to"
-
-data: " Des"
-
-data: "cart"
-
-data: "es"
-
-data: "’"
-
-data: " notion"
-
-data: " that"
-
-data: " self"
-
-data: "-awareness"
-
-data: " requires"
-
-data: " an"
-
-data: " active"
-
-data: " engagement"
-
-data: " with"
-
-data: " thought"
-
-data: " ["
-
-data: "A"
-
-data: "1"
-
-data: "]."
-
-data: " This"
-
-data: " theory"
-
-data: " suggests"
-
-data: " that"
-
-data: " consciousness"
-
-data: " is"
-
-data: " not"
-
-data: " a"
-
-data: " singular"
-
-data: " entity"
-
-data: " but"
-
-data: " a"
-
-data: " dynamic"
-
-data: " and"
-
-data: " distributed"
-
-data: " process"
-
-data: ","
-
-data: " reson"
-
-data: "ating"
-
-data: " with"
-
-data: " Des"
-
-data: "cart"
-
-data: "es"
-
-data: "’"
-
-data: " idea"
-
-data: " that"
-
-data: " the"
-
-data: " cog"
-
-data: "ito"
-
-data: " is"
-
-data: " a"
-
-data: " self"
+data: "self"
 
 data: "-e"
 
@@ -1248,959 +1208,541 @@ data: "vid"
 
 data: "ent"
 
-data: " truth"
+data: " "
 
-data: " once"
+data: "truth"
 
-data: " considered"
+data: " "
 
-data: "."
-
-data: " The"
-
-data: " interplay"
-
-data: " between"
-
-data: " the"
-
-data: " mind"
-
-data: " and"
-
-data: " body"
-
-data: ","
-
-data: " as"
-
-data: " articulated"
-
-data: " by"
-
-data: " Des"
-
-data: "cart"
-
-data: "es"
-
-data: ","
-
-data: " has"
-
-data: " found"
-
-data: " echoes"
-
-data: " in"
-
-data: " neuroscience"
-
-data: ","
-
-data: " where"
-
-data: " the"
-
-data: " mind"
-
-data: " is"
-
-data: " increasingly"
-
-data: " viewed"
-
-data: " as"
-
-data: " an"
-
-data: " emerg"
-
-data: "ent"
-
-data: " property"
-
-data: " of"
-
-data: " complex"
-
-data: " biological"
-
-data: " processes"
-
-data: ".\n\n"
-
-data: "The"
-
-data: " body"
-
-data: ","
-
-data: " in"
-
-data: " Des"
-
-data: "cart"
-
-data: "es"
-
-data: "’"
-
-data: " dual"
-
-data: "istic"
-
-data: " framework"
-
-data: ","
-
-data: " is"
-
-data: " distinct"
-
-data: " from"
-
-data: " the"
-
-data: " mind"
-
-data: ","
-
-data: " leading"
-
-data: " to"
-
-data: " the"
-
-data: " infamous"
-
-data: " mind"
-
-data: "-body"
-
-data: " problem"
-
-data: "."
-
-data: " This"
-
-data: " distinction"
-
-data: " has"
-
-data: " sparked"
-
-data: " a"
-
-data: " myriad"
-
-data: " of"
-
-data: " interpretations"
-
-data: " and"
-
-data: " critiques"
-
-data: " throughout"
-
-data: " history"
-
-data: ","
-
-data: " from"
-
-data: " the"
-
-data: " material"
-
-data: "ists"
-
-data: " who"
-
-data: " deny"
-
-data: " the"
-
-data: " existence"
-
-data: " of"
-
-data: " an"
-
-data: " imm"
-
-data: "aterial"
-
-data: " mind"
-
-data: " to"
-
-data: " the"
-
-data: " ideal"
-
-data: "ists"
-
-data: " who"
-
-data: " posit"
-
-data: " that"
-
-data: " consciousness"
-
-data: " is"
-
-data: " fundamental"
-
-data: " to"
-
-data: " reality"
-
-data: "."
-
-data: " The"
-
-data: " Cartesian"
-
-data: " split"
-
-data: " has"
-
-data: " prov"
-
-data: "oked"
-
-data: " extensive"
-
-data: " debate"
-
-data: ","
-
-data: " particularly"
-
-data: " in"
-
-data: " the"
-
-data: " works"
-
-data: " of"
-
-data: " philosophers"
-
-data: " such"
-
-data: " as"
-
-data: " Sp"
-
-data: "ino"
-
-data: "za"
-
-data: ","
-
-data: " who"
-
-data: " sought"
-
-data: " to"
-
-data: " reconcile"
-
-data: " the"
-
-data: " two"
-
-data: " realms"
-
-data: " by"
-
-data: " proposing"
-
-data: " a"
-
-data: " mon"
-
-data: "istic"
-
-data: " view"
-
-data: " of"
-
-data: " substance"
-
-data: "."
-
-data: " This"
-
-data: " discourse"
-
-data: " has"
-
-data: " continued"
-
-data: " into"
-
-data: " the"
-
-data: " present"
-
-data: " day"
-
-data: ","
-
-data: " influencing"
-
-data: " contemporary"
-
-data: " debates"
-
-data: " in"
-
-data: " philosophy"
-
-data: " of"
-
-data: " mind"
-
-data: " and"
-
-data: " metaph"
-
-data: "ysics"
-
-data: ".\n\n"
-
-data: "To"
-
-data: " grasp"
-
-data: " the"
-
-data: " implications"
-
-data: " of"
-
-data: " Des"
-
-data: "cart"
-
-data: "es"
-
-data: "’"
-
-data: " dual"
-
-data: "ism"
-
-data: ","
-
-data: " consider"
-
-data: " the"
-
-data: " thought"
-
-data: " experiment"
-
-data: " of"
-
-data: " a"
-
-data: " sent"
-
-data: "ient"
-
-data: " being"
-
-data: " existing"
-
-data: " in"
-
-data: " a"
-
-data: " simulated"
-
-data: " reality"
-
-data: ","
-
-data: " akin"
-
-data: " to"
-
-data: " the"
-
-data: " premise"
-
-data: " of"
-
-data: " the"
-
-data: " film"
-
-data: " “"
-
-data: "The"
-
-data: " Matrix"
-
-data: ".”"
-
-data: " In"
-
-data: " this"
-
-data: " scenario"
-
-data: ","
-
-data: " the"
-
-data: " individual"
-
-data: "’s"
-
-data: " sensory"
-
-data: " experiences"
-
-data: " are"
-
-data: " artificially"
-
-data: " constructed"
-
-data: ","
-
-data: " raising"
-
-data: " questions"
-
-data: " about"
-
-data: " the"
-
-data: " authenticity"
-
-data: " of"
-
-data: " consciousness"
-
-data: "."
-
-data: " Are"
-
-data: " the"
-
-data: " thoughts"
-
-data: " and"
-
-data: " feelings"
-
-data: " of"
-
-data: " the"
-
-data: " simulated"
-
-data: " being"
-
-data: " any"
-
-data: " less"
-
-data: " real"
-
-data: " than"
-
-data: " those"
-
-data: " of"
-
-data: " a"
-
-data: " being"
-
-data: " experiencing"
-
-data: " an"
-
-data: " un"
-
-data: "medi"
-
-data: "ated"
-
-data: " reality"
-
-data: "?"
-
-data: " This"
-
-data: " thought"
-
-data: " experiment"
-
-data: " challenges"
-
-data: " the"
-
-data: " Cartesian"
-
-data: " assertion"
-
-data: " that"
-
-data: " the"
-
-data: " certainty"
-
-data: " of"
-
-data: " existence"
-
-data: " rests"
-
-data: " solely"
-
-data: " on"
-
-data: " the"
-
-data: " act"
-
-data: " of"
-
-data: " thinking"
-
-data: "."
-
-data: " It"
-
-data: " suggests"
-
-data: " that"
-
-data: " consciousness"
-
-data: " may"
-
-data: " be"
-
-data: " intric"
-
-data: "ately"
-
-data: " woven"
-
-data: " into"
-
-data: " the"
-
-data: " fabric"
-
-data: " of"
-
-data: " experience"
-
-data: ","
-
-data: " regardless"
-
-data: " of"
-
-data: " its"
-
-data: " ont"
-
-data: "ological"
-
-data: " origins"
-
-data: ".\n\n"
-
-data: "The"
-
-data: " implications"
-
-data: " of"
-
-data: " Des"
-
-data: "cart"
-
-data: "es"
-
-data: "’"
-
-data: " ideas"
-
-data: " extend"
-
-data: " into"
-
-data: " the"
-
-data: " realm"
-
-data: " of"
-
-data: " ethics"
-
-data: " and"
-
-data: " morality"
-
-data: ","
-
-data: " where"
-
-data: " consciousness"
-
-data: " plays"
-
-data: " a"
-
-data: " pivotal"
-
-data: " role"
-
-data: " in"
-
-data: " discussions"
-
-data: " about"
-
-data: " agency"
-
-data: ","
-
-data: " responsibility"
-
-data: ","
-
-data: " and"
-
-data: " the"
-
-data: " nature"
-
-data: " of"
-
-data: " the"
-
-data: " self"
-
-data: "."
-
-data: " If"
-
-data: " our"
-
-data: " thoughts"
-
-data: " and"
-
-data: " actions"
-
-data: " are"
-
-data: " products"
-
-data: " of"
-
-data: " our"
-
-data: " conscious"
-
-data: " mind"
-
-data: ","
-
-data: " then"
-
-data: " understanding"
-
-data: " the"
-
-data: " nature"
-
-data: " of"
-
-data: " consciousness"
-
-data: " is"
-
-data: " crucial"
-
-data: " for"
-
-data: " establishing"
-
-data: " moral"
-
-data: " accountability"
-
-data: "."
-
-data: " Des"
-
-data: "cart"
-
-data: "es"
-
-data: "’"
-
-data: " assertion"
-
-data: " that"
-
-data: " thinking"
-
-data: " cannot"
-
-data: " occur"
-
-data: " without"
-
-data: " a"
-
-data: " thinker"
-
-data: " ["
+data: "["
 
 data: "P"
 
-data: "6"
+data: "8"
 
 data: "]"
 
-data: " leads"
+data: " "
 
-data: " us"
+data: "serves"
 
-data: " to"
+data: " "
 
-data: " contemplate"
+data: "as"
 
-data: " the"
+data: " "
 
-data: " responsibilities"
+data: "the"
 
-data: " inherent"
+data: " "
 
-data: " in"
+data: "foundation"
 
-data: " conscious"
+data: " "
 
-data: " thought"
+data: "upon"
 
-data: "."
+data: " "
 
-data: " This"
+data: "which"
 
-data: " perspective"
+data: " "
 
-data: " resonates"
-
-data: " with"
-
-data: " contemporary"
-
-data: " discussions"
-
-data: " surrounding"
-
-data: " artificial"
-
-data: " intelligence"
-
-data: " and"
-
-data: " machine"
-
-data: " consciousness"
-
-data: "."
-
-data: " As"
-
-data: " we"
-
-data: " develop"
-
-data: " increasingly"
-
-data: " sophisticated"
-
-data: " algorithms"
-
-data: " capable"
-
-data: " of"
-
-data: " mim"
-
-data: "icking"
-
-data: " human"
-
-data: "-like"
-
-data: " thought"
-
-data: " processes"
-
-data: ","
-
-data: " we"
-
-data: " must"
-
-data: " grapple"
-
-data: " with"
-
-data: " the"
-
-data: " ethical"
-
-data: " ramifications"
-
-data: " of"
-
-data: " assigning"
-
-data: " agency"
-
-data: " to"
-
-data: " non"
-
-data: "-human"
-
-data: " entities"
-
-data: ".\n\n"
-
-data: "Moreover"
-
-data: ","
-
-data: " the"
-
-data: " process"
-
-data: " of"
-
-data: " doubt"
-
-data: " itself"
-
-data: ","
-
-data: " as"
-
-data: " pos"
-
-data: "ited"
-
-data: " by"
-
-data: " Des"
+data: "Des"
 
 data: "cart"
 
 data: "es"
 
-data: ","
+data: " "
 
-data: " invites"
+data: "builds"
 
-data: " a"
+data: " "
 
-data: " reconsider"
+data: "his"
 
-data: "ation"
+data: " "
 
-data: " of"
+data: "metaph"
 
-data: " the"
+data: "ysical"
 
-data: " role"
+data: " "
 
-data: " of"
-
-data: " skepticism"
-
-data: " in"
-
-data: " our"
-
-data: " modern"
-
-data: " epistem"
-
-data: "ology"
+data: "architecture"
 
 data: "."
 
-data: " In"
+data: " "
 
-data: " an"
+data: "It"
 
-data: " age"
+data: " "
 
-data: " dominated"
+data: "challenges"
 
-data: " by"
+data: " "
 
-data: " information"
+data: "us"
 
-data: " and"
+data: " "
 
-data: " misinformation"
+data: "to"
 
-data: ","
+data: " "
 
-data: " the"
+data: "consider"
 
-data: " capacity"
+data: " "
 
-data: " to"
+data: "the"
 
-data: " question"
+data: " "
 
-data: " the"
+data: "nature"
 
-data: " ver"
+data: " "
 
-data: "acity"
+data: "of"
 
-data: " of"
+data: " "
 
-data: " our"
+data: "our"
 
-data: " beliefs"
+data: " "
 
-data: " is"
+data: "own"
 
-data: " more"
+data: " "
 
-data: " vital"
+data: "consciousness"
 
-data: " than"
+data: " "
 
-data: " ever"
+data: "and"
+
+data: " "
+
+data: "the"
+
+data: " "
+
+data: "implications"
+
+data: " "
+
+data: "of"
+
+data: " "
+
+data: "our"
+
+data: " "
+
+data: "existence"
 
 data: "."
 
-data: " Des"
+data: " "
+
+data: "If"
+
+data: " "
+
+data: "thinking"
+
+data: " "
+
+data: "is"
+
+data: " "
+
+data: "the"
+
+data: " "
+
+data: "hallmark"
+
+data: " "
+
+data: "of"
+
+data: " "
+
+data: "our"
+
+data: " "
+
+data: "being"
+
+data: ","
+
+data: " "
+
+data: "then"
+
+data: " "
+
+data: "what"
+
+data: " "
+
+data: "does"
+
+data: " "
+
+data: "it"
+
+data: " "
+
+data: "mean"
+
+data: " "
+
+data: "to"
+
+data: " "
+
+data: "truly"
+
+data: " "
+
+data: "know"
+
+data: " "
+
+data: "oneself"
+
+data: "?"
+
+data: " "
+
+data: "How"
+
+data: " "
+
+data: "do"
+
+data: " "
+
+data: "our"
+
+data: " "
+
+data: "thoughts"
+
+data: " "
+
+data: "shape"
+
+data: " "
+
+data: "our"
+
+data: " "
+
+data: "understanding"
+
+data: " "
+
+data: "of"
+
+data: " "
+
+data: "reality"
+
+data: "?"
+
+data: "\n\n"
+
+data: "To"
+
+data: " "
+
+data: "elucid"
+
+data: "ate"
+
+data: " "
+
+data: "this"
+
+data: " "
+
+data: "inquiry"
+
+data: ","
+
+data: " "
+
+data: "consider"
+
+data: " "
+
+data: "a"
+
+data: " "
+
+data: "thought"
+
+data: " "
+
+data: "experiment"
+
+data: " "
+
+data: "that"
+
+data: " "
+
+data: "Des"
+
+data: "cart"
+
+data: "es"
+
+data: " "
+
+data: "himself"
+
+data: " "
+
+data: "might"
+
+data: " "
+
+data: "endorse"
+
+data: ":"
+
+data: " "
+
+data: "Imagine"
+
+data: " "
+
+data: "a"
+
+data: " "
+
+data: "world"
+
+data: " "
+
+data: "where"
+
+data: " "
+
+data: "your"
+
+data: " "
+
+data: "senses"
+
+data: " "
+
+data: "are"
+
+data: " "
+
+data: "dece"
+
+data: "ived"
+
+data: ","
+
+data: " "
+
+data: "where"
+
+data: " "
+
+data: "what"
+
+data: " "
+
+data: "you"
+
+data: " "
+
+data: "perceive"
+
+data: " "
+
+data: "is"
+
+data: " "
+
+data: "merely"
+
+data: " "
+
+data: "an"
+
+data: " "
+
+data: "illusion"
+
+data: "."
+
+data: " "
+
+data: "This"
+
+data: " "
+
+data: "scenario"
+
+data: " "
+
+data: "echoes"
+
+data: " "
+
+data: "the"
+
+data: " "
+
+data: "\""
+
+data: "evil"
+
+data: " "
+
+data: "demon"
+
+data: "\""
+
+data: " "
+
+data: "hypothesis"
+
+data: " "
+
+data: "["
+
+data: "P"
+
+data: "3"
+
+data: "],"
+
+data: " "
+
+data: "wherein"
+
+data: " "
+
+data: "a"
+
+data: " "
+
+data: "male"
+
+data: "volent"
+
+data: " "
+
+data: "entity"
+
+data: " "
+
+data: "manip"
+
+data: "ulates"
+
+data: " "
+
+data: "your"
+
+data: " "
+
+data: "perceptions"
+
+data: ","
+
+data: " "
+
+data: "leading"
+
+data: " "
+
+data: "you"
+
+data: " "
+
+data: "to"
+
+data: " "
+
+data: "question"
+
+data: " "
+
+data: "the"
+
+data: " "
+
+data: "very"
+
+data: " "
+
+data: "fabric"
+
+data: " "
+
+data: "of"
+
+data: " "
+
+data: "reality"
+
+data: "."
+
+data: " "
+
+data: "In"
+
+data: " "
+
+data: "such"
+
+data: " "
+
+data: "a"
+
+data: " "
+
+data: "world"
+
+data: ","
+
+data: " "
+
+data: "how"
+
+data: " "
+
+data: "can"
+
+data: " "
+
+data: "one"
+
+data: " "
+
+data: "ascertain"
+
+data: " "
+
+data: "truth"
+
+data: "?"
+
+data: " "
+
+data: "Des"
 
 data: "cart"
 
@@ -2208,51 +1750,89 @@ data: "es"
 
 data: "'"
 
-data: " methodology"
+data: " "
 
-data: " encourages"
+data: "method"
 
-data: " a"
+data: " "
 
-data: " rigorous"
+data: "of"
 
-data: " inquiry"
+data: " "
 
-data: " into"
+data: "doubt"
 
-data: " our"
+data: " "
 
-data: " assumptions"
+data: "becomes"
+
+data: " "
+
+data: "a"
+
+data: " "
+
+data: "guiding"
+
+data: " "
+
+data: "principle"
 
 data: ","
 
-data: " advocating"
+data: " "
 
-data: " for"
+data: "urging"
 
-data: " a"
+data: " "
 
-data: " suspension"
+data: "us"
 
-data: " of"
+data: " "
 
-data: " assent"
+data: "to"
 
-data: " to"
+data: " "
 
-data: " propositions"
+data: "suspend"
 
-data: " that"
+data: " "
 
-data: " can"
+data: "assent"
 
-data: " be"
+data: " "
 
-data: " doub"
+data: "to"
+
+data: " "
+
+data: "any"
+
+data: " "
+
+data: "proposition"
+
+data: " "
+
+data: "that"
+
+data: " "
+
+data: "can"
+
+data: " "
+
+data: "be"
+
+data: " "
+
+data: "doub"
 
 data: "ted"
 
-data: " ["
+data: " "
+
+data: "["
 
 data: "P"
 
@@ -2260,377 +1840,869 @@ data: "4"
 
 data: "]."
 
-data: " This"
+data: " "
 
-data: " principle"
-
-data: " resonates"
-
-data: " with"
-
-data: " the"
-
-data: " scientific"
-
-data: " method"
+data: "Yet"
 
 data: ","
 
-data: " which"
+data: " "
 
-data: " values"
+data: "amidst"
 
-data: " skepticism"
+data: " "
 
-data: " and"
+data: "this"
 
-data: " inquiry"
+data: " "
 
-data: " as"
+data: "uncertainty"
 
-data: " foundational"
+data: ","
 
-data: " to"
+data: " "
 
-data: " the"
+data: "the"
 
-data: " pursuit"
+data: " "
 
-data: " of"
+data: "act"
 
-data: " knowledge"
+data: " "
+
+data: "of"
+
+data: " "
+
+data: "doubt"
+
+data: " "
+
+data: "itself"
+
+data: " "
+
+data: "remains"
+
+data: " "
+
+data: "un"
+
+data: "ass"
+
+data: "ailable"
+
+data: "—it"
+
+data: " "
+
+data: "proves"
+
+data: " "
+
+data: "the"
+
+data: " "
+
+data: "existence"
+
+data: " "
+
+data: "of"
+
+data: " "
+
+data: "the"
+
+data: " "
+
+data: "doub"
+
+data: "ter"
 
 data: "."
 
-data: " Just"
+data: "\n\n"
 
-data: " as"
+data: "The"
 
-data: " Des"
+data: " "
+
+data: "implications"
+
+data: " "
+
+data: "of"
+
+data: " "
+
+data: "Des"
 
 data: "cart"
 
 data: "es"
 
-data: " sought"
+data: "'"
 
-data: " to"
+data: " "
 
-data: " establish"
+data: "philosophy"
 
-data: " a"
+data: " "
 
-data: " firm"
+data: "extend"
 
-data: " foundation"
+data: " "
 
-data: " for"
+data: "beyond"
 
-data: " knowledge"
+data: " "
 
-data: " through"
+data: "mere"
 
-data: " doubt"
+data: " "
+
+data: "metaph"
+
+data: "ysical"
+
+data: " "
+
+data: "mus"
+
+data: "ings"
+
+data: ";"
+
+data: " "
+
+data: "they"
+
+data: " "
+
+data: "resonate"
+
+data: " "
+
+data: "deeply"
+
+data: " "
+
+data: "within"
+
+data: " "
+
+data: "contemporary"
+
+data: " "
+
+data: "discussions"
+
+data: " "
+
+data: "of"
+
+data: " "
+
+data: "consciousness"
+
+data: "."
+
+data: " "
+
+data: "Cognitive"
+
+data: " "
+
+data: "science"
 
 data: ","
 
-data: " contemporary"
+data: " "
 
-data: " thinkers"
+data: "in"
 
-data: " advocate"
+data: " "
 
-data: " for"
+data: "its"
 
-data: " a"
+data: " "
 
-data: " critical"
+data: "quest"
 
-data: " examination"
+data: " "
 
-data: " of"
+data: "to"
 
-data: " claims"
+data: " "
 
-data: ","
+data: "understand"
 
-data: " fostering"
+data: " "
 
-data: " a"
+data: "the"
 
-data: " culture"
+data: " "
 
-data: " of"
-
-data: " intellectual"
-
-data: " rigor"
-
-data: ".\n\n"
-
-data: "In"
-
-data: " considering"
-
-data: " the"
-
-data: " historical"
-
-data: " context"
+data: "mind"
 
 data: ","
 
-data: " one"
+data: " "
 
-data: " cannot"
+data: "frequently"
 
-data: " overlook"
+data: " "
 
-data: " the"
+data: "revis"
 
-data: " influence"
+data: "its"
 
-data: " of"
+data: " "
 
-data: " Des"
+data: "the"
+
+data: " "
+
+data: "themes"
+
+data: " "
+
+data: "that"
+
+data: " "
+
+data: "Des"
 
 data: "cart"
 
 data: "es"
 
-data: " on"
+data: " "
 
-data: " subsequent"
+data: "articulated"
 
-data: " philosophical"
+data: " "
 
-data: " movements"
+data: "centuries"
 
-data: ","
+data: " "
 
-data: " particularly"
-
-data: " the"
-
-data: " Enlight"
-
-data: "enment"
+data: "ago"
 
 data: "."
 
-data: " Think"
+data: " "
 
-data: "ers"
+data: "Modern"
 
-data: " such"
+data: " "
 
-data: " as"
+data: "neurosc"
 
-data: " John"
+data: "ient"
 
-data: " Locke"
+data: "ific"
 
-data: " and"
+data: " "
 
-data: " Im"
+data: "research"
 
-data: "manuel"
+data: " "
 
-data: " Kant"
+data: "has"
 
-data: " built"
+data: " "
 
-data: " upon"
+data: "unveiled"
 
-data: " and"
+data: " "
 
-data: " reacted"
+data: "the"
 
-data: " to"
+data: " "
 
-data: " Cartesian"
+data: "complexities"
 
-data: " ideas"
+data: " "
+
+data: "of"
+
+data: " "
+
+data: "the"
+
+data: " "
+
+data: "brain"
 
 data: ","
 
-data: " shaping"
+data: " "
 
-data: " the"
+data: "revealing"
 
-data: " trajectory"
+data: " "
 
-data: " of"
+data: "that"
 
-data: " modern"
+data: " "
 
-data: " philosophy"
+data: "consciousness"
+
+data: " "
+
+data: "is"
+
+data: " "
+
+data: "not"
+
+data: " "
+
+data: "a"
+
+data: " "
+
+data: "singular"
+
+data: " "
+
+data: "entity"
+
+data: " "
+
+data: "but"
+
+data: " "
+
+data: "rather"
+
+data: " "
+
+data: "a"
+
+data: " "
+
+data: "collection"
+
+data: " "
+
+data: "of"
+
+data: " "
+
+data: "processes"
 
 data: "."
 
-data: " Locke"
+data: " "
 
-data: "’s"
+data: "This"
 
-data: " empir"
+data: " "
 
-data: "icism"
+data: "aligns"
+
+data: " "
+
+data: "with"
+
+data: " "
+
+data: "Des"
+
+data: "cart"
+
+data: "es"
+
+data: "'"
+
+data: " "
+
+data: "assertion"
+
+data: " "
+
+data: "that"
+
+data: " "
+
+data: "the"
+
+data: " "
+
+data: "mind"
+
+data: " "
+
+data: "is"
+
+data: " "
+
+data: "a"
+
+data: " "
+
+data: "distinct"
+
+data: " "
+
+data: "substance"
 
 data: ","
 
-data: " which"
+data: " "
 
-data: " emphasized"
+data: "separate"
 
-data: " the"
+data: " "
 
-data: " role"
+data: "from"
 
-data: " of"
+data: " "
 
-data: " sensory"
+data: "the"
 
-data: " experience"
+data: " "
 
-data: " in"
-
-data: " the"
-
-data: " formation"
-
-data: " of"
-
-data: " knowledge"
+data: "body"
 
 data: ","
 
-data: " can"
+data: " "
 
-data: " be"
+data: "which"
 
-data: " seen"
+data: " "
 
-data: " as"
+data: "does"
 
-data: " a"
+data: " "
 
-data: " response"
+data: "not"
 
-data: " to"
+data: " "
 
-data: " the"
+data: "require"
 
-data: " Cartesian"
+data: " "
 
-data: " emphasis"
+data: "spatial"
 
-data: " on"
+data: " "
 
-data: " rational"
+data: "extension"
 
-data: "ism"
+data: " "
+
+data: "["
+
+data: "A"
+
+data: "1"
+
+data: "]."
+
+data: " "
+
+data: "The"
+
+data: " "
+
+data: "mind"
+
+data: ","
+
+data: " "
+
+data: "in"
+
+data: " "
+
+data: "this"
+
+data: " "
+
+data: "framework"
+
+data: ","
+
+data: " "
+
+data: "transc"
+
+data: "ends"
+
+data: " "
+
+data: "mere"
+
+data: " "
+
+data: "physical"
+
+data: "ity"
+
+data: ","
+
+data: " "
+
+data: "embody"
+
+data: "ing"
+
+data: " "
+
+data: "a"
+
+data: " "
+
+data: "realm"
+
+data: " "
+
+data: "of"
+
+data: " "
+
+data: "thought"
+
+data: ","
+
+data: " "
+
+data: "emotion"
+
+data: ","
+
+data: " "
+
+data: "and"
+
+data: " "
+
+data: "self"
+
+data: "-awareness"
 
 data: "."
 
-data: " Kant"
+data: "\n\n"
+
+data: "As"
+
+data: " "
+
+data: "we"
+
+data: " "
+
+data: "navigate"
+
+data: " "
+
+data: "the"
+
+data: " "
+
+data: "landscape"
+
+data: " "
+
+data: "of"
+
+data: " "
+
+data: "consciousness"
 
 data: ","
 
-data: " in"
+data: " "
 
-data: " his"
+data: "we"
 
-data: " critical"
+data: " "
 
-data: " philosophy"
+data: "are"
 
-data: ","
+data: " "
 
-data: " sought"
+data: "compelled"
 
-data: " to"
+data: " "
 
-data: " bridge"
+data: "to"
 
-data: " the"
+data: " "
 
-data: " gap"
+data: "engage"
 
-data: " between"
+data: " "
 
-data: " rational"
+data: "with"
 
-data: "ism"
+data: " "
 
-data: " and"
+data: "the"
 
-data: " empir"
+data: " "
 
-data: "icism"
+data: "contemporary"
 
-data: ","
+data: " "
 
-data: " proposing"
+data: "implications"
 
-data: " that"
+data: " "
 
-data: " our"
+data: "of"
 
-data: " understanding"
+data: " "
 
-data: " of"
+data: "Des"
 
-data: " reality"
+data: "cart"
 
-data: " is"
+data: "es"
 
-data: " shaped"
+data: "'"
 
-data: " by"
+data: " "
 
-data: " both"
-
-data: " sensory"
-
-data: " experience"
-
-data: " and"
-
-data: " the"
-
-data: " inherent"
-
-data: " structures"
-
-data: " of"
-
-data: " the"
-
-data: " mind"
+data: "ideas"
 
 data: "."
 
-data: " The"
+data: " "
 
-data: " dialogues"
+data: "The"
 
-data: " between"
+data: " "
 
-data: " these"
+data: "burgeoning"
 
-data: " philosophers"
+data: " "
 
-data: " underscore"
+data: "field"
 
-data: " the"
+data: " "
 
-data: " enduring"
+data: "of"
 
-data: " impact"
+data: " "
 
-data: " of"
+data: "artificial"
 
-data: " Des"
+data: " "
+
+data: "intelligence"
+
+data: " "
+
+data: "("
+
+data: "AI"
+
+data: ")"
+
+data: " "
+
+data: "invites"
+
+data: " "
+
+data: "us"
+
+data: " "
+
+data: "to"
+
+data: " "
+
+data: "reconsider"
+
+data: " "
+
+data: "the"
+
+data: " "
+
+data: "nature"
+
+data: " "
+
+data: "of"
+
+data: " "
+
+data: "consciousness"
+
+data: " "
+
+data: "and"
+
+data: " "
+
+data: "what"
+
+data: " "
+
+data: "it"
+
+data: " "
+
+data: "means"
+
+data: " "
+
+data: "to"
+
+data: " "
+
+data: "be"
+
+data: " "
+
+data: "a"
+
+data: " "
+
+data: "thinking"
+
+data: " "
+
+data: "entity"
+
+data: "."
+
+data: " "
+
+data: "If"
+
+data: " "
+
+data: "machines"
+
+data: " "
+
+data: "can"
+
+data: " "
+
+data: "simulate"
+
+data: " "
+
+data: "thought"
+
+data: " "
+
+data: "processes"
+
+data: ","
+
+data: " "
+
+data: "do"
+
+data: " "
+
+data: "they"
+
+data: " "
+
+data: "possess"
+
+data: " "
+
+data: "consciousness"
+
+data: "?"
+
+data: " "
+
+data: "This"
+
+data: " "
+
+data: "inquiry"
+
+data: " "
+
+data: "leads"
+
+data: " "
+
+data: "us"
+
+data: " "
+
+data: "to"
+
+data: " "
+
+data: "question"
+
+data: " "
+
+data: "the"
+
+data: " "
+
+data: "boundaries"
+
+data: " "
+
+data: "of"
+
+data: " "
+
+data: "the"
+
+data: " "
+
+data: "mind"
+
+data: " "
+
+data: "and"
+
+data: " "
+
+data: "the"
+
+data: " "
+
+data: "criteria"
+
+data: " "
+
+data: "we"
+
+data: " "
+
+data: "use"
+
+data: " "
+
+data: "to"
+
+data: " "
+
+data: "define"
+
+data: " "
+
+data: "sent"
+
+data: "ience"
+
+data: "."
+
+data: " "
+
+data: "Des"
 
 data: "cart"
 
@@ -2638,582 +2710,1743 @@ data: "es"
 
 data: "’"
 
-data: " thoughts"
+data: " "
 
-data: " on"
+data: "emphasis"
 
-data: " consciousness"
+data: " "
 
-data: " and"
+data: "on"
 
-data: " knowledge"
+data: " "
 
-data: ".\n\n"
+data: "the"
 
-data: "As"
+data: " "
 
-data: " we"
+data: "necessity"
 
-data: " navigate"
+data: " "
 
-data: " the"
+data: "of"
 
-data: " complexities"
+data: " "
 
-data: " of"
+data: "a"
 
-data: " contemporary"
+data: " "
 
-data: " consciousness"
+data: "thinker"
 
-data: ","
+data: " "
 
-data: " we"
+data: "["
 
-data: " find"
+data: "P"
 
-data: " ourselves"
+data: "6"
 
-data: " at"
+data: "]"
 
-data: " the"
+data: " "
 
-data: " intersection"
+data: "challenges"
 
-data: " of"
+data: " "
 
-data: " philosophy"
+data: "us"
 
-data: ","
+data: " "
 
-data: " neuroscience"
+data: "to"
 
-data: ","
+data: " "
 
-data: " and"
+data: "explore"
 
-data: " technology"
+data: " "
 
-data: "."
+data: "whether"
 
-data: " The"
+data: " "
 
-data: " rise"
+data: "consciousness"
 
-data: " of"
+data: " "
 
-data: " neuro"
+data: "is"
 
-data: "ph"
+data: " "
 
-data: "ilos"
+data: "an"
 
-data: "ophy"
+data: " "
 
-data: ","
+data: "exclusive"
 
-data: " a"
+data: " "
 
-data: " discipline"
+data: "trait"
 
-data: " that"
+data: " "
 
-data: " seeks"
+data: "of"
 
-data: " to"
+data: " "
 
-data: " integrate"
+data: "biological"
 
-data: " insights"
+data: " "
 
-data: " from"
+data: "entities"
 
-data: " neuroscience"
+data: " "
 
-data: " with"
+data: "or"
 
-data: " philosophical"
+data: " "
 
-data: " inquiry"
+data: "if"
 
-data: ","
+data: " "
 
-data: " reflects"
+data: "it"
 
-data: " a"
+data: " "
 
-data: " growing"
+data: "can"
 
-data: " recognition"
+data: " "
 
-data: " of"
+data: "be"
 
-data: " the"
+data: " "
 
-data: " need"
+data: "replicated"
 
-data: " to"
+data: " "
 
-data: " understand"
+data: "in"
 
-data: " consciousness"
+data: " "
 
-data: " through"
+data: "artificial"
 
-data: " an"
+data: " "
 
-data: " interdisciplinary"
-
-data: " lens"
+data: "systems"
 
 data: "."
 
-data: " This"
+data: "\n\n"
 
-data: " approach"
-
-data: " not"
-
-data: " only"
-
-data: " honors"
-
-data: " the"
-
-data: " Cartesian"
-
-data: " legacy"
-
-data: " but"
-
-data: " also"
-
-data: " expands"
-
-data: " upon"
-
-data: " it"
+data: "Moreover"
 
 data: ","
 
-data: " fostering"
+data: " "
 
-data: " a"
-
-data: " dialogue"
-
-data: " between"
-
-data: " empirical"
-
-data: " findings"
-
-data: " and"
-
-data: " philosophical"
-
-data: " questions"
-
-data: "."
-
-data: " The"
-
-data: " exploration"
-
-data: " of"
-
-data: " consciousness"
-
-data: " is"
-
-data: " no"
-
-data: " longer"
-
-data: " confined"
-
-data: " to"
-
-data: " the"
-
-data: " realm"
-
-data: " of"
-
-data: " abstract"
-
-data: " thought"
-
-data: ";"
-
-data: " it"
-
-data: " now"
-
-data: " intersects"
-
-data: " with"
-
-data: " questions"
-
-data: " about"
-
-data: " brain"
-
-data: " function"
-
-data: ","
-
-data: " artificial"
-
-data: " intelligence"
-
-data: ","
-
-data: " and"
-
-data: " the"
-
-data: " ethical"
-
-data: " implications"
-
-data: " of"
-
-data: " emerging"
-
-data: " technologies"
-
-data: ".\n\n"
-
-data: "In"
-
-data: " conclusion"
-
-data: ","
-
-data: " the"
-
-data: " inquiry"
-
-data: " into"
-
-data: " consciousness"
-
-data: " initiated"
-
-data: " by"
-
-data: " Des"
+data: "Des"
 
 data: "cart"
 
 data: "es"
 
-data: " remains"
+data: "'"
 
-data: " a"
+data: " "
 
-data: " profound"
+data: "exploration"
 
-data: " and"
+data: " "
 
-data: " multif"
+data: "of"
 
-data: "aceted"
+data: " "
 
-data: " endeavor"
+data: "the"
+
+data: " "
+
+data: "mind"
+
+data: "-body"
+
+data: " "
+
+data: "problem"
+
+data: " "
+
+data: "remains"
+
+data: " "
+
+data: "relevant"
+
+data: " "
+
+data: "in"
+
+data: " "
+
+data: "the"
+
+data: " "
+
+data: "context"
+
+data: " "
+
+data: "of"
+
+data: " "
+
+data: "discussions"
+
+data: " "
+
+data: "surrounding"
+
+data: " "
+
+data: "mental"
+
+data: " "
+
+data: "health"
+
+data: " "
+
+data: "and"
+
+data: " "
+
+data: "the"
+
+data: " "
+
+data: "relationship"
+
+data: " "
+
+data: "between"
+
+data: " "
+
+data: "mental"
+
+data: " "
+
+data: "and"
+
+data: " "
+
+data: "physical"
+
+data: " "
+
+data: "states"
 
 data: "."
 
-data: " His"
+data: " "
 
-data: " method"
+data: "The"
 
-data: "ical"
+data: " "
 
-data: " doubt"
+data: "Cartesian"
+
+data: " "
+
+data: "dual"
+
+data: "ism"
+
+data: " "
+
+data: "he"
+
+data: " "
+
+data: "proposed"
+
+data: "—that"
+
+data: " "
+
+data: "the"
+
+data: " "
+
+data: "mind"
+
+data: " "
+
+data: "and"
+
+data: " "
+
+data: "body"
+
+data: " "
+
+data: "are"
+
+data: " "
+
+data: "distinct"
+
+data: " "
+
+data: "substances"
+
+data: "—"
+
+data: "has"
+
+data: " "
+
+data: "informed"
+
+data: " "
+
+data: "debates"
+
+data: " "
+
+data: "in"
+
+data: " "
+
+data: "philosophy"
 
 data: ","
 
-data: " the"
+data: " "
 
-data: " cog"
-
-data: "ito"
+data: "psychology"
 
 data: ","
 
-data: " and"
+data: " "
 
-data: " the"
+data: "and"
 
-data: " distinction"
+data: " "
 
-data: " between"
-
-data: " mind"
-
-data: " and"
-
-data: " body"
-
-data: " provide"
-
-data: " a"
-
-data: " foundational"
-
-data: " framework"
-
-data: " for"
-
-data: " understanding"
-
-data: " the"
-
-data: " complexities"
-
-data: " of"
-
-data: " consciousness"
+data: "medicine"
 
 data: "."
 
-data: " The"
+data: " "
 
-data: " historical"
+data: "The"
 
-data: ","
+data: " "
 
-data: " scientific"
+data: "implications"
 
-data: ","
+data: " "
 
-data: " and"
+data: "of"
 
-data: " ethical"
+data: " "
 
-data: " dimensions"
+data: "this"
 
-data: " of"
+data: " "
 
-data: " this"
+data: "dual"
 
-data: " exploration"
+data: "ism"
 
-data: " invite"
+data: " "
 
-data: " us"
+data: "manifest"
 
-data: " to"
+data: " "
 
-data: " engage"
+data: "in"
 
-data: " deeply"
+data: " "
 
-data: " with"
+data: "contemporary"
 
-data: " the"
+data: " "
 
-data: " nature"
+data: "discussions"
 
-data: " of"
+data: " "
 
-data: " our"
+data: "about"
 
-data: " own"
+data: " "
 
-data: " existence"
+data: "the"
 
-data: " and"
+data: " "
 
-data: " the"
+data: "interplay"
 
-data: " implications"
+data: " "
 
-data: " of"
+data: "between"
 
-data: " our"
+data: " "
 
-data: " conscious"
+data: "mental"
 
-data: " experience"
+data: " "
+
+data: "states"
+
+data: " "
+
+data: "and"
+
+data: " "
+
+data: "physical"
+
+data: " "
+
+data: "health"
 
 data: "."
 
-data: " As"
+data: " "
 
-data: " we"
+data: "For"
 
-data: " move"
+data: " "
 
-data: " forward"
-
-data: " in"
-
-data: " our"
-
-data: " quest"
-
-data: " for"
-
-data: " understanding"
+data: "instance"
 
 data: ","
 
-data: " we"
+data: " "
 
-data: " must"
+data: "consider"
 
-data: " remain"
+data: " "
 
-data: " vigilant"
+data: "the"
 
-data: " in"
+data: " "
 
-data: " our"
+data: "phenomenon"
 
-data: " skepticism"
+data: " "
+
+data: "of"
+
+data: " "
+
+data: "psychos"
+
+data: "omatic"
+
+data: " "
+
+data: "disorders"
 
 data: ","
 
-data: " embracing"
+data: " "
 
-data: " the"
+data: "where"
 
-data: " rich"
+data: " "
 
-data: " tapestry"
+data: "emotional"
 
-data: " of"
+data: " "
 
-data: " ideas"
+data: "distress"
 
-data: " that"
+data: " "
 
-data: " have"
+data: "manifests"
 
-data: " emerged"
+data: " "
 
-data: " from"
+data: "in"
 
-data: " the"
+data: " "
 
-data: " Cartesian"
+data: "physical"
 
-data: " tradition"
+data: " "
 
-data: " while"
-
-data: " also"
-
-data: " forging"
-
-data: " new"
-
-data: " paths"
-
-data: " in"
-
-data: " the"
-
-data: " ever"
-
-data: "-e"
-
-data: "volving"
-
-data: " landscape"
-
-data: " of"
-
-data: " consciousness"
+data: "ailments"
 
 data: "."
 
-data: " The"
+data: " "
 
-data: " journey"
+data: "This"
 
-data: " towards"
+data: " "
 
-data: " understanding"
+data: "interplay"
 
-data: " consciousness"
+data: " "
 
-data: " is"
+data: "highlights"
 
-data: " not"
+data: " "
 
-data: " merely"
+data: "the"
 
-data: " an"
+data: " "
 
-data: " intellectual"
+data: "complex"
 
-data: " exercise"
+data: " "
 
-data: ";"
+data: "relationships"
 
-data: " it"
+data: " "
 
-data: " is"
+data: "between"
 
-data: " a"
+data: " "
 
-data: " deeply"
+data: "the"
 
-data: " personal"
+data: " "
 
-data: " exploration"
+data: "mind"
 
-data: " of"
+data: " "
 
-data: " what"
+data: "and"
 
-data: " it"
+data: " "
 
-data: " means"
-
-data: " to"
-
-data: " be"
-
-data: " human"
+data: "body"
 
 data: ","
 
-data: " to"
+data: " "
 
-data: " think"
+data: "urging"
 
-data: ","
+data: " "
 
-data: " and"
+data: "us"
 
-data: " to"
+data: " "
 
-data: " exist"
+data: "to"
 
-data: " in"
+data: " "
 
-data: " a"
+data: "reconsider"
 
-data: " world"
+data: " "
 
-data: " filled"
+data: "the"
 
-data: " with"
+data: " "
 
-data: " both"
+data: "Cartesian"
 
-data: " wonder"
+data: " "
 
-data: " and"
+data: "model"
 
-data: " uncertainty"
+data: " "
+
+data: "in"
+
+data: " "
+
+data: "light"
+
+data: " "
+
+data: "of"
+
+data: " "
+
+data: "contemporary"
+
+data: " "
+
+data: "understand"
+
+data: "ings"
+
+data: " "
+
+data: "of"
+
+data: " "
+
+data: "health"
+
+data: " "
+
+data: "and"
+
+data: " "
+
+data: "well"
+
+data: "-being"
 
 data: "."
 
-data: "\n\n[Chunk 1 saved to DB: 1288 words | Running t
+data: "\n\n"
+
+data: "Counter"
+
+data: "points"
+
+data: " "
+
+data: "to"
+
+data: " "
+
+data: "Cartesian"
+
+data: " "
+
+data: "dual"
+
+data: "ism"
+
+data: " "
+
+data: "have"
+
+data: " "
+
+data: "emerged"
+
+data: " "
+
+data: "over"
+
+data: " "
+
+data: "the"
+
+data: " "
+
+data: "centuries"
+
+data: ","
+
+data: " "
+
+data: "most"
+
+data: " "
+
+data: "notably"
+
+data: " "
+
+data: "through"
+
+data: " "
+
+data: "the"
+
+data: " "
+
+data: "lens"
+
+data: " "
+
+data: "of"
+
+data: " "
+
+data: "material"
+
+data: "ism"
+
+data: " "
+
+data: "and"
+
+data: " "
+
+data: "physical"
+
+data: "ism"
+
+data: ","
+
+data: " "
+
+data: "which"
+
+data: " "
+
+data: "posit"
+
+data: " "
+
+data: "that"
+
+data: " "
+
+data: "consciousness"
+
+data: " "
+
+data: "arises"
+
+data: " "
+
+data: "solely"
+
+data: " "
+
+data: "from"
+
+data: " "
+
+data: "physical"
+
+data: " "
+
+data: "processes"
+
+data: "."
+
+data: " "
+
+data: "Philosoph"
+
+data: "ers"
+
+data: " "
+
+data: "like"
+
+data: " "
+
+data: "Daniel"
+
+data: " "
+
+data: "Denn"
+
+data: "ett"
+
+data: " "
+
+data: "challenge"
+
+data: " "
+
+data: "the"
+
+data: " "
+
+data: "notion"
+
+data: " "
+
+data: "of"
+
+data: " "
+
+data: "a"
+
+data: " "
+
+data: "distinct"
+
+data: ","
+
+data: " "
+
+data: "non"
+
+data: "-material"
+
+data: " "
+
+data: "mind"
+
+data: ","
+
+data: " "
+
+data: "suggesting"
+
+data: " "
+
+data: "instead"
+
+data: " "
+
+data: "that"
+
+data: " "
+
+data: "consciousness"
+
+data: " "
+
+data: "is"
+
+data: " "
+
+data: "an"
+
+data: " "
+
+data: "emerg"
+
+data: "ent"
+
+data: " "
+
+data: "property"
+
+data: " "
+
+data: "of"
+
+data: " "
+
+data: "complex"
+
+data: " "
+
+data: "neurological"
+
+data: " "
+
+data: "processes"
+
+data: "."
+
+data: " "
+
+data: "This"
+
+data: " "
+
+data: "perspective"
+
+data: " "
+
+data: "invites"
+
+data: " "
+
+data: "a"
+
+data: " "
+
+data: "ree"
+
+data: "valuation"
+
+data: " "
+
+data: "of"
+
+data: " "
+
+data: "Des"
+
+data: "cart"
+
+data: "es"
+
+data: "'"
+
+data: " "
+
+data: "assertions"
+
+data: ","
+
+data: " "
+
+data: "prompting"
+
+data: " "
+
+data: "an"
+
+data: " "
+
+data: "ongoing"
+
+data: " "
+
+data: "dialogue"
+
+data: " "
+
+data: "about"
+
+data: " "
+
+data: "the"
+
+data: " "
+
+data: "nature"
+
+data: " "
+
+data: "of"
+
+data: " "
+
+data: "consciousness"
+
+data: " "
+
+data: "and"
+
+data: " "
+
+data: "the"
+
+data: " "
+
+data: "essence"
+
+data: " "
+
+data: "of"
+
+data: " "
+
+data: "human"
+
+data: " "
+
+data: "experience"
+
+data: "."
+
+data: "\n\n"
+
+data: "Yet"
+
+data: ","
+
+data: " "
+
+data: "even"
+
+data: " "
+
+data: "amidst"
+
+data: " "
+
+data: "these"
+
+data: " "
+
+data: "counter"
+
+data: "-"
+
+data: "arguments"
+
+data: ","
+
+data: " "
+
+data: "Des"
+
+data: "cart"
+
+data: "es"
+
+data: "'"
+
+data: " "
+
+data: "insights"
+
+data: " "
+
+data: "endure"
+
+data: "."
+
+data: " "
+
+data: "The"
+
+data: " "
+
+data: "challenge"
+
+data: " "
+
+data: "of"
+
+data: " "
+
+data: "recon"
+
+data: "cil"
+
+data: "ing"
+
+data: " "
+
+data: "subjective"
+
+data: " "
+
+data: "experience"
+
+data: " "
+
+data: "with"
+
+data: " "
+
+data: "objective"
+
+data: " "
+
+data: "reality"
+
+data: " "
+
+data: "continues"
+
+data: " "
+
+data: "to"
+
+data: " "
+
+data: "perplex"
+
+data: " "
+
+data: "philosophers"
+
+data: " "
+
+data: "and"
+
+data: " "
+
+data: "scientists"
+
+data: " "
+
+data: "alike"
+
+data: "."
+
+data: " "
+
+data: "The"
+
+data: " "
+
+data: "qual"
+
+data: "ia"
+
+data: " "
+
+data: "problem"
+
+data: ","
+
+data: " "
+
+data: "which"
+
+data: " "
+
+data: "addresses"
+
+data: " "
+
+data: "the"
+
+data: " "
+
+data: "subjective"
+
+data: " "
+
+data: "qualities"
+
+data: " "
+
+data: "of"
+
+data: " "
+
+data: "conscious"
+
+data: " "
+
+data: "experience"
+
+data: ","
+
+data: " "
+
+data: "poses"
+
+data: " "
+
+data: "a"
+
+data: " "
+
+data: "significant"
+
+data: " "
+
+data: "hurdle"
+
+data: " "
+
+data: "in"
+
+data: " "
+
+data: "understanding"
+
+data: " "
+
+data: "consciousness"
+
+data: "."
+
+data: " "
+
+data: "How"
+
+data: " "
+
+data: "do"
+
+data: " "
+
+data: "we"
+
+data: " "
+
+data: "account"
+
+data: " "
+
+data: "for"
+
+data: " "
+
+data: "the"
+
+data: " "
+
+data: "richness"
+
+data: " "
+
+data: "of"
+
+data: " "
+
+data: "our"
+
+data: " "
+
+data: "experiences"
+
+data: "—the"
+
+data: " "
+
+data: "taste"
+
+data: " "
+
+data: "of"
+
+data: " "
+
+data: "chocolate"
+
+data: ","
+
+data: " "
+
+data: "the"
+
+data: " "
+
+data: "warmth"
+
+data: " "
+
+data: "of"
+
+data: " "
+
+data: "sunlight"
+
+data: "—"
+
+data: "within"
+
+data: " "
+
+data: "a"
+
+data: " "
+
+data: "purely"
+
+data: " "
+
+data: "physical"
+
+data: " "
+
+data: "framework"
+
+data: "?"
+
+data: " "
+
+data: "Des"
+
+data: "cart"
+
+data: "es"
+
+data: "'"
+
+data: " "
+
+data: "insist"
+
+data: "ence"
+
+data: " "
+
+data: "on"
+
+data: " "
+
+data: "the"
+
+data: " "
+
+data: "prim"
+
+data: "acy"
+
+data: " "
+
+data: "of"
+
+data: " "
+
+data: "thought"
+
+data: " "
+
+data: "and"
+
+data: " "
+
+data: "the"
+
+data: " "
+
+data: "existence"
+
+data: " "
+
+data: "of"
+
+data: " "
+
+data: "a"
+
+data: " "
+
+data: "thinker"
+
+data: " "
+
+data: "serves"
+
+data: " "
+
+data: "as"
+
+data: " "
+
+data: "a"
+
+data: " "
+
+data: "reminder"
+
+data: " "
+
+data: "that"
+
+data: " "
+
+data: "the"
+
+data: " "
+
+data: "subjective"
+
+data: " "
+
+data: "dimensions"
+
+data: " "
+
+data: "of"
+
+data: " "
+
+data: "consciousness"
+
+data: " "
+
+data: "cannot"
+
+data: " "
+
+data: "be"
+
+data: " "
+
+data: "easily"
+
+data: " "
+
+data: "reduced"
+
+data: " "
+
+data: "to"
+
+data: " "
+
+data: "mere"
+
+data: " "
+
+data: "physical"
+
+data: " "
+
+data: "phenomena"
+
+data: "."
+
+data: "\n\n"
+
+data: "In"
+
+data: " "
+
+data: "considering"
+
+data: " "
+
+data: "the"
+
+data: " "
+
+data: "historical"
+
+data: " "
+
+data: "trajectory"
+
+data: " "
+
+data: "of"
+
+data: " "
+
+data: "consciousness"
+
+data: " "
+
+data: "studies"
+
+data: ","
+
+data: " "
+
+data: "we"
+
+data: " "
+
+data: "observe"
+
+data: " "
+
+data: "that"
+
+data: " "
+
+data: "Des"
+
+data: "cart"
+
+data: "es"
+
+data: "'"
+
+data: " "
+
+data: "contributions"
+
+data: " "
+
+data: "serve"
+
+data: " "
+
+data: "as"
+
+data: " "
+
+data: "a"
+
+data: " "
+
+data: "foundational"
+
+data: " "
+
+data: "pillar"
+
+data: " "
+
+data: "upon"
+
+data: " "
+
+data: "which"
+
+data: " "
+
+data: "subsequent"
+
+data: " "
+
+data: "thinkers"
+
+data: " "
+
+data: "have"
+
+data: " "
+
+data: "built"
+
+data: "."
+
+data: " "
+
+data: "His"
+
+data: " "
+
+data: "method"
+
+data: " "
+
+data: "of"
+
+data: " "
+
+data: "doubt"
+
+data: " "
+
+data: "and"
+
+data: " "
+
+data: "exploration"
+
+data: " "
+
+data: "of"
+
+data: " "
+
+data: "the"
+
+data: " "
+
+data: "self"
+
+data: " "
+
+data: "have"
+
+data: " "
+
+data: "influenced"
+
+data: " "
+
+data: "a"
+
+data: " "
+
+data: "diverse"
+
+data: " "
+
+data: "array"
+
+data: " "
+
+data: "of"
+
+data: " "
+
+data: "philosophical"
+
+data: " "
+
+data: "movements"
+
+data: ","
+
+data: " "
+
+data: "including"
+
+data: " "
+
+data: "existential"
+
+data: "ism"
+
+data: " "
+
+data: "and"
+
+data: " "
+
+data: "phenomen"
+
+data: "ology"
+
+data: "."
+
+data: " "
+
+data: "Figures"
+
+data: " "
+
+data: "such"
+
+data: " "
+
+data: "as"
+
+data: " "
+
+data: "Jean"
+
+data: "-Paul"
+
+data: " "
+
+data: "Sart"
+
+data: "re"
+
+data: " "
+
+data: "and"
+
+data: " "
+
+data: "Maurice"
+
+data: " "
+
+data: "Mer"
+
+data: "le"
+
+data: "au"
+
+data: "-P"
+
+data: "ont"
+
+data: "y"
+
+data: " "
+
+data: "have"
+
+data: " "
+
+data: "drawn"
+
+data: " "
+
+data: "inspiration"
+
+data: " "
+
+data: "from"
+
+data: " "
+
+data: "Cartesian"
+
+data: " "
+
+data: "themes"
+
+data: ","
+
+data: " "
+
+data: "grap"
+
+data: "pling"
+
+data: " "
+
+data: "with"
+
+data: " "
+
+data: "the"
+
+data: " "
+
+data: "nature"
+
+data: " "
+
+data: "of"
+
+data: " "
+
+data: "existence"
+
+data: " "
+
+data: "and"
+
+data: " "
+
+data: "the"
+
+data: " "
+
+data: "embodied"
+
+data: " "
+
+data: "experience"
+
+data: " "
+
+data: "of"
+
+data: " "
+
+data: "consciousness"
+
+data: "."
+
+data: " "
+
+data: "This"
+
+data: " "
+
+data: "lineage"
+
+data: " "
+
+data: "underscores"
+
+data: " "
+
+data: "the"
+
+data: " "
+
+data: "enduring"
+
+data: " "
+
+data: "impact"
+
+data: " "
+
+data: "of"
+
+data: " "
+
+data: "Des"
+
+data: "cart"
+
+data: "es"
+
+data: "'"
+
+data: " "
+
+data: "thought"
+
+data: ","
+
+data: " "
+
+data: "as"
+
+data: " "
+
+data: "contemporary"
+
+data: " "
+
+data: "philosophers"
+
+data: " "
+
+data: "continue"
+
+data: " "
+
+data: "to"
+
