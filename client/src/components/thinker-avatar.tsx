@@ -1,4 +1,9 @@
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import adlerImg from "../assets/thinkers/adler.png";
+
+const THINKER_AVATARS: Record<string, string> = {
+  adler: adlerImg,
+};
 
 interface ThinkerAvatarProps {
   thinkerId: string;
@@ -15,6 +20,8 @@ export function ThinkerAvatar({ thinkerId, size = "md", isAnimating = false, cla
     xl: "h-24 w-24 text-2xl",
   };
 
+  const avatarSrc = THINKER_AVATARS[thinkerId.toLowerCase()];
+
   return (
     <div className={`relative ${className}`}>
       <Avatar 
@@ -22,6 +29,7 @@ export function ThinkerAvatar({ thinkerId, size = "md", isAnimating = false, cla
         style={{ animationDuration: isAnimating ? "3s" : undefined }}
         data-testid={`avatar-thinker-${thinkerId.toLowerCase()}`}
       >
+        {avatarSrc && <AvatarImage src={avatarSrc} alt={thinkerId} className="object-cover" />}
         <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white font-bold">
           {thinkerId.charAt(0).toUpperCase()}
         </AvatarFallback>
