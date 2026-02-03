@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from "react";
-import { Send, Loader2, Copy, Download, ArrowRight } from "lucide-react";
+import { useState, useRef } from "react";
+import { Send, Loader2, Copy, Download, ArrowRight, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
@@ -17,6 +17,7 @@ import { THINKERS } from "@shared/schema";
 interface Message {
   role: "user" | "assistant";
   content: string;
+  skeleton?: string;
 }
 
 export function MainChatSection() {
@@ -29,9 +30,6 @@ export function MainChatSection() {
   const [wordCount, setWordCount] = useState(2000);
   const [quoteCount, setQuoteCount] = useState(10);
   const [enhanced, setEnhanced] = useState(true);
-  const [skeleton, setSkeleton] = useState("");
-  const [showSkeleton, setShowSkeleton] = useState(false);
-  const [pendingMessage, setPendingMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { setModelBuilderInput } = useContentTransfer();
   const { toast } = useToast();
@@ -46,22 +44,6 @@ export function MainChatSection() {
     toast({ title: "Document Loaded", description: `${content.split(/\s+/).length.toLocaleString()} words loaded` });
   };
 
-  const fetchSkeleton = async (message: string) => {
-    try {
-      const response = await fetch(`/api/figures/${selectedThinker}/skeleton`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic: message, quoteCount }),
-      });
-      if (!response.ok) throw new Error("Failed to fetch skeleton");
-      const data = await response.json();
-      return data.skeleton;
-    } catch (error) {
-      console.error("Skeleton error:", error);
-      return null;
-    }
-  };
-
   const handleSubmit = async () => {
     if (!input.trim() || isStreaming) return;
 
@@ -69,31 +51,14 @@ export function MainChatSection() {
       ? `${input.trim()}\n\n--- DOCUMENT TO DISCUSS ---\n${documentContent}` 
       : input.trim();
     
-    // For word counts > 500, show skeleton first
-    if (wordCount > 500) {
-      setIsStreaming(true);
-      toast({ title: "Phase 1: Fetching Database Skeleton", description: "Loading source material..." });
-      
-      const skeletonContent = await fetchSkeleton(input.trim());
-      if (skeletonContent) {
-        setSkeleton(skeletonContent);
-        setShowSkeleton(true);
-        setPendingMessage(userMessage);
-        setIsStreaming(false);
-        toast({ title: "Skeleton Ready", description: "Review and download the skeleton, then click Generate to continue." });
-        return;
-      }
-    }
-    
     await generateResponse(userMessage);
   };
 
   const generateResponse = async (userMessage: string) => {
+    const userInput = input.trim();
     setInput("");
     setDocumentContent("");
-    setShowSkeleton(false);
-    setPendingMessage("");
-    setMessages(prev => [...prev, { role: "user", content: input.trim() || pendingMessage.split("\n")[0] + (documentContent ? ` [Document attached]` : "") }]);
+    setMessages(prev => [...prev, { role: "user", content: userInput + (documentContent ? ` [Document attached]` : "") }]);
     setIsStreaming(true);
 
     try {
@@ -112,15 +77,37 @@ export function MainChatSection() {
       if (!response.ok) throw new Error("Failed to get response");
 
       let assistantContent = "";
+      let extractedSkeleton = "";
       setMessages(prev => [...prev, { role: "assistant", content: "" }]);
 
       for await (const chunk of streamResponse(response)) {
         assistantContent += chunk;
+        
+        // Extract skeleton JSON from stream (hidden from display)
+        const startMarker = "[SKELETON_JSON]";
+        const endMarker = "[/SKELETON_JSON]";
+        const startIdx = assistantContent.indexOf(startMarker);
+        const endIdx = assistantContent.indexOf(endMarker);
+        if (startIdx !== -1 && endIdx !== -1) {
+          extractedSkeleton = assistantContent.substring(startIdx + startMarker.length, endIdx);
+        }
+        
+        // Remove skeleton JSON marker from display
+        let displayContent = assistantContent;
+        if (startIdx !== -1) {
+          if (endIdx !== -1) {
+            displayContent = assistantContent.substring(0, startIdx) + assistantContent.substring(endIdx + endMarker.length);
+          } else {
+            displayContent = assistantContent.substring(0, startIdx);
+          }
+        }
+        
         setMessages(prev => {
           const newMessages = [...prev];
           newMessages[newMessages.length - 1] = {
             role: "assistant",
-            content: assistantContent
+            content: displayContent,
+            skeleton: extractedSkeleton
           };
           return newMessages;
         });
@@ -133,19 +120,27 @@ export function MainChatSection() {
       }]);
     } finally {
       setIsStreaming(false);
-      setSkeleton("");
     }
   };
 
-  const handleGenerateFromSkeleton = () => {
-    if (pendingMessage) {
-      generateResponse(pendingMessage);
+  const handleDownloadSkeleton = (skeletonJson: string) => {
+    try {
+      const skeleton = JSON.parse(skeletonJson);
+      let text = "SKELETON\n========\n\n";
+      text += `THESIS:\n${skeleton.thesis || ""}\n\n`;
+      text += `OUTLINE:\n${(skeleton.outline || []).map((s: string, i: number) => `  ${i + 1}. ${s}`).join("\n")}\n\n`;
+      if (skeleton.commitments?.length > 0) {
+        text += `COMMITMENTS:\n${skeleton.commitments.map((c: string, i: number) => `  ${i + 1}. ${c}`).join("\n")}\n\n`;
+      }
+      if (skeleton.keyTerms && Object.keys(skeleton.keyTerms).length > 0) {
+        text += `KEY TERMS:\n${Object.entries(skeleton.keyTerms).map(([k, v]) => `  - ${k}: ${v}`).join("\n")}\n\n`;
+      }
+      downloadText(text, `skeleton-${selectedThinker}-${Date.now()}.txt`);
+      toast({ title: "Downloaded", description: "Skeleton downloaded" });
+    } catch (e) {
+      downloadText(skeletonJson, `skeleton-${selectedThinker}-${Date.now()}.json`);
+      toast({ title: "Downloaded", description: "Skeleton downloaded as JSON" });
     }
-  };
-
-  const handleDownloadSkeleton = () => {
-    downloadText(skeleton, `skeleton-${selectedThinker}-${Date.now()}.txt`);
-    toast({ title: "Downloaded", description: "Skeleton downloaded" });
   };
 
   const handleClear = () => {
@@ -232,6 +227,11 @@ export function MainChatSection() {
                     <Button variant="ghost" size="sm" onClick={() => handleDownloadMessage(message.content, index)} data-testid={`button-download-message-${index}`}>
                       <Download className="h-3 w-3 mr-1" /> Download
                     </Button>
+                    {message.skeleton && (
+                      <Button variant="ghost" size="sm" onClick={() => handleDownloadSkeleton(message.skeleton!)} data-testid={`button-download-skeleton-${index}`}>
+                        <FileText className="h-3 w-3 mr-1" /> Download Skeleton
+                      </Button>
+                    )}
                     <Button variant="ghost" size="sm" onClick={() => handleSendToModelBuilder(message.content)} data-testid={`button-send-to-model-${index}`}>
                       <ArrowRight className="h-3 w-3 mr-1" /> To Model Builder
                     </Button>

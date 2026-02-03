@@ -293,22 +293,52 @@ export async function processWithCoherence(options: CoherenceOptions): Promise<v
   const totalChunks = Math.max(1, Math.ceil(targetWords / WORDS_PER_CHUNK));
   const wordsPerChunk = Math.ceil(targetWords / totalChunks);
 
-  sendSSE(res, `\n=== PHASE 1: CREATING SESSION & EXTRACTING SKELETON ===\n`);
+  sendSSE(res, `\n=== PHASE 1: EXTRACTING SKELETON FROM DATABASE ===\n`);
   sendSSE(res, `Target: ${targetWords.toLocaleString()} words in ${totalChunks} chunks\n\n`);
 
   const sessionId = await createSession(options);
-  sendSSE(res, `Session ID: ${sessionId}\n`);
 
   const skeleton = await extractGlobalSkeleton(userPrompt, thinkerName, databaseContent, model);
   await updateSessionSkeleton(sessionId, skeleton, totalChunks);
 
-  sendSSE(res, `SKELETON EXTRACTED & STORED IN DATABASE:\n`);
-  sendSSE(res, `- Thesis: ${skeleton.thesis}\n`);
-  sendSSE(res, `- Outline: ${skeleton.outline.length} sections\n`);
-  sendSSE(res, `- Commitments: ${skeleton.commitments.length}\n`);
-  sendSSE(res, `- Database items: ${skeleton.databaseContent.positions.length} positions, ${skeleton.databaseContent.quotes.length} quotes\n\n`);
+  // Stream the full skeleton visibly for the user
+  sendSSE(res, `\n──────────────────────────────────────────────────────────────\n`);
+  sendSSE(res, `                    SKELETON (Downloadable)\n`);
+  sendSSE(res, `──────────────────────────────────────────────────────────────\n\n`);
+  
+  sendSSE(res, `THESIS:\n${skeleton.thesis}\n\n`);
+  
+  sendSSE(res, `OUTLINE:\n`);
+  skeleton.outline.forEach((section, i) => {
+    sendSSE(res, `  ${i + 1}. ${section}\n`);
+  });
+  
+  if (skeleton.commitments.length > 0) {
+    sendSSE(res, `\nCOMMITMENTS:\n`);
+    skeleton.commitments.forEach((c, i) => {
+      sendSSE(res, `  ${i + 1}. ${c}\n`);
+    });
+  }
+  
+  if (Object.keys(skeleton.keyTerms).length > 0) {
+    sendSSE(res, `\nKEY TERMS:\n`);
+    Object.entries(skeleton.keyTerms).forEach(([term, def]) => {
+      sendSSE(res, `  - ${term}: ${def}\n`);
+    });
+  }
+  
+  sendSSE(res, `\nDATABASE ITEMS:\n`);
+  sendSSE(res, `  Positions: ${skeleton.databaseContent.positions.length}\n`);
+  sendSSE(res, `  Quotes: ${skeleton.databaseContent.quotes.length}\n`);
+  sendSSE(res, `  Arguments: ${skeleton.databaseContent.arguments.length}\n`);
+  sendSSE(res, `  Works: ${skeleton.databaseContent.works.length}\n`);
+  
+  sendSSE(res, `\n──────────────────────────────────────────────────────────────\n\n`);
+  
+  // Send skeleton as JSON for frontend to capture (marked for extraction)
+  sendSSE(res, `[SKELETON_JSON]${JSON.stringify(skeleton)}[/SKELETON_JSON]\n\n`);
 
-  await delay(2000);
+  await delay(1000);
 
   sendSSE(res, `\n=== PHASE 2: GENERATING ${totalChunks} CHUNKS (with DB persistence) ===\n\n`);
 
