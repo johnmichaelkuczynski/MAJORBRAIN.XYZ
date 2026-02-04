@@ -1,0 +1,93 @@
+The Raven-Paradox
+
+  As a matter of logic, sentences that are logically equivalent must be confirmationally equivalent, but there are logically equivalent sentences that are not confirmationally equivalent (e.g.  all ravens are black  and  all non-black things are non-ravens ).
+  Logical equivalence: S1 and S2 are logically equivalent iff S1 entails S2 and S2 entails S1. (n=4 entails n=3+1, and n=3+1 entails n=4. Therefore, n=4 is equivalent with n=3+1.)
+  Confirmational equivalence: S1 and S2 are confirmationally equivalent iff, given any datum D, D confirms S1 to degree n iff D confirms S2 to degree n. (D: Two days ago, Smith had no cars, but yesterday he won four cars on a game show. D confirms n=4 and n=3+1, and it confirms them equally.)
+  Logical and confirmational equivalence logically equivalent: For S1 and S2 to be logically equivalent is, by definition, for neither to entail anything not also entailed by the other. It follows, by an indirect proof, that logical equivalence entails confirmational equivalence.
+  Suppose that S1 and S2 are logically equivalent but confirmationally non-equivalent. Since they are confirmationally non-equivalent, there is some proposition S3 that confirms S2 more than it confirms S1. It follows that S3 is relatively unlikely to be false if S2 is true and also that S3 is relatively unlikely to be true if S1 is true. Thus, S2 entails that S3 is relatively likely to be true and S1 entails that S3 is relatively likely to be false. Thus, there is some proposition that S1 entails that S2 does not entail and there is some proposition that S2 entails that S1 does not entail. Thus, S1 and S2 are not logically equivalent, contradicting our hypothesis. Thus, confirmational non-equivalence entails logical non-equivalence. Equivalently, logical equivalence guarantees confirmational equivalence.
+The Raven Paradox: Consider:
+
+R1: All ravens are black (if x is a raven, then x is black), and
+R2: All non-black things are non-ravens (if x is non-black, then x isn t a raven).
+
+R1 and R2 are equivalent.
+(That is, they are equivalent if read extensionally, i.e. as concerning only actual, as opposed to
+
+possible objects or, equivalently, as concerning what is as opposed to what must be. Hempel doesn t acknowledge that R1 and R2 can be read either extensionally or intensionally. When expounding Hempel s theory, we will follow Hempel s example in this regard. When critiquing it, we won t.)
+  The (extensional) equivalence of R1 and R2 is easily verified using Venn diagrams. But there is a problem. Consider:
+
+R3: x is a pink piano.
+
+  R3 confirms R2, but not R1. The pinkness of pianos has nothing to do with the blackness of ravens. But R3 would confirm R1 and R2 equally if they were logically equivalent. Since it doesn t, they aren t. But they seem to be	a paradox.
+
+Another paradox of the same kind: Consider:
+
+M1: Heated metal expands (if x is metal, then x expands when heated), and
+M2: Heated non-expanders aren t metal (if x doesn t expand when heated, then x isn t metal).
+
+The equivalence of M1 and M2 is easily verified using Venn diagrams. But there s a problem. Consider:
+
+M3: Cube steaks shrink when heated.
+
+  M3 confirms M2, but not M1: The deflationary tendencies of heated meat have nothing to do with the expansionary tendencies of heated metal. But M3 would confirm M1 and M2 equally if they were logically equivalent. Since it doesn t, they aren t. But they seem to be  a paradox.
+
+Hempel s solution
+
+  R3 does confirm R1 and R2 equally. We think otherwise because, our background beliefs being what they are, we believe it impossible that pianos should be ravens. We wouldn t believe this if our background beliefs were different, and we d therefore see that R3 per se is equally confirmatory of each of R1 and R2.
+  Similarly, M3 does confirm M1 and M2 equally. We think otherwise because, our background beliefs being what they are, we believe it impossible that cube steaks should be made of metal. We wouldn t believe this if our background beliefs were different, and we d therefore see that M3 per se is equally confirmatory of each of M1 and M2.
+
+The problem with Hempel s solution
+
+  We can t learn anything about ravens by studying pianos. We can t learn anything about metal by studying meat. Hempel s solution implies otherwise and is therefore false.
+
+The actual solution to the Raven Paradox
+
+There are two ways to interpret:
+
+(1) All phi s are psi s (if x is a phi, then x is a psi).
+
+(1) can be interpreted (or  read ) extensionally or intensionally. Read intensionally, 1 means:
+
+(1*) For reasons of natural law, all phi s are psi s.
+
+Read extensionally, 1 means:
+
+(1#) By coincidence, all phi s are psi s.
+
+Some statements, for example,
+
+(2) All of the coins in JM s pocket are quarters
+
+are naturally read extensionally, e.g. 2 is naturally to be taken to mean:
+
+(2#) By coincidence, all of the coins in JM s pocket are quarter.
+
+  But if there were some natural law (or mechanism---a mechanism being a way deploying natural laws in furtherance of some objective) that required coins in my pocket to be quarters, then (2) would have to be read intensionally and thus taken to mean:
+
+(2*) For reasons of natural law, all the coins in JM s pocket are quarters.
+
+M1 is naturally read intensionally and is thus taken to mean:
+
+(M1*) For reasons of natural law, metal objects expand when heated.
+
+Read extensionally, M means:
+
+(M1#) By coincidence, all things that don t expand when heated aren t metal.
+
+  M1* is not equivalent with M2. M2 is to the effect that a thing s failing to expand when heated implies that it already isn t metal, and it therefore implies that its failing to expand when heated cannot possibly cause it not to be metal.
+Thus, M1* entails the negation of M2 and a fortiori isn t equivalent with M2. An analogous argument establishes the non-equivalence of R1 and R2.
+
+The Raven-paradox a by-product of the Regularity Analysis
+
+  For Hempel, as for Hume, there are no causal connections, only regularities that mimic causal connections. So, for Hempel/Hume, any connection between
+
+x is heated metal
+
+and
+
+x is expanding
+
+is purely extensional.
+  If that were indeed so, then a shrinking cube-steak would provide quite as much support for x is heated metal, then x is expanding as would a piece of heated, expanding metal.
+But it doesn t; so there is no paradox.
+
