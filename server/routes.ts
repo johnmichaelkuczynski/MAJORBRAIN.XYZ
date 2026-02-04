@@ -1259,6 +1259,89 @@ Now write a ${wordCount}-word document on "${topic}".`;
     }
   });
 
+  // Document Analyzer - Generate CORE document from uploaded text
+  app.post("/api/document/analyze", async (req: Request, res: Response) => {
+    const { content, author, title, model = "gpt-4o" } = req.body;
+
+    if (!content || !author) {
+      return res.status(400).json({ error: "Content and author are required" });
+    }
+
+    setupSSE(res);
+
+    const wordCount = content.split(/\s+/).filter((w: string) => w.length > 0).length;
+    
+    const systemPrompt = `You are a scholarly document analyzer. You will analyze the provided text and extract structured content.
+
+DOCUMENT INFO:
+Title: ${title || "Untitled"}
+Author: ${author}
+Word Count: ${wordCount.toLocaleString()}
+
+OUTPUT FORMAT - Generate in this EXACT order with these EXACT headers:
+
+=== DETAILED OUTLINE ===
+[Create a comprehensive outline with main sections and subsections, numbered 1, 1.1, 1.2, 2, 2.1, etc.]
+
+=== KEY POSITIONS ===
+[List 10-20 of the most important philosophical/intellectual positions from this text. Each on its own line, starting with "POSITION:"]
+
+=== KEY ARGUMENTS ===
+[List 10-20 of the most important arguments made in this text. Each on its own line, starting with "ARGUMENT:"]
+
+=== TRENDS OF THOUGHT ===
+[Identify 5-10 general intellectual trends, themes, or patterns in this work. Each on its own line, starting with "TREND:"]
+
+=== QUESTIONS AND ANSWERS ===
+[Generate exactly 50 question-answer pairs based on this text. Format each as:]
+Q1: [Question that someone might ask the author about this text]
+A1: [Answer based on what the author says in this text]
+
+Q2: [Next question]
+A2: [Answer based on text]
+
+[Continue through Q50/A50]
+
+CRITICAL RULES:
+1. All content must come from the provided text - do not invent
+2. Be specific and detailed - cite concepts, terms, claims from the text
+3. Questions should cover the full range of topics in the document
+4. Answers should be substantive (2-5 sentences each)
+5. NO MARKDOWN - plain text only
+6. No filler phrases like "This raises profound questions..."`;
+
+    try {
+      const userMessage = `Analyze this document and generate the CORE content:\n\n${content.substring(0, 100000)}`;
+      
+      if (isOpenAIModel(model)) {
+        const messages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userMessage }
+        ];
+
+        for await (const chunk of streamOpenAI(messages, model)) {
+          sendSSE(res, chunk);
+        }
+      } else {
+        const messages: Array<{ role: "user" | "assistant"; content: string }> = [
+          { role: "user", content: userMessage }
+        ];
+
+        for await (const chunk of streamAnthropic(systemPrompt, messages, model)) {
+          sendSSE(res, chunk);
+        }
+      }
+
+      res.write("data: [DONE]\n\n");
+      res.end();
+    } catch (error: any) {
+      console.error("Document analysis error:", error);
+      sendSSE(res, `Error: ${error.message}`);
+      res.write("data: [DONE]\n\n");
+      res.end();
+    }
+  });
+
   // General AI Chat (streaming)
   app.post("/api/ai/chat", async (req: Request, res: Response) => {
     const { message, model = "gpt-4o", history = [] } = req.body;

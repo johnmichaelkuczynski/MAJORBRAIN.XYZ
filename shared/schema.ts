@@ -344,3 +344,24 @@ export const stitchResults = pgTable("stitch_results", {
 });
 
 export type StitchResult = typeof stitchResults.$inferSelect;
+
+// ============================================================================
+// CORE CONTENT TABLE - Priority content from analyzed documents
+// ============================================================================
+
+// Core content - extracted from analyzed documents, ALWAYS searched first
+export const coreContent = pgTable("core_content", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  thinker: text("thinker").notNull(),
+  contentType: varchar("content_type", { length: 50 }).notNull(), // 'outline', 'position', 'argument', 'trend', 'qa'
+  contentText: text("content_text").notNull(),
+  question: text("question"), // For Q&A type entries
+  answer: text("answer"), // For Q&A type entries
+  sourceDocument: text("source_document"), // Original document title
+  coreDocumentId: text("core_document_id"), // e.g., "CORE_FREUD_27"
+  importance: integer("importance").default(1), // Priority ranking
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type CoreContent = typeof coreContent.$inferSelect;
+export type InsertCoreContent = typeof coreContent.$inferInsert;

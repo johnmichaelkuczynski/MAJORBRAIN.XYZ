@@ -60,7 +60,21 @@ async function initCoherenceTables() {
         created_at TIMESTAMP DEFAULT NOW()
       )
     `;
-    console.log("Coherence tables initialized");
+    await client`
+      CREATE TABLE IF NOT EXISTS core_content (
+        id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid()::varchar,
+        thinker TEXT NOT NULL,
+        content_type VARCHAR(50) NOT NULL,
+        content_text TEXT NOT NULL,
+        question TEXT,
+        answer TEXT,
+        source_document TEXT,
+        core_document_id TEXT,
+        importance INTEGER DEFAULT 1,
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `;
+    console.log("Coherence and core_content tables initialized");
   } catch (error) {
     console.error("Failed to initialize coherence tables:", error);
   }

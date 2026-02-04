@@ -18,6 +18,7 @@ import { ArgumentGeneratorSection } from "@/components/argument-generator-sectio
 import { OutlineGeneratorSection } from "@/components/outline-generator-section";
 import { FullDocumentSection } from "@/components/full-document-section";
 import { AiChatSection } from "@/components/ai-chat-section";
+import { DocumentAnalyzerSection } from "@/components/document-analyzer-section";
 import { BookOpen } from "lucide-react";
 
 function App() {
@@ -76,6 +77,8 @@ function App() {
                   <OutlineGeneratorSection />
                   
                   <FullDocumentSection />
+                  
+                  <DocumentAnalyzerSection />
                   
                   <AiChatSection />
                 </div>
