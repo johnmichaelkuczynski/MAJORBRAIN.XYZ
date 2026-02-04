@@ -742,7 +742,14 @@ Now write a ${wordCount}-word dialogue between ${thinkerNames.join(" and ")} on 
         sessionType: "debate",
         thinkerId: debaters.join("-vs-"),
         thinkerName: debaterNames.join(" vs "),
-        userPrompt: `Create a formal debate on "${topic}" between ${debaterNames.join(" and ")}. Structure: Opening Statements, Rebuttals, Cross-Examination, Closing Arguments.`,
+        userPrompt: `Create a DEBATE (back-and-forth exchange) on "${topic}" between ${debaterNames.join(" and ")}. 
+        
+FORMAT: Each speaker takes turns like this:
+${debaterNames[0]}: [speaks...]
+${debaterNames[1]}: [responds...]
+${debaterNames[0]}: [rebuts...]
+
+STRUCTURE: Opening Statements, Rebuttals, Cross-Examination, Closing Arguments. Speakers must DISAGREE and CHALLENGE each other.`,
         targetWords: wordCount,
         model: model as any,
         enhanced: true,
@@ -767,21 +774,40 @@ Now write a ${wordCount}-word dialogue between ${thinkerNames.join(" and ")} on 
       ? "ENHANCED MODE (1:3 RATIO): Database content is the SCAFFOLDING (1 part). LLM elaboration is the FLESH (3 parts). For every database item, add 3x content with historical context, scientific parallels, examples, and illustrations."
       : "STRICT MODE: Use ONLY database content. Explain and elaborate on database items but do not add external content.";
 
-    const systemPrompt = `You are creating a formal philosophical debate based ENTIRELY on database content.
+    const systemPrompt = `You are creating a formal philosophical DEBATE - a back-and-forth exchange between speakers.
 
-ABSOLUTE WORD COUNT REQUIREMENT - NO EXCEPTIONS:
-The debate MUST be AT LEAST ${wordCount} words. This is a MINIMUM, not a target. NEVER write less. NO EXCEPTIONS.
+FORMAT REQUIREMENT - THIS IS A DEBATE, NOT AN ESSAY:
+Each speaker takes turns. Format EXACTLY like this:
 
-CRITICAL INSTRUCTIONS:
-1. The debate MUST be built from the database content provided below as the SKELETON
-2. You MUST incorporate at least ${quoteCount} items total from the databases
+${debaterNames[0]}: [Their opening statement...]
+
+${debaterNames[1]}: [Their response...]
+
+${debaterNames[0]}: [Their rebuttal...]
+
+${debaterNames[1]}: [Their counter-argument...]
+
+[Continue alternating speakers throughout]
+
+DEBATE STRUCTURE:
+1. OPENING STATEMENTS - Each debater presents their position (2-3 paragraphs each)
+2. REBUTTALS - Each debater responds to the other's points (2-3 exchanges)
+3. CROSS-EXAMINATION - Direct questions and answers between debaters (3-4 exchanges)
+4. CLOSING ARGUMENTS - Each debater summarizes their position (1-2 paragraphs each)
+
+WORD COUNT: At least ${wordCount} words total.
+
+CONTENT RULES:
+1. Build from database content below
+2. Include at least ${quoteCount} database citations [P#], [Q#], [A#], [W#]
 3. ${modeInstruction}
-4. Each debater should reference their actual positions [P#], quotes [Q#], arguments [A#] and works [W#]
-5. DO NOT USE ANY MARKDOWN - no #, no *, no -, no **. Plain text only.
+4. Each speaker argues FROM THEIR OWN PERSPECTIVE in first person
+5. NO MARKDOWN - plain text only
+6. Speakers should DISAGREE and CHALLENGE each other
 
 ${allSkeletons}
 
-Now write a ${wordCount}-word debate between ${debaterNames.join(" and ")} on "${topic}".`;
+Write a ${wordCount}-word debate on "${topic}" with ${debaterNames.join(" and ")} taking turns speaking.`;
 
     try {
       if (isOpenAIModel(model)) {
