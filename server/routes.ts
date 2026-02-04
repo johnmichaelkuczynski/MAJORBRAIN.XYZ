@@ -890,7 +890,22 @@ Write a ${wordCount}-word debate on "${topic}" with ${debaterNames.join(" and ")
         sessionType: "interview",
         thinkerId: interviewee,
         thinkerName: intervieweeName,
-        userPrompt: `Create an in-depth interview with ${intervieweeName} on "${topic}". The interviewer is ${interviewerName}. Format: Q&A with probing follow-up questions.`,
+        userPrompt: `Create an in-depth INTERVIEW with ${intervieweeName} on "${topic}".
+
+MANDATORY INTERVIEW FORMAT:
+- This is a Q&A interview with clear turns between interviewer and interviewee
+- Each turn MUST start with the speaker's name followed by a colon
+- Format: "${interviewerName}: [question]" then "${intervieweeName}: [answer]"
+- The interviewer asks probing questions; the interviewee gives substantive answers
+- NOT an essay - it must look like a real interview transcript
+
+EXAMPLE:
+${interviewerName}: What is your view on...?
+${intervieweeName}: That's an excellent question. I believe...
+${interviewerName}: Could you elaborate on...?
+${intervieweeName}: Certainly. In my work, I argue...
+
+The interviewer should ask follow-up questions based on the interviewee's answers.`,
         targetWords: wordCount,
         model: model as any,
         enhanced: true,
@@ -911,20 +926,33 @@ Write a ${wordCount}-word debate on "${topic}" with ${debaterNames.join(" and ")
     // Short output path
     const skeleton = buildDatabaseSkeleton(context, intervieweeName, quoteCount);
     
-    const systemPrompt = `You are creating an in-depth interview based ENTIRELY on database content.
+    const systemPrompt = `You are creating an in-depth INTERVIEW with clear Q&A format.
 
 ABSOLUTE WORD COUNT REQUIREMENT - NO EXCEPTIONS:
 The interview MUST be AT LEAST ${wordCount} words. This is a MINIMUM, not a target. NEVER write less. NO EXCEPTIONS.
 
+MANDATORY INTERVIEW FORMAT:
+- This is a Q&A interview with clear turns between interviewer and interviewee
+- Each turn MUST start with the speaker's name followed by a colon
+- Format: "${interviewerName}: [question]" then "${intervieweeName}: [answer]"
+- The interviewer asks probing questions; the interviewee gives substantive answers
+- NOT an essay - it must look like a real interview transcript
+
+EXAMPLE:
+${interviewerName}: What is your view on...?
+${intervieweeName}: That's an excellent question. I believe...
+${interviewerName}: Could you elaborate on...?
+${intervieweeName}: Certainly. In my work, I argue...
+
 CRITICAL INSTRUCTIONS:
 1. The interview MUST be built from the database content provided below as the SKELETON
 2. ${intervieweeName} should quote and reference their actual positions [P#], quotes [Q#], arguments [A#] and works [W#]
-3. The interviewer is ${interviewerName}
-4. DO NOT USE ANY MARKDOWN - plain text only.
+3. The interviewer should ask follow-up questions based on the interviewee's answers
+4. DO NOT USE ANY MARKDOWN - plain text only
 
 ${skeleton}
 
-Now write a ${wordCount}-word interview with ${intervieweeName} on "${topic}".`;
+Now write a ${wordCount}-word interview with ${intervieweeName} on "${topic}". Remember: Q&A format with names and colons!`;
 
     try {
       if (isOpenAIModel(model)) {
