@@ -1338,6 +1338,17 @@ Now write a ${wordCount}-word document on "${topic}".`;
       return res.status(400).json({ error: "Content and author are required" });
     }
 
+    // Validate content size (max 500KB to prevent abuse)
+    const MAX_CONTENT_SIZE = 500 * 1024;
+    if (typeof content !== 'string' || content.length > MAX_CONTENT_SIZE) {
+      return res.status(400).json({ error: "Content too large. Maximum 500KB allowed." });
+    }
+    
+    // Validate author name
+    if (typeof author !== 'string' || author.length > 100 || author.length < 1) {
+      return res.status(400).json({ error: "Author name must be 1-100 characters." });
+    }
+
     setupSSE(res);
 
     const wordCount = content.split(/\s+/).filter((w: string) => w.length > 0).length;

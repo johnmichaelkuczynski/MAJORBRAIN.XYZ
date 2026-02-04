@@ -236,20 +236,17 @@ async function ingestFile(filePath: string): Promise<IngestResult> {
     const content = fs.readFileSync(filePath, "utf-8");
     let recordsInserted = 0;
     
-    // Handle CORE documents specially - parse sections
+    // Handle CORE documents specially - parse sections with PARAMETERIZED QUERIES
     if (isCore) {
       const coreRecords = parseCoreDocument(content, author, fileName);
       
       for (const record of coreRecords) {
         try {
-          const escapedContent = record.content.replace(/'/g, "''");
-          const escapedAuthor = author.replace(/'/g, "''");
-          const escapedSource = fileName.replace(/'/g, "''");
-          
-          await db.execute(sql.raw(`
+          // Use parameterized query to prevent SQL injection
+          await db.execute(sql`
             INSERT INTO core_content (thinker, content_type, content, source_document, priority)
-            VALUES ('${escapedAuthor}', '${record.type}', '${escapedContent}', '${escapedSource}', 1)
-          `));
+            VALUES (${author}, ${record.type}, ${record.content}, ${fileName}, 1)
+          `);
           recordsInserted++;
         } catch (insertError: any) {
           console.error(`CORE insert error for ${fileName}:`, insertError.message);
