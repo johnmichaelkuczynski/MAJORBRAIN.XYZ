@@ -68,10 +68,13 @@ export async function* streamResponse(response: Response): AsyncGenerator<Stream
   }
 }
 
-// Simple string stream for backward compatibility
+// Simple string stream for backward compatibility - ONLY yields content, NOT skeleton metadata
 export async function* streamResponseSimple(response: Response): AsyncGenerator<string> {
   for await (const chunk of streamResponse(response)) {
-    yield chunk.content;
+    // Only yield content chunks, filter out skeleton metadata
+    if (chunk.type !== "skeleton") {
+      yield chunk.content;
+    }
   }
 }
 
