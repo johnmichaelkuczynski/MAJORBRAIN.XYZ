@@ -143,6 +143,33 @@ async function getThinkerContext(thinkerId: string, query: string, quoteCount: n
   console.log(`[SEARCH] Extracted terms: ${searchTerms.join(', ')}`);
   console.log(`[SEARCH] Thinker: ${thinkerName}`);
 
+  // PRIORITY 0: Search CORE content FIRST (from analyzed documents)
+  const coreContent = await safeDbQuery(async () => {
+    const result = await db.execute(sql`
+      SELECT * FROM core_content 
+      WHERE (thinker ILIKE ${'%' + thinkerName + '%'} OR thinker ILIKE ${'%' + thinkerId + '%'})
+      ${searchTerms.length > 0 ? sql`AND (${sql.join(searchTerms.map(term => sql`content ILIKE ${'%' + term + '%'}`), sql` OR `)})` : sql``}
+      ORDER BY priority DESC, id
+      LIMIT ${quoteCount * 2}
+    `);
+    return result.rows || [];
+  }, []);
+  
+  // Also get general CORE content as fallback
+  const generalCoreContent = await safeDbQuery(async () => {
+    if (coreContent.length > 0) return [];
+    const result = await db.execute(sql`
+      SELECT * FROM core_content 
+      WHERE (thinker ILIKE ${'%' + thinkerName + '%'} OR thinker ILIKE ${'%' + thinkerId + '%'})
+      ORDER BY priority DESC, id
+      LIMIT ${quoteCount}
+    `);
+    return result.rows || [];
+  }, []);
+  
+  const allCoreContent = [...coreContent, ...generalCoreContent];
+  console.log(`[SEARCH] Found ${allCoreContent.length} CORE content items`);
+
   // Build search conditions for each content type
   // Priority 1: Content that matches query terms (RELEVANT to the question)
   // Priority 2: Any content by this thinker (fallback)
@@ -263,8 +290,9 @@ async function getThinkerContext(thinkerId: string, query: string, quoteCount: n
     arguments: relevantArguments,
     works: relevantWorks,
     textChunks: [],
+    coreContent: allCoreContent,
     searchTerms,
-    queryWasMatched: relevantPositions.length > 0 || relevantQuotes.length > 0 || relevantArguments.length > 0 || relevantWorks.length > 0,
+    queryWasMatched: relevantPositions.length > 0 || relevantQuotes.length > 0 || relevantArguments.length > 0 || relevantWorks.length > 0 || allCoreContent.length > 0,
   };
 }
 
@@ -275,6 +303,48 @@ function buildDatabaseSkeleton(context: any, thinkerName: string, quoteCount: nu
   skeleton += `You MUST incorporate AT LEAST ${quoteCount} of these items into your response.\n`;
   skeleton += `DO NOT make up positions or quotes - use ONLY what is provided below.\n`;
   skeleton += `CRITICAL: DO NOT USE ANY MARKDOWN FORMATTING. No #, no *, no -, no **. Plain text only.\n\n`;
+  
+  // PRIORITY: CORE content first (from analyzed documents)
+  if (context.coreContent?.length > 0) {
+    const corePositions = context.coreContent.filter((c: any) => c.content_type === 'position');
+    const coreArguments = context.coreContent.filter((c: any) => c.content_type === 'argument');
+    const coreTrends = context.coreContent.filter((c: any) => c.content_type === 'trend');
+    const coreQAs = context.coreContent.filter((c: any) => c.content_type === 'qa');
+    const coreOutline = context.coreContent.filter((c: any) => c.content_type === 'outline');
+    
+    if (coreOutline.length > 0) {
+      skeleton += `\n--- ${thinkerName}'s DOCUMENT OUTLINE (PRIORITY) ---\n`;
+      skeleton += `[OUTLINE] ${coreOutline[0].content?.substring(0, 2000) || ''}\n`;
+    }
+    
+    if (corePositions.length > 0) {
+      skeleton += `\n--- ${thinkerName}'s CORE POSITIONS (PRIORITY - ${corePositions.length} total) ---\n`;
+      corePositions.slice(0, quoteCount).forEach((p: any, i: number) => {
+        skeleton += `[CP${i + 1}] ${p.content}\n`;
+      });
+    }
+    
+    if (coreArguments.length > 0) {
+      skeleton += `\n--- ${thinkerName}'s CORE ARGUMENTS (PRIORITY - ${coreArguments.length} total) ---\n`;
+      coreArguments.slice(0, quoteCount).forEach((a: any, i: number) => {
+        skeleton += `[CA${i + 1}] ${a.content}\n`;
+      });
+    }
+    
+    if (coreTrends.length > 0) {
+      skeleton += `\n--- ${thinkerName}'s THOUGHT TRENDS (PRIORITY - ${coreTrends.length} total) ---\n`;
+      coreTrends.slice(0, 10).forEach((t: any, i: number) => {
+        skeleton += `[T${i + 1}] ${t.content}\n`;
+      });
+    }
+    
+    if (coreQAs.length > 0) {
+      skeleton += `\n--- ${thinkerName}'s Q&A (PRIORITY - ${coreQAs.length} total) ---\n`;
+      coreQAs.slice(0, quoteCount).forEach((qa: any, i: number) => {
+        skeleton += `[QA${i + 1}] ${qa.content}\n`;
+      });
+    }
+  }
   
   if (context.positions?.length > 0) {
     skeleton += `\n--- ${thinkerName}'s POSITIONS (${context.positions.length} total) ---\n`;
@@ -306,7 +376,8 @@ function buildDatabaseSkeleton(context: any, thinkerName: string, quoteCount: nu
   }
 
   skeleton += `\n=== END DATABASE CONTENT ===\n`;
-  skeleton += `\nREMINDER: Your output MUST be built from the above content. Reference items by their codes [P1], [Q1], [A1], [W1] etc. DO NOT invent content.\n`;
+  skeleton += `\nREMINDER: Your output MUST be built from the above content. Reference items by their codes [CP1], [CA1], [T1], [QA1], [P1], [Q1], [A1], [W1] etc. DO NOT invent content.\n`;
+  skeleton += `PRIORITY: Use CORE content (CP, CA, T, QA) first if available - these are from comprehensive document analysis.\n`;
   skeleton += `ABSOLUTELY NO MARKDOWN. No # headers, no * bullets, no - lists, no ** bold. Use plain text with numbered sections like "1." "2." etc.\n`;
   
   return skeleton;
