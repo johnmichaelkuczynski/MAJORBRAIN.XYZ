@@ -10,6 +10,7 @@ import { GenerationControls } from "./generation-controls";
 import { FileUpload } from "./file-upload";
 import { ThinkerAvatar } from "./thinker-avatar";
 import { SkeletonPopup } from "./skeleton-popup";
+import { SkeletonBuildPopup } from "./skeleton-build-popup";
 import { StreamingPopup } from "./streaming-popup";
 import { streamResponse } from "@/lib/streaming";
 import { useToast } from "@/hooks/use-toast";
@@ -39,8 +40,11 @@ export function MainChatSection() {
   const [enhanced, setEnhanced] = useState(true);
   
   const [showSkeletonPopup, setShowSkeletonPopup] = useState(false);
+  const [showSkeletonBuildPopup, setShowSkeletonBuildPopup] = useState(false);
   const [showOutputPopup, setShowOutputPopup] = useState(false);
   const [skeleton, setSkeleton] = useState<SkeletonData | null>(null);
+  const [skeletonBuildContent, setSkeletonBuildContent] = useState("");
+  const [isSkeletonBuilding, setIsSkeletonBuilding] = useState(false);
   const [streamingContent, setStreamingContent] = useState("");
   const [pendingMessage, setPendingMessage] = useState("");
   
@@ -140,8 +144,16 @@ export function MainChatSection() {
   const streamContent = async (message: string) => {
     setIsStreaming(true);
     setStreamingContent("");
+    setSkeletonBuildContent("");
     setInput("");
     setDocumentContent("");
+    
+    // For long outputs, show skeleton popup first
+    const useCrossChunk = wordCount > 500;
+    if (useCrossChunk) {
+      setShowSkeletonBuildPopup(true);
+      setIsSkeletonBuilding(true);
+    }
 
     abortControllerRef.current = new AbortController();
 
@@ -163,15 +175,32 @@ export function MainChatSection() {
       console.log("[STREAM] Response status:", response.status, response.ok);
       if (!response.ok) throw new Error("Failed to get response");
 
-      let content = "";
+      let skeletonContent = "";
+      let mainContent = "";
+      let inSkeletonPhase = useCrossChunk;
       let chunkCount = 0;
+      
       for await (const chunk of streamResponse(response)) {
         chunkCount++;
-        content += chunk;
-        if (chunkCount <= 5 || chunkCount % 50 === 0) {
-          console.log("[STREAM] Chunk", chunkCount, ":", chunk.substring(0, 30));
+        
+        // Detect transition from skeleton to content phase
+        if (inSkeletonPhase && (chunk.includes("PHASE 2") || chunk.includes("GENERATING CHUNK"))) {
+          inSkeletonPhase = false;
+          setIsSkeletonBuilding(false);
+          setShowOutputPopup(true);
         }
-        setStreamingContent(content);
+        
+        if (inSkeletonPhase) {
+          skeletonContent += chunk;
+          setSkeletonBuildContent(skeletonContent);
+        } else {
+          mainContent += chunk;
+          setStreamingContent(mainContent);
+        }
+        
+        if (chunkCount <= 5 || chunkCount % 50 === 0) {
+          console.log("[STREAM] Chunk", chunkCount, "phase:", inSkeletonPhase ? "skeleton" : "content");
+        }
       }
       console.log("[STREAM] Completed. Total chunks:", chunkCount);
     } catch (error: any) {
@@ -181,6 +210,7 @@ export function MainChatSection() {
       }
     } finally {
       setIsStreaming(false);
+      setIsSkeletonBuilding(false);
     }
   };
 
@@ -296,6 +326,15 @@ export function MainChatSection() {
         content={streamingContent}
         isStreaming={isStreaming}
         targetWordCount={wordCount}
+        thinkerId={selectedThinker}
+        thinkerName={thinker?.name}
+      />
+
+      <SkeletonBuildPopup
+        isOpen={showSkeletonBuildPopup}
+        onClose={() => setShowSkeletonBuildPopup(false)}
+        content={skeletonBuildContent}
+        isBuilding={isSkeletonBuilding}
         thinkerId={selectedThinker}
         thinkerName={thinker?.name}
       />
