@@ -396,8 +396,9 @@ export async function processIngestFolder(): Promise<IngestResult[]> {
 
 export function startIngestWatcher(intervalMs: number = 10000): NodeJS.Timeout {
   console.log(`Starting ingest watcher. Monitoring: ${INGEST_DIR}`);
-  console.log(`File format: AUTHOR_TYPE_N.txt (e.g., Kuczynski_QUOTES_1.txt)`);
-  console.log(`Types: QUOTES, POSITIONS, ARGUMENTS, WORKS`);
+  console.log(`Standard format: AUTHOR_TYPE_N.txt (e.g., Kuczynski_QUOTES_1.txt)`);
+  console.log(`Standard types: QUOTES, POSITIONS, ARGUMENTS, WORKS`);
+  console.log(`CORE format: CORE_AUTHOR_N.txt (e.g., CORE_Kuczynski_1.txt) - Priority content from document analysis`);
   
   if (!fs.existsSync(INGEST_DIR)) {
     fs.mkdirSync(INGEST_DIR, { recursive: true });
