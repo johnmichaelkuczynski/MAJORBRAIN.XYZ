@@ -349,17 +349,36 @@ WORD COUNT: AT LEAST ${minWords} words of SUBSTANCE.`;
 ${formatInstructions}
 ${coreRules}
 
-=== DATABASE CONTENT (Use for ${thinkerName}'s positions) ===
+=== ${thinkerName.toUpperCase()}'S ACTUAL INDEXED POSITIONS (MANDATORY - CITE THESE) ===
 ${skeleton.databaseContent.positions.slice(0, 8).join("\n")}
+
+=== ${thinkerName.toUpperCase()}'S ACTUAL QUOTES (MANDATORY - USE WITH [Q#] CODES) ===
 ${skeleton.databaseContent.quotes.slice(0, 6).join("\n")}
+
+=== ${thinkerName.toUpperCase()}'S ACTUAL ARGUMENTS (MANDATORY - CITE WITH [A#]) ===
 ${skeleton.databaseContent.arguments.slice(0, 4).join("\n")}
 
 TOPIC: ${skeleton.thesis}
 
 ${priorClaimsStr ? `PRIOR CLAIMS MADE: ${priorClaimsStr}` : ""}
 
+=== GROUNDING REQUIREMENTS (NON-NEGOTIABLE) ===
+${thinkerName}'s responses MUST:
+1. CITE database content with codes: [P1], [P2], [Q1], [Q2], [A1], etc.
+2. USE the EXACT positions, quotes, and arguments from above
+3. NOT fabricate or invent positions not in the database
+4. Quote directly from [Q#] items when making claims
+5. Reference specific [P#] positions when explaining views
+
+EXAMPLE of correct ${thinkerName} response:
+"${thinkerName}: The DN model fails in psychological explanation [P1]. As I wrote, 'the cause of many a psychological event is known, even though the corresponding regularity is not known' [Q2]. This argument [A1] shows..."
+
+WRONG (ungrounded fabrication):
+"${thinkerName}: I believe psychological explanations are complex and involve many factors..."
+
 CRITICAL: Output ONLY speaker turns. Format: "NAME: text"
-NO essays. NO paragraphs. ONLY alternating speaker turns.`;
+NO essays. NO paragraphs. ONLY alternating speaker turns.
+EVERY ${thinkerName} response MUST include at least 2 citation codes [P#], [Q#], or [A#].`;
   } else if (enhanced) {
     system = `You ARE ${thinkerName}. Speak in FIRST PERSON.
 ${coreRules}
