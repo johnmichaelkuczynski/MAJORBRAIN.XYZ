@@ -255,14 +255,21 @@ FORBIDDEN PHRASES - ZERO TOLERANCE:
 - "The implications of this are..."
 - "This leads us to consider..."
 - "One might argue..."
+- "I have long held that..."
+- "I have long believed..."
+- "It is my view that..."
+- "It has always been my position..."
+- "Throughout my career..."
 - "fostering innovation and understanding"
 - ANY vague philosophical-sounding filler
+- ANY autobiographical padding
 
 STYLE:
-- Be DIRECT and CONCISE
-- Get to the point immediately
-- State positions clearly
-- No padding, no rambling
+- Be DIRECT and CONCISE - answer IMMEDIATELY
+- Get to the point in the FIRST sentence
+- State positions clearly without preamble
+- No padding, no throat-clearing, no rambling
+- Start with the actual answer, not with setup
 - No markdown (no #, *, -, **)
 
 WORD COUNT: AT LEAST ${minWords} words of SUBSTANCE.`;
