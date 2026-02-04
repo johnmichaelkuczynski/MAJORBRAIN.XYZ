@@ -11,7 +11,7 @@ import { ModelSelect } from "./model-select";
 import { GenerationControls } from "./generation-controls";
 import { StreamingOutput } from "./streaming-output";
 import { FileUpload } from "./file-upload";
-import { streamResponse, downloadText, copyToClipboard } from "@/lib/streaming";
+import { streamResponseSimple, downloadText, copyToClipboard } from "@/lib/streaming";
 import { THINKERS } from "@shared/schema";
 
 export function DialogueCreatorSection() {
@@ -60,7 +60,7 @@ export function DialogueCreatorSection() {
 
       if (!response.ok) throw new Error("Failed to generate dialogue");
 
-      for await (const chunk of streamResponse(response)) {
+      for await (const chunk of streamResponseSimple(response)) {
         setOutput(prev => prev + chunk);
       }
     } catch (error) {

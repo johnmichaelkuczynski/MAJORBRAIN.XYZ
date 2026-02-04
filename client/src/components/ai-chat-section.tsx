@@ -8,7 +8,7 @@ import { SectionHeader } from "./section-header";
 import { ModelSelect } from "./model-select";
 import { GenerationControls } from "./generation-controls";
 import { FileUpload } from "./file-upload";
-import { streamResponse, downloadText, copyToClipboard } from "@/lib/streaming";
+import { streamResponseSimple, downloadText, copyToClipboard } from "@/lib/streaming";
 import { useToast } from "@/hooks/use-toast";
 
 interface Message {
@@ -64,7 +64,7 @@ export function AiChatSection() {
       let assistantContent = "";
       setMessages(prev => [...prev, { role: "assistant", content: "" }]);
 
-      for await (const chunk of streamResponse(response)) {
+      for await (const chunk of streamResponseSimple(response)) {
         assistantContent += chunk;
         setMessages(prev => {
           const newMessages = [...prev];

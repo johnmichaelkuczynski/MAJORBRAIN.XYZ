@@ -10,7 +10,7 @@ import { ModelSelect } from "./model-select";
 import { GenerationControls } from "./generation-controls";
 import { StreamingOutput } from "./streaming-output";
 import { FileUpload } from "./file-upload";
-import { streamResponse, downloadText, copyToClipboard } from "@/lib/streaming";
+import { streamResponseSimple, downloadText, copyToClipboard } from "@/lib/streaming";
 
 export function InterviewCreatorSection() {
   const [topic, setTopic] = useState("");
@@ -47,7 +47,7 @@ export function InterviewCreatorSection() {
 
       if (!response.ok) throw new Error("Failed to generate interview");
 
-      for await (const chunk of streamResponse(response)) {
+      for await (const chunk of streamResponseSimple(response)) {
         setOutput(prev => prev + chunk);
       }
     } catch (error) {
