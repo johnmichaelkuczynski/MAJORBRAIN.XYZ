@@ -68,11 +68,9 @@ export function MainChatSection() {
     setIsStreaming(true);
     setStreamingContent("");
     
-    if (wordCount > 500) {
-      await fetchSkeletonAndShow(userMessage);
-    } else {
-      await generateDirectly(userMessage);
-    }
+    // Always stream directly - skeleton popup is optional viewing
+    setShowOutputPopup(true);
+    await streamContent(userMessage);
   };
 
   const fetchSkeletonAndShow = async (message: string) => {
@@ -88,7 +86,11 @@ export function MainChatSection() {
       
       setSkeleton(data.skeleton);
       setShowSkeletonPopup(true);
-      setIsStreaming(false);
+      
+      // Auto-proceed immediately - don't wait for user approval
+      // User can still view and download skeleton, or close popup
+      setShowOutputPopup(true);
+      await generateWithSkeleton(message);
     } catch (error) {
       console.error("Skeleton error:", error);
       toast({ title: "Error", description: "Failed to generate skeleton. Proceeding directly.", variant: "destructive" });
@@ -161,23 +163,8 @@ export function MainChatSection() {
 
       let content = "";
       for await (const chunk of streamResponse(response)) {
-        const startMarker = "[SKELETON_JSON]";
-        const endMarker = "[/SKELETON_JSON]";
-        
         content += chunk;
-        
-        let displayContent = content;
-        const startIdx = displayContent.indexOf(startMarker);
-        if (startIdx !== -1) {
-          const endIdx = displayContent.indexOf(endMarker);
-          if (endIdx !== -1) {
-            displayContent = displayContent.substring(0, startIdx) + displayContent.substring(endIdx + endMarker.length);
-          } else {
-            displayContent = displayContent.substring(0, startIdx);
-          }
-        }
-        
-        setStreamingContent(displayContent);
+        setStreamingContent(content);
       }
     } catch (error: any) {
       if (error.name !== "AbortError") {
@@ -301,6 +288,8 @@ export function MainChatSection() {
         content={streamingContent}
         isStreaming={isStreaming}
         targetWordCount={wordCount}
+        thinkerId={selectedThinker}
+        thinkerName={thinker?.name}
       />
     </>
   );

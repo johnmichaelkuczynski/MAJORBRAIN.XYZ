@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { X, Minus, Maximize2, Minimize2, Copy, Download, GripHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { downloadText, copyToClipboard } from "@/lib/streaming";
+import { ThinkerAvatar } from "./thinker-avatar";
 
 interface StreamingPopupProps {
   isOpen: boolean;
@@ -10,6 +11,8 @@ interface StreamingPopupProps {
   content: string;
   isStreaming: boolean;
   targetWordCount?: number;
+  thinkerId?: string;
+  thinkerName?: string;
 }
 
 export function StreamingPopup({
@@ -19,6 +22,8 @@ export function StreamingPopup({
   content,
   isStreaming,
   targetWordCount = 0,
+  thinkerId,
+  thinkerName,
 }: StreamingPopupProps) {
   const [isMinimized, setIsMinimized] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
@@ -112,6 +117,15 @@ export function StreamingPopup({
       >
         <div className="flex items-center gap-2 text-white">
           <GripHorizontal className="h-4 w-4 opacity-60" />
+          {thinkerId && (
+            <ThinkerAvatar 
+              thinkerId={thinkerId} 
+              name={thinkerName} 
+              size="sm" 
+              isAnimating={isStreaming}
+              showName={false}
+            />
+          )}
           <span className="font-bold text-sm" data-testid="text-popup-title">{title}</span>
           {isStreaming && (
             <span className="ml-2 px-2 py-0.5 text-xs bg-white/20 rounded-full animate-pulse" data-testid="status-streaming">

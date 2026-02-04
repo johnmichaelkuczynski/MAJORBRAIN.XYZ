@@ -31,16 +31,18 @@ export async function* streamResponse(response: Response): AsyncGenerator<string
             return;
           }
           try {
+            // First try to parse as JSON
             const parsed = JSON.parse(data);
-            if (parsed.content) {
+            if (typeof parsed === "string") {
+              // data: "word" format - most common
+              yield parsed;
+            } else if (parsed.content) {
               yield parsed.content;
             } else if (parsed.text) {
               yield parsed.text;
-            } else if (typeof parsed === "string") {
-              yield parsed;
             }
           } catch {
-            // Not JSON, yield raw data
+            // Not JSON, yield raw data (handles data: word format without quotes)
             if (data.trim()) {
               yield data;
             }

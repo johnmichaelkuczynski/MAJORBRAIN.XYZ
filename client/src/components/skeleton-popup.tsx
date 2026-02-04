@@ -253,9 +253,16 @@ export function SkeletonPopup({
             <Button variant="outline" size="sm" onClick={handleDownload} data-testid="button-download-skeleton">
               <Download className="h-3 w-3 mr-1" /> Download Skeleton
             </Button>
-            <Button onClick={onProceed} disabled={isLoading} className="bg-secondary" data-testid="button-proceed-generate">
-              {isLoading ? "Generating..." : "Proceed to Generate Content"}
-            </Button>
+            {isLoading ? (
+              <div className="flex items-center gap-2 text-sm text-primary font-medium animate-pulse">
+                <span className="inline-block w-2 h-2 bg-primary rounded-full animate-bounce" />
+                Generating content...
+              </div>
+            ) : (
+              <Button variant="ghost" size="sm" onClick={onClose} data-testid="button-close-skeleton-done">
+                Close
+              </Button>
+            )}
           </div>
 
           {!isMaximized && (

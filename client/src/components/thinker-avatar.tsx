@@ -137,12 +137,6 @@ export function ThinkerAvatar({
         </div>
       )}
       
-      {isAnimating && (
-        <div 
-          className="absolute inset-0 rounded-xl border-2 border-t-accent border-r-transparent border-b-transparent border-l-transparent animate-spin pointer-events-none"
-          data-testid="avatar-spinner"
-        />
-      )}
     </div>
   );
 }
