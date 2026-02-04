@@ -43,7 +43,8 @@ export interface CoherenceOptions {
 }
 
 function sendSSE(res: Response, data: string) {
-  res.write(`data: ${JSON.stringify(data)}\n\n`);
+  // Send in format expected by streamResponseSimple: { content: "word" }
+  res.write(`data: ${JSON.stringify({ content: data })}\n\n`);
   if (typeof (res as any).flush === "function") {
     (res as any).flush();
   }
