@@ -29,6 +29,7 @@ export interface CoherenceOptions {
   sessionType: "chat" | "debate" | "interview" | "dialogue" | "document";
   thinkerId: string;
   thinkerName: string;
+  secondSpeaker?: string;
   userPrompt: string;
   targetWords: number;
   model: ModelId;
@@ -231,11 +232,75 @@ function buildChunkPrompt(
   targetWordsPerChunk: number,
   thinkerName: string,
   priorDeltas: ChunkDelta[],
-  enhanced: boolean = true
+  enhanced: boolean = true,
+  sessionType: "chat" | "debate" | "interview" | "dialogue" | "document" = "document",
+  secondSpeaker: string = "Interviewer"
 ): { system: string; user: string } {
   const priorClaimsStr = priorDeltas.flatMap(d => d.claimsAdded || []).join("; ");
   const minWords = Math.ceil(targetWordsPerChunk * 1.2);
   
+  // FORMAT-SPECIFIC INSTRUCTIONS based on sessionType
+  let formatInstructions = "";
+  
+  if (sessionType === "interview") {
+    formatInstructions = `
+=== MANDATORY INTERVIEW FORMAT ===
+This is an INTERVIEW with clear Q&A turns. EVERY line must start with a speaker name and colon.
+
+EXACT FORMAT REQUIRED:
+${secondSpeaker}: [interviewer asks a question]
+${thinkerName}: [interviewee gives substantive answer]
+
+${secondSpeaker}: [next question]
+${thinkerName}: [next answer]
+
+RULES:
+- Alternate between ${secondSpeaker} asking questions and ${thinkerName} answering
+- ${secondSpeaker} asks probing follow-up questions based on answers
+- ${thinkerName} gives substantive answers (3-6 sentences each)
+- NO essay paragraphs. ONLY speaker turns with "NAME: text" format
+- Every single line of output must start with either "${secondSpeaker}:" or "${thinkerName}:"
+`;
+  } else if (sessionType === "debate") {
+    formatInstructions = `
+=== MANDATORY DEBATE FORMAT ===
+This is a DEBATE with opposing speakers taking turns. EVERY line must start with a speaker name and colon.
+
+EXACT FORMAT REQUIRED:
+${thinkerName}: [makes an argument or claim]
+${secondSpeaker}: [challenges, disagrees, or counters]
+
+${thinkerName}: [responds to challenge]
+${secondSpeaker}: [further objection or rebuttal]
+
+RULES:
+- Speakers DISAGREE and CHALLENGE each other
+- Each turn is a direct response to the previous speaker
+- Sharp, pointed exchanges - no agreement or pleasantries
+- NO essay paragraphs. ONLY speaker turns with "NAME: text" format
+- Every single line of output must start with either "${thinkerName}:" or "${secondSpeaker}:"
+`;
+  } else if (sessionType === "dialogue") {
+    formatInstructions = `
+=== MANDATORY DIALOGUE FORMAT ===
+This is a DIALOGUE - a philosophical conversation with speaker turns. EVERY line must start with a speaker name and colon.
+
+EXACT FORMAT REQUIRED:
+${thinkerName}: [shares a thought or position]
+${secondSpeaker}: [responds, agrees, questions, or builds on it]
+
+${thinkerName}: [continues the discussion]
+${secondSpeaker}: [adds perspective or asks for clarification]
+
+RULES:
+- Natural back-and-forth conversation between two thinkers
+- They can agree, disagree, or explore ideas together
+- Each speaker responds to what the other just said
+- NO essay paragraphs. ONLY speaker turns with "NAME: text" format
+- Every single line of output must start with either "${thinkerName}:" or "${secondSpeaker}:"
+`;
+  }
+
   // CORE REQUIREMENTS - same for both modes
   const coreRules = `
 === ABSOLUTE REQUIREMENTS ===
@@ -276,7 +341,26 @@ WORD COUNT: AT LEAST ${minWords} words of SUBSTANCE.`;
 
   let system: string;
   
-  if (enhanced) {
+  // For conversation formats, use different prompts
+  const isConversation = sessionType === "interview" || sessionType === "debate" || sessionType === "dialogue";
+  
+  if (isConversation) {
+    system = `You are generating a ${sessionType.toUpperCase()}.
+${formatInstructions}
+${coreRules}
+
+=== DATABASE CONTENT (Use for ${thinkerName}'s positions) ===
+${skeleton.databaseContent.positions.slice(0, 8).join("\n")}
+${skeleton.databaseContent.quotes.slice(0, 6).join("\n")}
+${skeleton.databaseContent.arguments.slice(0, 4).join("\n")}
+
+TOPIC: ${skeleton.thesis}
+
+${priorClaimsStr ? `PRIOR CLAIMS MADE: ${priorClaimsStr}` : ""}
+
+CRITICAL: Output ONLY speaker turns. Format: "NAME: text"
+NO essays. NO paragraphs. ONLY alternating speaker turns.`;
+  } else if (enhanced) {
     system = `You ARE ${thinkerName}. Speak in FIRST PERSON.
 ${coreRules}
 
@@ -317,11 +401,24 @@ ${priorClaimsStr ? `PRIOR CLAIMS MADE: ${priorClaimsStr}` : ""}
 
   const outlineSection = skeleton.outline[chunkIndex] || `Part ${chunkIndex + 1}`;
   
-  const user = `Section: "${outlineSection}"
+  let user: string;
+  
+  if (isConversation) {
+    user = `Continue the ${sessionType} on: "${outlineSection}"
+
+Write ${minWords}+ words as alternating speaker turns.
+Format: "SPEAKER_NAME: [what they say]"
+
+Start with ${chunkIndex % 2 === 0 ? (sessionType === "interview" ? secondSpeaker : thinkerName) : (sessionType === "interview" ? thinkerName : secondSpeaker)}:
+
+BEGIN NOW with speaker turns only.`;
+  } else {
+    user = `Section: "${outlineSection}"
 
 Write ${minWords}+ words. First person. Direct. No filler. Cite sources [P#], [Q#], [A#], [W#].
 
 BEGIN NOW.`;
+  }
 
   return { system, user };
 }
@@ -376,7 +473,7 @@ function sendContentSSE(res: Response, data: string) {
 }
 
 export async function processWithCoherence(options: CoherenceOptions): Promise<void> {
-  const { sessionType, thinkerId, thinkerName, userPrompt, targetWords, model, enhanced, databaseContent, res } = options;
+  const { sessionType, thinkerId, thinkerName, secondSpeaker = "Interviewer", userPrompt, targetWords, model, enhanced, databaseContent, res } = options;
 
   const WORDS_PER_CHUNK = 1000;
   const totalChunks = Math.max(1, Math.ceil(targetWords / WORDS_PER_CHUNK));
@@ -435,7 +532,7 @@ export async function processWithCoherence(options: CoherenceOptions): Promise<v
     }
 
     const priorDeltas = await getPriorDeltas(sessionId);
-    const { system, user } = buildChunkPrompt(dbSkeleton, i, totalChunks, wordsPerChunk, thinkerName, priorDeltas, enhanced);
+    const { system, user } = buildChunkPrompt(dbSkeleton, i, totalChunks, wordsPerChunk, thinkerName, priorDeltas, enhanced, sessionType, secondSpeaker);
 
     let chunkOutput = "";
     for await (const text of streamText({ model, systemPrompt: system, userPrompt: user, maxTokens: 4096 })) {
@@ -468,7 +565,7 @@ export async function processWithCoherence(options: CoherenceOptions): Promise<v
     
     const dbSkeleton = await getSessionSkeleton(sessionId);
     if (dbSkeleton) {
-      const supplementPrompt = buildChunkPrompt(dbSkeleton, totalChunks, totalChunks + 1, shortfall, thinkerName, await getPriorDeltas(sessionId), enhanced);
+      const supplementPrompt = buildChunkPrompt(dbSkeleton, totalChunks, totalChunks + 1, shortfall, thinkerName, await getPriorDeltas(sessionId), enhanced, sessionType, secondSpeaker);
       let supplementOutput = "";
       
       sendContentSSE(res, "\n\n");

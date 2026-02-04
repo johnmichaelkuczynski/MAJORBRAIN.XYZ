@@ -35,14 +35,16 @@ ASK THEM is a comprehensive philosophical AI platform that allows users to inter
 8. **Argument Generator** - Retrieve and format arguments from database
 9. **Outline Generator** - Generate structured outlines
 10. **Full Document Generator** - Generate comprehensive documents (100-50,000 words)
-11. **AI Chat** - General purpose AI assistant
+11. **Document Analyzer** - Analyze uploaded documents to extract CORE content for priority database ingestion
+12. **AI Chat** - General purpose AI assistant
 
 ## Ingest Folder
 
 Drop files into the `ingest/` folder to automatically import data into the database.
 
 ### File Naming Convention
-Files must follow this format: `AUTHOR_TYPE_N.txt`
+
+**Standard Format:** `AUTHOR_TYPE_N.txt`
 
 Examples:
 - `Kuczynski_QUOTES_1.txt` - Quotes from Kuczynski
@@ -50,11 +52,17 @@ Examples:
 - `Kuczynski_ARGUMENTS_1.txt` - Arguments
 - `Kuczynski_WORKS_1.txt` - Works/writings
 
+**CORE Format (Priority):** `CORE_AUTHOR_N.txt`
+
+Examples:
+- `CORE_Kuczynski_1.txt` - Priority content from document analysis
+
 ### Supported Types
 - **QUOTES** - One quote per line
 - **POSITIONS** - One position per line
 - **ARGUMENTS** - One argument per line
 - **WORKS** - Text content from works
+- **CORE** - Priority content from Document Analyzer (outline, positions, arguments, trends, Q&As)
 
 ### How It Works
 1. Drop files into the `ingest/` folder
@@ -77,6 +85,7 @@ Examples:
 - `arguments` - Philosophical arguments
 - `works` - Full text content from works
 - `text_chunks` - Text segments for RAG functionality
+- `core_content` - PRIORITY content from Document Analyzer (searched first in all queries)
 
 ## API Endpoints
 
@@ -90,6 +99,7 @@ Examples:
 - `POST /api/interview/generate` - Generate interviews
 - `POST /api/outline/generate` - Generate outlines
 - `POST /api/document/generate` - Generate full documents
+- `POST /api/document/analyze` - Analyze document and generate CORE content (outline, positions, arguments, trends, 50 Q&As)
 - `POST /api/ai/chat` - General AI chat
 
 ### Data Retrieval

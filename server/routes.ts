@@ -725,22 +725,9 @@ CRITICAL: DO NOT USE ANY MARKDOWN FORMATTING. No # headers, no * bullets, no - l
       await processWithCoherence({
         sessionType: "dialogue",
         thinkerId: thinkers.join("-and-"),
-        thinkerName: thinkerNames.join(" and "),
-        userPrompt: `Create a philosophical DIALOGUE on "${topic}" between ${thinkerNames.join(" and ")}.
-
-MANDATORY DIALOGUE FORMAT:
-- Each speaker's turn MUST start with their name followed by a colon
-- Format: "${thinkerNames[0]}: [their statement]" then "${thinkerNames[1]}: [their response]"
-- Speakers MUST alternate back and forth throughout the entire dialogue
-- This is a CONVERSATION with turn-taking, NOT an essay or monologue
-- Each speaker should have roughly equal speaking time
-
-EXAMPLE:
-${thinkerNames[0]}: I believe that...
-${thinkerNames[1]}: That is interesting, but I argue...
-${thinkerNames[0]}: You raise a concern. However...
-
-Speakers should ENGAGE with each other's points and respond directly to what the other says.`,
+        thinkerName: thinkerNames[0],
+        secondSpeaker: thinkerNames[1] || thinkerNames[0],
+        userPrompt: `Create a philosophical DIALOGUE on "${topic}" between ${thinkerNames.join(" and ")}.`,
         targetWords: wordCount,
         model: model as any,
         enhanced: true,
@@ -850,15 +837,9 @@ Now write a ${wordCount}-word dialogue between ${thinkerNames.join(" and ")} on 
       await processWithCoherence({
         sessionType: "debate",
         thinkerId: debaters.join("-vs-"),
-        thinkerName: debaterNames.join(" vs "),
-        userPrompt: `Create a DEBATE (back-and-forth exchange) on "${topic}" between ${debaterNames.join(" and ")}. 
-        
-FORMAT: Each speaker takes turns like this:
-${debaterNames[0]}: [speaks...]
-${debaterNames[1]}: [responds...]
-${debaterNames[0]}: [rebuts...]
-
-STRUCTURE: Opening Statements, Rebuttals, Cross-Examination, Closing Arguments. Speakers must DISAGREE and CHALLENGE each other.`,
+        thinkerName: debaterNames[0],
+        secondSpeaker: debaterNames[1] || debaterNames[0],
+        userPrompt: `Create a DEBATE on "${topic}" between ${debaterNames.join(" and ")}.`,
         targetWords: wordCount,
         model: model as any,
         enhanced: true,
@@ -970,22 +951,8 @@ Write a ${wordCount}-word debate on "${topic}" with ${debaterNames.join(" and ")
         sessionType: "interview",
         thinkerId: interviewee,
         thinkerName: intervieweeName,
-        userPrompt: `Create an in-depth INTERVIEW with ${intervieweeName} on "${topic}".
-
-MANDATORY INTERVIEW FORMAT:
-- This is a Q&A interview with clear turns between interviewer and interviewee
-- Each turn MUST start with the speaker's name followed by a colon
-- Format: "${interviewerName}: [question]" then "${intervieweeName}: [answer]"
-- The interviewer asks probing questions; the interviewee gives substantive answers
-- NOT an essay - it must look like a real interview transcript
-
-EXAMPLE:
-${interviewerName}: What is your view on...?
-${intervieweeName}: That's an excellent question. I believe...
-${interviewerName}: Could you elaborate on...?
-${intervieweeName}: Certainly. In my work, I argue...
-
-The interviewer should ask follow-up questions based on the interviewee's answers.`,
+        secondSpeaker: interviewerName,
+        userPrompt: `Create an in-depth INTERVIEW with ${intervieweeName} on "${topic}".`,
         targetWords: wordCount,
         model: model as any,
         enhanced: true,
