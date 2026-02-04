@@ -646,7 +646,21 @@ CRITICAL: DO NOT USE ANY MARKDOWN FORMATTING. No # headers, no * bullets, no - l
         sessionType: "dialogue",
         thinkerId: thinkers.join("-and-"),
         thinkerName: thinkerNames.join(" and "),
-        userPrompt: `Create a philosophical dialogue on "${topic}" between ${thinkerNames.join(" and ")}. Each speaker should present and defend their actual philosophical positions.`,
+        userPrompt: `Create a philosophical DIALOGUE on "${topic}" between ${thinkerNames.join(" and ")}.
+
+MANDATORY DIALOGUE FORMAT:
+- Each speaker's turn MUST start with their name followed by a colon
+- Format: "${thinkerNames[0]}: [their statement]" then "${thinkerNames[1]}: [their response]"
+- Speakers MUST alternate back and forth throughout the entire dialogue
+- This is a CONVERSATION with turn-taking, NOT an essay or monologue
+- Each speaker should have roughly equal speaking time
+
+EXAMPLE:
+${thinkerNames[0]}: I believe that...
+${thinkerNames[1]}: That is interesting, but I argue...
+${thinkerNames[0]}: You raise a concern. However...
+
+Speakers should ENGAGE with each other's points and respond directly to what the other says.`,
         targetWords: wordCount,
         model: model as any,
         enhanced: true,
@@ -667,18 +681,33 @@ CRITICAL: DO NOT USE ANY MARKDOWN FORMATTING. No # headers, no * bullets, no - l
       allSkeletons += buildDatabaseSkeleton(ctx, name, Math.floor(quoteCount / thinkers.length));
     });
 
-    const systemPrompt = `You are creating a philosophical dialogue based ENTIRELY on database content.
+    const systemPrompt = `You are creating a philosophical DIALOGUE with speakers taking turns.
 
 ABSOLUTE WORD COUNT REQUIREMENT - NO EXCEPTIONS:
 The dialogue MUST be AT LEAST ${wordCount} words.
 
+MANDATORY DIALOGUE FORMAT:
+- Each speaker's turn MUST start with their name followed by a colon
+- Format: "${thinkerNames[0]}: [their statement]" then "${thinkerNames[1]}: [their response]"
+- Speakers MUST alternate back and forth throughout the entire dialogue
+- This is a CONVERSATION, NOT an essay or monologue
+- Each speaker should have roughly equal speaking time
+
+EXAMPLE FORMAT:
+${thinkerNames[0]}: I believe that...
+${thinkerNames[1]}: That is an interesting point, but I would argue...
+${thinkerNames[0]}: You raise a valid concern. However...
+${thinkerNames[1]}: Let me respond to that by saying...
+
 CRITICAL INSTRUCTIONS:
 1. Each thinker should quote and reference their actual positions [P#], quotes [Q#], arguments [A#] and works [W#]
-2. DO NOT USE ANY MARKDOWN - plain text only.
+2. DO NOT USE ANY MARKDOWN - plain text only
+3. The dialogue should feel like a real philosophical conversation
+4. Speakers should ENGAGE with each other's points, not just deliver separate speeches
 
 ${allSkeletons}
 
-Now write a ${wordCount}-word dialogue between ${thinkerNames.join(" and ")} on "${topic}".`;
+Now write a ${wordCount}-word dialogue between ${thinkerNames.join(" and ")} on "${topic}". Remember: speaker names with colons, alternating turns!`;
 
     try {
       if (isOpenAIModel(model)) {
