@@ -108,87 +108,163 @@ async function safeDbQuery<T>(queryFn: () => Promise<T>, fallback: T): Promise<T
   }
 }
 
-// Helper to get EXTENSIVE content from database for a thinker - this is the SKELETON for generation
+// Extract keywords from user query for semantic search
+function extractSearchTerms(query: string): string[] {
+  const stopWords = new Set([
+    'the', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
+    'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should',
+    'may', 'might', 'must', 'can', 'to', 'of', 'in', 'for', 'on', 'with', 'at',
+    'by', 'from', 'as', 'into', 'through', 'during', 'before', 'after', 'above',
+    'below', 'between', 'under', 'again', 'further', 'then', 'once', 'here',
+    'there', 'when', 'where', 'why', 'how', 'all', 'each', 'few', 'more', 'most',
+    'other', 'some', 'such', 'no', 'nor', 'not', 'only', 'own', 'same', 'so',
+    'than', 'too', 'very', 'just', 'and', 'but', 'if', 'or', 'because', 'until',
+    'while', 'about', 'against', 'what', 'which', 'who', 'whom', 'this', 'that',
+    'these', 'those', 'am', 'your', 'you', 'i', 'me', 'my', 'we', 'our', 'they',
+    'their', 'it', 'its', 'he', 'she', 'him', 'her', 'his', 'hers', 'think', 
+    'view', 'views', 'opinion', 'believe', 'solve', 'explain', 'tell', 'say',
+    'said', 'says', 'does', 'please', 'thanks', 'thank'
+  ]);
+  
+  return query
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, ' ')
+    .split(/\s+/)
+    .filter(word => word.length > 2 && !stopWords.has(word))
+    .slice(0, 10); // Max 10 keywords
+}
+
+// SEMANTIC SEARCH: Find content that matches the user's query topic
 async function getThinkerContext(thinkerId: string, query: string, quoteCount: number = 50) {
   const thinkerName = normalizeThinkerName(thinkerId);
+  const searchTerms = extractSearchTerms(query);
   
-  // Fetch substantial amounts - these form the SKELETON of the output
-  const relevantPositions = await safeDbQuery(
+  console.log(`[SEARCH] Query: "${query}"`);
+  console.log(`[SEARCH] Extracted terms: ${searchTerms.join(', ')}`);
+  console.log(`[SEARCH] Thinker: ${thinkerName}`);
+
+  // Build search conditions for each content type
+  // Priority 1: Content that matches query terms (RELEVANT to the question)
+  // Priority 2: Any content by this thinker (fallback)
+  
+  const buildSearchConditions = (textColumn: any, thinkerColumn: any) => {
+    const thinkerMatch = or(
+      ilike(thinkerColumn, `%${thinkerName}%`),
+      ilike(thinkerColumn, `%${thinkerId}%`)
+    );
+    
+    if (searchTerms.length === 0) {
+      return thinkerMatch;
+    }
+    
+    // Search for ANY of the query terms in the content
+    const termMatches = searchTerms.map(term => ilike(textColumn, `%${term}%`));
+    return sql`${thinkerMatch} AND (${sql.join(termMatches, sql` OR `)})`;
+  };
+
+  // STEP 1: Search for content RELEVANT to the query
+  let relevantPositions = await safeDbQuery(
     () => db
       .select()
       .from(positions)
-      .where(
-        or(
-          ilike(positions.thinker, `%${thinkerName}%`),
-          ilike(positions.thinker, `%${thinkerId}%`)
-        )
-      )
-      .limit(Math.max(quoteCount * 2, 100)),
+      .where(buildSearchConditions(positions.positionText, positions.thinker))
+      .limit(quoteCount * 2),
     []
   );
 
-  const relevantQuotes = await safeDbQuery(
+  let relevantQuotes = await safeDbQuery(
     () => db
       .select()
       .from(quotes)
-      .where(
-        or(
-          ilike(quotes.thinker, `%${thinkerName}%`),
-          ilike(quotes.thinker, `%${thinkerId}%`)
-        )
-      )
-      .limit(Math.max(quoteCount, 50)),
-    []
-  );
-
-  const relevantArguments = await safeDbQuery(
-    () => db
-      .select()
-      .from(arguments_)
-      .where(
-        or(
-          ilike(arguments_.thinker, `%${thinkerName}%`),
-          ilike(arguments_.thinker, `%${thinkerId}%`)
-        )
-      )
-      .limit(Math.max(quoteCount, 50)),
-    []
-  );
-
-  const relevantWorks = await safeDbQuery(
-    () => db
-      .select()
-      .from(works)
-      .where(
-        or(
-          ilike(works.thinker, `%${thinkerName}%`),
-          ilike(works.thinker, `%${thinkerId}%`)
-        )
-      )
-      .limit(Math.max(quoteCount, 50)),
-    []
-  );
-
-  const relevantChunks = await safeDbQuery(
-    () => db
-      .select()
-      .from(textChunks)
-      .where(
-        or(
-          ilike(textChunks.thinker, `%${thinkerName}%`),
-          ilike(textChunks.thinker, `%${thinkerId}%`)
-        )
-      )
+      .where(buildSearchConditions(quotes.quoteText, quotes.thinker))
       .limit(quoteCount),
     []
   );
+
+  let relevantArguments = await safeDbQuery(
+    () => db
+      .select()
+      .from(arguments_)
+      .where(buildSearchConditions(arguments_.argumentText, arguments_.thinker))
+      .limit(quoteCount),
+    []
+  );
+
+  let relevantWorks = await safeDbQuery(
+    () => db
+      .select()
+      .from(works)
+      .where(buildSearchConditions(works.workText, works.thinker))
+      .limit(quoteCount),
+    []
+  );
+
+  console.log(`[SEARCH] Found relevant: ${relevantPositions.length} positions, ${relevantQuotes.length} quotes, ${relevantArguments.length} arguments, ${relevantWorks.length} works`);
+
+  // STEP 2: If no relevant content found, fall back to general content (but warn)
+  if (relevantPositions.length === 0 && relevantQuotes.length === 0 && 
+      relevantArguments.length === 0 && relevantWorks.length === 0) {
+    console.log(`[SEARCH] No relevant content found for query. Using general content as fallback.`);
+    
+    relevantPositions = await safeDbQuery(
+      () => db
+        .select()
+        .from(positions)
+        .where(or(
+          ilike(positions.thinker, `%${thinkerName}%`),
+          ilike(positions.thinker, `%${thinkerId}%`)
+        ))
+        .limit(Math.floor(quoteCount / 2)),
+      []
+    );
+
+    relevantQuotes = await safeDbQuery(
+      () => db
+        .select()
+        .from(quotes)
+        .where(or(
+          ilike(quotes.thinker, `%${thinkerName}%`),
+          ilike(quotes.thinker, `%${thinkerId}%`)
+        ))
+        .limit(Math.floor(quoteCount / 2)),
+      []
+    );
+
+    relevantArguments = await safeDbQuery(
+      () => db
+        .select()
+        .from(arguments_)
+        .where(or(
+          ilike(arguments_.thinker, `%${thinkerName}%`),
+          ilike(arguments_.thinker, `%${thinkerId}%`)
+        ))
+        .limit(Math.floor(quoteCount / 4)),
+      []
+    );
+
+    relevantWorks = await safeDbQuery(
+      () => db
+        .select()
+        .from(works)
+        .where(or(
+          ilike(works.thinker, `%${thinkerName}%`),
+          ilike(works.thinker, `%${thinkerId}%`)
+        ))
+        .limit(Math.floor(quoteCount / 4)),
+      []
+    );
+    
+    console.log(`[SEARCH] Fallback found: ${relevantPositions.length} positions, ${relevantQuotes.length} quotes`);
+  }
 
   return {
     positions: relevantPositions,
     quotes: relevantQuotes,
     arguments: relevantArguments,
     works: relevantWorks,
-    textChunks: relevantChunks,
+    textChunks: [],
+    searchTerms,
+    queryWasMatched: relevantPositions.length > 0 || relevantQuotes.length > 0 || relevantArguments.length > 0 || relevantWorks.length > 0,
   };
 }
 
@@ -236,7 +312,7 @@ function buildDatabaseSkeleton(context: any, thinkerName: string, quoteCount: nu
   return skeleton;
 }
 
-// Build system prompt for philosopher chat - USES DATABASE AS SKELETON
+// Build system prompt for philosopher chat - FIRST PERSON, DIRECT, NO PUFFERY
 function buildPhilosopherSystemPrompt(thinkerId: string, context: any, quoteCount: number = 10, wordCount: number = 2000, enhanced: boolean = false): string {
   const normalizedId = thinkerId.toLowerCase();
   const thinker = THINKERS.find(t => t.id.toLowerCase() === normalizedId || t.name.toLowerCase() === normalizedId);
@@ -245,81 +321,76 @@ function buildPhilosopherSystemPrompt(thinkerId: string, context: any, quoteCoun
   const totalDbContent = (context.positions?.length || 0) + (context.quotes?.length || 0) + 
                         (context.arguments?.length || 0) + (context.works?.length || 0);
 
-  let prompt = `You are ${name}. You must respond ONLY based on the actual database content provided below.
+  // Check if we found query-relevant content or just fallback
+  const queryWasMatched = context.queryWasMatched !== false;
 
-ABSOLUTE WORD COUNT REQUIREMENT - NO EXCEPTIONS:
-You MUST write AT LEAST ${wordCount} words. This is a MINIMUM, not a target.
-There are ZERO exceptions to this rule. A response under ${wordCount} words is a FAILURE.
+  let prompt = `You ARE ${name}. You speak in FIRST PERSON. You say "I believe", "My view is", "I argue".
 
-HOW TO ACHIEVE LENGTH WITH 100% SUBSTANCE (NO PADDING):
-- Dig DEEP into every database item - explain its full meaning and implications
-- For each position/quote/argument, provide: historical context, scientific parallels, technological applications, intellectual connections
-- Give concrete EXAMPLES and ILLUSTRATIONS for every abstract idea
-- Connect ideas to developments in science, technology, history, philosophy
-- Explore counterarguments and how the thinker would respond
-- Trace the logical chain of reasoning in exhaustive detail
-- EVERY sentence must add new information or insight
+=== ABSOLUTE REQUIREMENTS ===
 
-ABSOLUTELY FORBIDDEN - ZERO TOLERANCE:
-- NO disclaimers ("I should note...", "It's important to remember...")
-- NO filler phrases ("That's a great question", "Let me explain", "In other words")
-- NO meta-commentary about the response itself
-- NO padding or repetition
-- NO placeholder sentences
-- NO summarizing what you just said
-- PURE CONTENT ONLY - maximum signal, zero noise
+FIRST PERSON ONLY:
+- Say "I" not "${name}"
+- Say "My view" not "${name}'s view"  
+- Say "I argue" not "${name} argues"
+- NEVER refer to yourself in third person. EVER.
 
-MANDATORY CITATION FORMAT - EVERY PARAGRAPH MUST CITE:
-- EVERY paragraph you write MUST begin with a citation like [P1], [Q3], [A5], or [W2]
-- You MUST cite at least one database item per paragraph
-- Format: Start with the code, then elaborate. Example: "[P1] This position reflects..."
-- A response without [P#], [Q#], [A#], [W#] citations is INVALID and UNACCEPTABLE
-- You have ${quoteCount} items to work with - USE THEM
+WORD COUNT: Write AT LEAST ${wordCount} words. This is a MINIMUM.
 
-CRITICAL INSTRUCTIONS:
-1. EVERY paragraph starts with a database citation [P#], [Q#], [A#], or [W#]
-2. DO NOT write any paragraph without first citing a specific database item
-3. DO NOT make up positions - use ONLY what is in the database below
-4. If asked about something not covered, say you would need to consult your writings
-5. Speak in first person as ${name}
-6. ${enhanced ? "ENHANCED MODE (1:3 RATIO): Database content is the SCAFFOLDING (1 part). Your elaboration is the FLESH (3 parts). Start each paragraph with a citation, then add 3x content with examples, historical context, scientific parallels." : "STRICT MODE: Use ONLY database content. Every paragraph must cite and explain a database item."}
+CONCISE AND DIRECT:
+- Get to the point immediately
+- State positions clearly and directly
+- No circuitous rambling
+- No padding or filler
 
-Database contains ${totalDbContent} items for ${name}.
-`;
+=== ABSOLUTELY FORBIDDEN ===
 
-  if (context.positions?.length > 0) {
-    prompt += `\n--- MY POSITIONS (from database) ---\n`;
-    context.positions.slice(0, quoteCount).forEach((p: any, i: number) => {
-      prompt += `[P${i + 1}] ${p.positionText || p.position_text}\n`;
-    });
-  }
+NEVER USE THESE PHRASES (ZERO TOLERANCE):
+- "This raises profound questions..."
+- "And so we see that..."
+- "It is important to note..."
+- "In this context, we must consider..."
+- "This brings us to a broader point..."
+- "Let me explain..."
+- "That's an interesting question..."
+- "To put it another way..."
+- "In other words..."
+- "The implications of this are..."
+- "This leads us to consider..."
+- "One might argue..."
+- "It could be said that..."
+- ANY vague philosophical-sounding filler
 
-  if (context.quotes?.length > 0) {
-    prompt += `\n--- MY QUOTES (from database) ---\n`;
-    context.quotes.slice(0, quoteCount).forEach((q: any, i: number) => {
-      prompt += `[Q${i + 1}] "${q.quoteText || q.quote_text}"\n`;
-    });
-  }
+NEVER:
+- Speak in third person about yourself
+- Use LLM puffery or filler phrases
+- Ramble without substance
+- Use markdown formatting (no #, *, -, **)
+- Make up positions not in the database
 
-  if (context.arguments?.length > 0) {
-    prompt += `\n--- MY ARGUMENTS (from database) ---\n`;
-    context.arguments.slice(0, Math.floor(quoteCount / 2)).forEach((a: any, i: number) => {
-      prompt += `[A${i + 1}] ${a.argumentText || a.argument_text}\n`;
-    });
-  }
+=== YOUR ACTUAL CONTENT ===
 
-  if (context.works?.length > 0) {
-    prompt += `\n--- MY WORKS EXCERPTS (from database) ---\n`;
-    context.works.slice(0, Math.floor(quoteCount / 3)).forEach((w: any, i: number) => {
-      const text = (w.workText || w.work_text || '').substring(0, 300);
-      prompt += `[W${i + 1}] ${text}...\n`;
-    });
-  }
+${queryWasMatched ? "The database content below DIRECTLY answers the user's question. USE IT." : "NOTE: No content directly matching this query was found. State that you would need to consult your writings on this specific topic, but you can offer related thoughts from your general positions."}
 
-  prompt += `\n\nRespond to the user's question using the above database content.`;
-  prompt += `\n\nMANDATORY: Start EVERY paragraph with a citation [P1], [Q1], [A1], or [W1]. A response without these codes is INVALID.`;
-  prompt += `\n\nNO MARKDOWN: No # headers, no * bullets, no - lists, no ** bold. Plain text only.`;
-  prompt += `\n\nWORD COUNT: You MUST write AT LEAST ${wordCount} words. NO EXCEPTIONS.`;
+${context.positions?.length > 0 ? `\n--- MY POSITIONS ---\n${context.positions.slice(0, quoteCount).map((p: any, i: number) => `[P${i + 1}] ${p.positionText || p.position_text}`).join('\n')}` : ''}
+
+${context.quotes?.length > 0 ? `\n--- MY QUOTES ---\n${context.quotes.slice(0, quoteCount).map((q: any, i: number) => `[Q${i + 1}] "${q.quoteText || q.quote_text}"`).join('\n')}` : ''}
+
+${context.arguments?.length > 0 ? `\n--- MY ARGUMENTS ---\n${context.arguments.slice(0, Math.floor(quoteCount / 2)).map((a: any, i: number) => `[A${i + 1}] ${a.argumentText || a.argument_text}`).join('\n')}` : ''}
+
+${context.works?.length > 0 ? `\n--- MY WORKS ---\n${context.works.slice(0, Math.floor(quoteCount / 3)).map((w: any, i: number) => `[W${i + 1}] ${(w.workText || w.work_text || '').substring(0, 500)}...`).join('\n')}` : ''}
+
+=== HOW TO RESPOND ===
+
+1. Answer the question DIRECTLY using the database content above
+2. Cite sources with [P1], [Q1], [A1], [W1] codes
+3. Speak as yourself in first person: "I believe...", "My argument is...", "I reject..."
+4. Be direct and substantive - no filler
+5. ${enhanced ? "ENHANCED: Use database as scaffolding (1 part), add your elaboration (3 parts) with examples, history, applications" : "STRICT: Stay close to database content"}
+6. Write at least ${wordCount} words of SUBSTANCE
+
+Database contains ${totalDbContent} items. Cite them with [P#], [Q#], [A#], [W#] codes.
+
+BEGIN YOUR RESPONSE IN FIRST PERSON. NO PREAMBLE.`;
 
   return prompt;
 }

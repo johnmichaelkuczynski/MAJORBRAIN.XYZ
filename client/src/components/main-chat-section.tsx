@@ -177,29 +177,34 @@ export function MainChatSection() {
 
       let skeletonContent = "";
       let mainContent = "";
-      let inSkeletonPhase = useCrossChunk;
       let chunkCount = 0;
+      let contentStarted = false;
       
       for await (const chunk of streamResponse(response)) {
         chunkCount++;
         
-        // Detect transition from skeleton to content phase
-        if (inSkeletonPhase && (chunk.includes("PHASE 2") || chunk.includes("GENERATING CHUNK"))) {
-          inSkeletonPhase = false;
-          setIsSkeletonBuilding(false);
-          setShowOutputPopup(true);
-        }
-        
-        if (inSkeletonPhase) {
-          skeletonContent += chunk;
+        // Route chunks based on their type (new format)
+        if (chunk.type === "skeleton") {
+          skeletonContent += chunk.content;
           setSkeletonBuildContent(skeletonContent);
-        } else {
-          mainContent += chunk;
+          
+          // Check for skeleton complete signal
+          if (chunk.content.includes("[SKELETON_COMPLETE]")) {
+            setIsSkeletonBuilding(false);
+          }
+        } else if (chunk.type === "content" || chunk.type === "raw") {
+          // First content chunk - show output popup
+          if (!contentStarted) {
+            contentStarted = true;
+            setIsSkeletonBuilding(false);
+            setShowOutputPopup(true);
+          }
+          mainContent += chunk.content;
           setStreamingContent(mainContent);
         }
         
-        if (chunkCount <= 5 || chunkCount % 50 === 0) {
-          console.log("[STREAM] Chunk", chunkCount, "phase:", inSkeletonPhase ? "skeleton" : "content");
+        if (chunkCount <= 5 || chunkCount % 100 === 0) {
+          console.log("[STREAM] Chunk", chunkCount, "type:", chunk.type);
         }
       }
       console.log("[STREAM] Completed. Total chunks:", chunkCount);

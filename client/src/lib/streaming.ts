@@ -1,4 +1,9 @@
-export async function* streamResponse(response: Response): AsyncGenerator<string> {
+export interface StreamChunk {
+  type: "skeleton" | "content" | "raw";
+  content: string;
+}
+
+export async function* streamResponse(response: Response): AsyncGenerator<StreamChunk> {
   if (!response.body) {
     throw new Error("No response body");
   }
@@ -13,7 +18,7 @@ export async function* streamResponse(response: Response): AsyncGenerator<string
       
       if (done) {
         if (buffer) {
-          yield buffer;
+          yield { type: "raw", content: buffer };
         }
         break;
       }
@@ -31,30 +36,42 @@ export async function* streamResponse(response: Response): AsyncGenerator<string
             return;
           }
           try {
-            // First try to parse as JSON
             const parsed = JSON.parse(data);
             if (typeof parsed === "string") {
-              // data: "word" format - most common
-              yield parsed;
+              // Old format: data: "word" - treat as content
+              yield { type: "content", content: parsed };
+            } else if (parsed.type === "skeleton" && parsed.content) {
+              // New format: skeleton channel
+              yield { type: "skeleton", content: parsed.content };
+            } else if (parsed.type === "content" && parsed.content) {
+              // New format: content channel
+              yield { type: "content", content: parsed.content };
             } else if (parsed.content) {
-              yield parsed.content;
+              // Legacy format with content field
+              yield { type: "content", content: parsed.content };
             } else if (parsed.text) {
-              yield parsed.text;
+              yield { type: "content", content: parsed.text };
             }
           } catch {
-            // Not JSON, yield raw data (handles data: word format without quotes)
+            // Not JSON, yield raw data
             if (data.trim()) {
-              yield data;
+              yield { type: "raw", content: data };
             }
           }
         } else if (line.trim() && !line.startsWith(":")) {
-          // Plain text line
-          yield line;
+          yield { type: "raw", content: line };
         }
       }
     }
   } finally {
     reader.releaseLock();
+  }
+}
+
+// Simple string stream for backward compatibility
+export async function* streamResponseSimple(response: Response): AsyncGenerator<string> {
+  for await (const chunk of streamResponse(response)) {
+    yield chunk.content;
   }
 }
 

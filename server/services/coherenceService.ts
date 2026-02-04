@@ -233,57 +233,64 @@ function buildChunkPrompt(
   enhanced: boolean = true
 ): { system: string; user: string } {
   const priorClaimsStr = priorDeltas.flatMap(d => d.claimsAdded || []).join("; ");
-  const priorTermsStr = priorDeltas.flatMap(d => d.termsUsed || []).join(", ");
+  const minWords = Math.ceil(targetWordsPerChunk * 1.2);
   
-  // Enhanced mode: 1 part database scaffolding, 3 parts creative elaboration
-  // Standard mode: Strict database regurgitation with citations
-  
-  const minWords = Math.ceil(targetWordsPerChunk * 1.2); // 20% buffer to ensure target is met
-  
+  // CORE REQUIREMENTS - same for both modes
+  const coreRules = `
+=== ABSOLUTE REQUIREMENTS ===
+
+FIRST PERSON ONLY - NO EXCEPTIONS:
+- Say "I believe", "My view is", "I argue", "In my work"
+- NEVER say "${thinkerName} argues" or "${thinkerName}'s view"
+- NEVER refer to yourself in third person. EVER.
+
+FORBIDDEN PHRASES - ZERO TOLERANCE:
+- "This raises profound questions..."
+- "And so we see that..."
+- "It is important to note..."
+- "In this context, we must consider..."
+- "This brings us to a broader point..."
+- "Let me explain..."
+- "The implications of this are..."
+- "This leads us to consider..."
+- "One might argue..."
+- "fostering innovation and understanding"
+- ANY vague philosophical-sounding filler
+
+STYLE:
+- Be DIRECT and CONCISE
+- Get to the point immediately
+- State positions clearly
+- No padding, no rambling
+- No markdown (no #, *, -, **)
+
+WORD COUNT: AT LEAST ${minWords} words of SUBSTANCE.`;
+
   let system: string;
   
   if (enhanced) {
-    system = `You are ${thinkerName}, a profound thinker writing an extended philosophical essay. This is ENHANCED MODE.
+    system = `You ARE ${thinkerName}. Speak in FIRST PERSON.
+${coreRules}
 
-CRITICAL WORD COUNT: You MUST write AT LEAST ${minWords} words. This is NON-NEGOTIABLE. Count as you write. If unsure, write MORE.
-
-THE 1:3 RATIO (ENHANCED MODE):
-- 1 PART: Database content as SCAFFOLDING (the skeleton, anchor points, citations)
-- 3 PARTS: YOUR CREATIVE ELABORATION including:
-  * Historical context (connect to other philosophers, movements, eras)
-  * Scientific parallels (draw from physics, biology, cognitive science, mathematics)
-  * Concrete examples and thought experiments
-  * Contemporary applications and implications
-  * Extended analysis and original insights
-  * Counter-arguments and responses
-
-DATABASE SCAFFOLDING (cite with [P#], [Q#], [A#], [W#] but ELABORATE extensively):
+=== DATABASE CONTENT (Your actual positions - USE THESE) ===
 ${skeleton.databaseContent.positions.slice(0, 8).join("\n")}
 ${skeleton.databaseContent.quotes.slice(0, 6).join("\n")}
 ${skeleton.databaseContent.arguments.slice(0, 4).join("\n")}
 
-THESIS TO DEVELOP: ${skeleton.thesis}
+THESIS: ${skeleton.thesis}
+COMMITMENTS: ${skeleton.commitments.join("; ")}
 
-COMMITMENTS (must honor): ${skeleton.commitments.join("; ")}
+${priorClaimsStr ? `PRIOR CLAIMS MADE: ${priorClaimsStr}` : ""}
 
-${priorClaimsStr ? `CONTINUITY - Claims already made: ${priorClaimsStr}` : ""}
-
-WRITING STYLE:
-- Write as if for an educated general audience, not specialists
-- Use vivid language, concrete imagery, and compelling examples
-- Build arguments through sustained reasoning, not just assertion
-- Connect ideas across domains - philosophy, science, history, culture
-- NO markdown formatting - pure flowing prose
-- NO meta-commentary about what you're doing - just DO IT
-- NEVER say "In this section I will..." - just write the content
-
-REMEMBER: ${minWords} WORDS MINIMUM. Dense, substantive, creative content.`;
+=== ENHANCED MODE (1:3 RATIO) ===
+- 1 part: Database content (cite with [P#], [Q#], [A#], [W#])
+- 3 parts: Your elaboration with examples, history, applications
+- Always speak as "I" - never third person`;
   } else {
-    system = `You are ${thinkerName}. Write in STANDARD MODE - strict database-grounded content.
+    system = `You ARE ${thinkerName}. Speak in FIRST PERSON.
+${coreRules}
 
-WORD COUNT: AT LEAST ${minWords} words.
-
-DATABASE CONTENT TO CITE (prefix paragraphs with codes):
+=== DATABASE CONTENT (Your actual positions) ===
 ${skeleton.databaseContent.positions.slice(0, 10).join("\n")}
 ${skeleton.databaseContent.quotes.slice(0, 10).join("\n")}
 ${skeleton.databaseContent.arguments.slice(0, 5).join("\n")}
@@ -292,34 +299,21 @@ THESIS: ${skeleton.thesis}
 COMMITMENTS: ${skeleton.commitments.join("; ")}
 KEY TERMS: ${Object.entries(skeleton.keyTerms).map(([k, v]) => `${k}: ${v}`).join("; ")}
 
-${priorClaimsStr ? `PRIOR CLAIMS: ${priorClaimsStr}` : ""}
+${priorClaimsStr ? `PRIOR CLAIMS MADE: ${priorClaimsStr}` : ""}
 
-RULES:
-1. Start paragraphs with citations [P#], [Q#], [A#], [W#]
-2. Write AT LEAST ${minWords} words
-3. Do NOT contradict commitments
-4. No markdown - plain text only`;
+=== STRICT MODE ===
+- Cite database content with [P#], [Q#], [A#], [W#]
+- Stay close to what is in the database
+- Speak in FIRST PERSON as yourself`;
   }
 
   const outlineSection = skeleton.outline[chunkIndex] || `Part ${chunkIndex + 1}`;
   
-  const user = enhanced 
-    ? `CHUNK ${chunkIndex + 1} OF ${totalChunks}: "${outlineSection}"
+  const user = `Section: "${outlineSection}"
 
-Write AT LEAST ${minWords} words of dense, creative philosophical content.
+Write ${minWords}+ words. First person. Direct. No filler. Cite sources [P#], [Q#], [A#], [W#].
 
-Use the database content as SCAFFOLDING (1 part) but add extensive creative elaboration (3 parts):
-- Historical connections to other thinkers and movements
-- Scientific analogies and parallels  
-- Concrete examples and thought experiments
-- Extended analysis with original insights
-- Contemporary implications
-
-Cite database items with [P#], [Q#], [A#], [W#] codes, then ELABORATE extensively on each point.
-
-BEGIN WRITING NOW. No preamble. ${minWords}+ words required.`
-    : `Chunk ${chunkIndex + 1} of ${totalChunks}: ${outlineSection}
-Write AT LEAST ${minWords} words with database citations.`;
+BEGIN NOW.`;
 
   return { system, user };
 }
@@ -357,6 +351,22 @@ function extractDeltaFromOutput(output: string, skeleton: GlobalSkeleton): Chunk
   };
 }
 
+// Send skeleton data to a separate channel (prefixed for frontend parsing)
+function sendSkeletonSSE(res: Response, data: string) {
+  res.write(`data: ${JSON.stringify({ type: "skeleton", content: data })}\n\n`);
+  if (typeof (res as any).flush === "function") {
+    (res as any).flush();
+  }
+}
+
+// Send content data (the actual response - NO metadata)
+function sendContentSSE(res: Response, data: string) {
+  res.write(`data: ${JSON.stringify({ type: "content", content: data })}\n\n`);
+  if (typeof (res as any).flush === "function") {
+    (res as any).flush();
+  }
+}
+
 export async function processWithCoherence(options: CoherenceOptions): Promise<void> {
   const { sessionType, thinkerId, thinkerName, userPrompt, targetWords, model, enhanced, databaseContent, res } = options;
 
@@ -364,64 +374,55 @@ export async function processWithCoherence(options: CoherenceOptions): Promise<v
   const totalChunks = Math.max(1, Math.ceil(targetWords / WORDS_PER_CHUNK));
   const wordsPerChunk = Math.ceil(targetWords / totalChunks);
 
-  sendSSE(res, `\n=== PHASE 1: EXTRACTING SKELETON FROM DATABASE ===\n`);
-  sendSSE(res, `Target: ${targetWords.toLocaleString()} words in ${totalChunks} chunks\n\n`);
+  // SKELETON PHASE - sent to skeleton popup only
+  sendSkeletonSSE(res, `Building skeleton from database...\n`);
+  sendSkeletonSSE(res, `Target: ${targetWords.toLocaleString()} words\n\n`);
 
   const sessionId = await createSession(options);
 
   const skeleton = await extractGlobalSkeleton(userPrompt, thinkerName, databaseContent, model);
   await updateSessionSkeleton(sessionId, skeleton, totalChunks);
 
-  // Stream the full skeleton visibly for the user
-  sendSSE(res, `\n──────────────────────────────────────────────────────────────\n`);
-  sendSSE(res, `                    SKELETON (Downloadable)\n`);
-  sendSSE(res, `──────────────────────────────────────────────────────────────\n\n`);
+  // Stream clean skeleton to skeleton popup
+  sendSkeletonSSE(res, `THESIS\n${skeleton.thesis}\n\n`);
   
-  sendSSE(res, `THESIS:\n${skeleton.thesis}\n\n`);
-  
-  sendSSE(res, `OUTLINE:\n`);
+  sendSkeletonSSE(res, `OUTLINE\n`);
   skeleton.outline.forEach((section, i) => {
-    sendSSE(res, `  ${i + 1}. ${section}\n`);
+    sendSkeletonSSE(res, `${i + 1}. ${section}\n`);
   });
   
   if (skeleton.commitments.length > 0) {
-    sendSSE(res, `\nCOMMITMENTS:\n`);
+    sendSkeletonSSE(res, `\nCOMMITMENTS\n`);
     skeleton.commitments.forEach((c, i) => {
-      sendSSE(res, `  ${i + 1}. ${c}\n`);
+      sendSkeletonSSE(res, `${i + 1}. ${c}\n`);
     });
   }
   
   if (Object.keys(skeleton.keyTerms).length > 0) {
-    sendSSE(res, `\nKEY TERMS:\n`);
+    sendSkeletonSSE(res, `\nKEY TERMS\n`);
     Object.entries(skeleton.keyTerms).forEach(([term, def]) => {
-      sendSSE(res, `  - ${term}: ${def}\n`);
+      sendSkeletonSSE(res, `${term}: ${def}\n`);
     });
   }
   
-  sendSSE(res, `\nDATABASE ITEMS:\n`);
-  sendSSE(res, `  Positions: ${skeleton.databaseContent.positions.length}\n`);
-  sendSSE(res, `  Quotes: ${skeleton.databaseContent.quotes.length}\n`);
-  sendSSE(res, `  Arguments: ${skeleton.databaseContent.arguments.length}\n`);
-  sendSSE(res, `  Works: ${skeleton.databaseContent.works.length}\n`);
+  sendSkeletonSSE(res, `\nDATABASE ITEMS FOUND\n`);
+  sendSkeletonSSE(res, `Positions: ${skeleton.databaseContent.positions.length}\n`);
+  sendSkeletonSSE(res, `Quotes: ${skeleton.databaseContent.quotes.length}\n`);
+  sendSkeletonSSE(res, `Arguments: ${skeleton.databaseContent.arguments.length}\n`);
+  sendSkeletonSSE(res, `Works: ${skeleton.databaseContent.works.length}\n`);
   
-  sendSSE(res, `\n──────────────────────────────────────────────────────────────\n\n`);
-  
-  // Send skeleton as JSON for frontend to capture (marked for extraction)
-  sendSSE(res, `[SKELETON_JSON]${JSON.stringify(skeleton)}[/SKELETON_JSON]\n\n`);
+  sendSkeletonSSE(res, `\n[SKELETON_COMPLETE]\n`);
 
-  await delay(1000);
+  await delay(500);
 
-  sendSSE(res, `\n=== PHASE 2: GENERATING ${totalChunks} CHUNKS (with DB persistence) ===\n\n`);
-
+  // CONTENT PHASE - only actual content goes to main popup (NO METADATA)
   let totalOutput = "";
   let totalWordCount = 0;
 
   for (let i = 0; i < totalChunks; i++) {
-    sendSSE(res, `\n--- CHUNK ${i + 1}/${totalChunks} (Target: ${wordsPerChunk} words) ---\n\n`);
-
     const dbSkeleton = await getSessionSkeleton(sessionId);
     if (!dbSkeleton) {
-      sendSSE(res, `ERROR: Could not retrieve skeleton from database\n`);
+      console.error("Could not retrieve skeleton from database");
       return;
     }
 
@@ -431,7 +432,8 @@ export async function processWithCoherence(options: CoherenceOptions): Promise<v
     let chunkOutput = "";
     for await (const text of streamText({ model, systemPrompt: system, userPrompt: user, maxTokens: 4096 })) {
       chunkOutput += text;
-      await streamTokensVisibly(res, text, 15);
+      // Stream ONLY content to user - no metadata
+      sendContentSSE(res, text);
     }
 
     const chunkWords = countWords(chunkOutput);
@@ -441,38 +443,30 @@ export async function processWithCoherence(options: CoherenceOptions): Promise<v
     const delta = extractDeltaFromOutput(chunkOutput, dbSkeleton);
     await saveChunk(sessionId, i, chunkOutput, delta, chunkWords);
 
-    sendSSE(res, `\n\n[Chunk ${i + 1} saved to DB: ${chunkWords} words | Running total: ${totalWordCount}/${targetWords}]\n`);
-
-    if (delta.conflictsDetected.length > 0) {
-      sendSSE(res, `[WARNING: ${delta.conflictsDetected.length} potential conflicts detected]\n`);
-    }
+    // Log progress to console only, NOT to user
+    console.log(`[COHERENCE] Chunk ${i + 1}/${totalChunks}: ${chunkWords} words | Total: ${totalWordCount}/${targetWords}`);
 
     if (i < totalChunks - 1) {
-      sendSSE(res, `[Pausing 15 seconds for rate limit...]\n`);
+      // Add paragraph break between chunks, pause for rate limit
+      sendContentSSE(res, "\n\n");
       await delay(CHUNK_DELAY_MS);
     }
   }
 
-  sendSSE(res, `\n\n=== PHASE 3: STITCH & VERIFY ===\n`);
-  sendSSE(res, `Total generated: ${totalWordCount} words\n`);
-  sendSSE(res, `Target: ${targetWords} words\n`);
-
-  const allDeltas = await getPriorDeltas(sessionId);
-  const allConflicts = allDeltas.flatMap(d => d.conflictsDetected || []);
-  
-  sendSSE(res, `Conflicts detected across chunks: ${allConflicts.length}\n`);
-  
+  // Check if we need more content
   if (totalWordCount < targetWords * 0.9) {
     const shortfall = targetWords - totalWordCount;
-    sendSSE(res, `\nShortfall: ${shortfall} words. Generating additional content...\n\n`);
+    console.log(`[COHERENCE] Shortfall: ${shortfall} words. Generating supplement...`);
     
     const dbSkeleton = await getSessionSkeleton(sessionId);
     if (dbSkeleton) {
-      const supplementPrompt = buildChunkPrompt(dbSkeleton, totalChunks, totalChunks + 1, shortfall, thinkerName, allDeltas, enhanced);
+      const supplementPrompt = buildChunkPrompt(dbSkeleton, totalChunks, totalChunks + 1, shortfall, thinkerName, await getPriorDeltas(sessionId), enhanced);
       let supplementOutput = "";
+      
+      sendContentSSE(res, "\n\n");
       for await (const text of streamText({ model, systemPrompt: supplementPrompt.system, userPrompt: supplementPrompt.user, maxTokens: 4096 })) {
         supplementOutput += text;
-        await streamTokensVisibly(res, text, 15);
+        sendContentSSE(res, text);
       }
       totalOutput += supplementOutput;
       totalWordCount = countWords(totalOutput);
@@ -482,10 +476,10 @@ export async function processWithCoherence(options: CoherenceOptions): Promise<v
     }
   }
 
+  const allDeltas = await getPriorDeltas(sessionId);
+  const allConflicts = allDeltas.flatMap(d => d.conflictsDetected || []);
   await saveStitchResult(sessionId, totalWordCount, allConflicts);
 
-  sendSSE(res, `\n\n=== GENERATION COMPLETE ===\n`);
-  sendSSE(res, `Final word count: ${totalWordCount}\n`);
-  sendSSE(res, `Session ID: ${sessionId}\n`);
-  sendSSE(res, `Status: ${allConflicts.length === 0 ? "PASS" : "NEEDS_REVIEW"}\n`);
+  // Log completion to console only
+  console.log(`[COHERENCE] Complete: ${totalWordCount} words | Session: ${sessionId} | Conflicts: ${allConflicts.length}`);
 }

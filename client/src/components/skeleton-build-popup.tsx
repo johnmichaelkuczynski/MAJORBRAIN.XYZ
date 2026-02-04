@@ -159,10 +159,15 @@ export function SkeletonBuildPopup({
         <>
           <div 
             ref={contentRef}
-            className="flex-1 overflow-auto p-4 bg-amber-50 dark:bg-amber-950/20 font-mono text-sm whitespace-pre-wrap"
+            className="flex-1 overflow-auto p-4 bg-amber-50 dark:bg-amber-950/20 text-sm whitespace-pre-wrap leading-relaxed"
             data-testid="skeleton-build-content"
           >
-            {content || (
+            {content ? (
+              content
+                .replace(/\[SKELETON_COMPLETE\]/g, '')
+                .replace(/Building skeleton from database\.\.\.\n?/g, '')
+                .trim()
+            ) : (
               <span className="text-amber-600 animate-pulse">
                 Extracting skeleton from database...
               </span>
