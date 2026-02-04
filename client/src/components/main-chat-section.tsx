@@ -146,6 +146,7 @@ export function MainChatSection() {
     abortControllerRef.current = new AbortController();
 
     try {
+      console.log("[STREAM] Starting fetch to /api/figures/" + selectedThinker + "/chat");
       const response = await fetch(`/api/figures/${selectedThinker}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -159,13 +160,20 @@ export function MainChatSection() {
         signal: abortControllerRef.current.signal,
       });
 
+      console.log("[STREAM] Response status:", response.status, response.ok);
       if (!response.ok) throw new Error("Failed to get response");
 
       let content = "";
+      let chunkCount = 0;
       for await (const chunk of streamResponse(response)) {
+        chunkCount++;
         content += chunk;
+        if (chunkCount <= 5 || chunkCount % 50 === 0) {
+          console.log("[STREAM] Chunk", chunkCount, ":", chunk.substring(0, 30));
+        }
         setStreamingContent(content);
       }
+      console.log("[STREAM] Completed. Total chunks:", chunkCount);
     } catch (error: any) {
       if (error.name !== "AbortError") {
         console.error("Chat error:", error);
