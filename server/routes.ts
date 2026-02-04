@@ -108,6 +108,16 @@ async function safeDbQuery<T>(queryFn: () => Promise<T>, fallback: T): Promise<T
   }
 }
 
+// Common philosophical abbreviations and their expansions
+const ABBREVIATION_EXPANSIONS: Record<string, string[]> = {
+  'dn': ['deductive-nomological', 'deductive', 'nomological'],
+  'ocd': ['obsessive-compulsive', 'obsessive', 'compulsive', 'disorder'],
+  'ai': ['artificial', 'intelligence'],
+  'iq': ['intelligence', 'quotient'],
+  'jnb': ['justified', 'true', 'belief'],
+  'jtb': ['justified', 'true', 'belief'],
+};
+
 // Extract keywords from user query for semantic search
 function extractSearchTerms(query: string): string[] {
   const stopWords = new Set([
@@ -126,12 +136,65 @@ function extractSearchTerms(query: string): string[] {
     'said', 'says', 'does', 'please', 'thanks', 'thank'
   ]);
   
-  return query
+  let terms = query
     .toLowerCase()
     .replace(/[^\w\s-]/g, ' ')
     .split(/\s+/)
-    .filter(word => word.length > 2 && !stopWords.has(word))
-    .slice(0, 10); // Max 10 keywords
+    .filter(word => word.length > 1 && !stopWords.has(word));
+  
+  // Expand abbreviations
+  const expandedTerms: string[] = [];
+  for (const term of terms) {
+    expandedTerms.push(term);
+    const expansion = ABBREVIATION_EXPANSIONS[term];
+    if (expansion) {
+      expandedTerms.push(...expansion);
+    }
+  }
+  
+  // Also add hyphenated compound forms for common philosophical terms
+  if (terms.includes('deductive') || terms.includes('nomological')) {
+    expandedTerms.push('deductive-nomological');
+  }
+  if (terms.includes('raven') || terms.includes('paradox')) {
+    expandedTerms.push('raven', 'paradox', 'confirmation');
+  }
+  if (terms.includes('hume') || terms.includes('causation')) {
+    expandedTerms.push('causation', 'causal', 'cause', 'hume', 'humean');
+  }
+  if (terms.includes('induction') || terms.includes('inductive')) {
+    expandedTerms.push('induction', 'inductive', 'inductivism');
+  }
+  if (terms.includes('popper') || terms.includes('falsification')) {
+    expandedTerms.push('falsification', 'falsifiability', 'popper', 'popperian');
+  }
+  if (terms.includes('freud') || terms.includes('psychoanalysis')) {
+    expandedTerms.push('freud', 'freudian', 'psychoanalysis', 'psychoanalytic');
+  }
+  if (terms.includes('crowd') || terms.includes('crowds')) {
+    expandedTerms.push('crowd', 'crowds', 'mob', 'collective');
+  }
+  if (terms.includes('criminal') || terms.includes('criminals')) {
+    expandedTerms.push('criminal', 'criminals', 'crime', 'criminality');
+  }
+  if (terms.includes('analytic') || terms.includes('philosophy')) {
+    expandedTerms.push('analytic', 'philosophy', 'analytical');
+  }
+  if (terms.includes('pragmatic') || terms.includes('truth')) {
+    expandedTerms.push('pragmatic', 'pragmatism', 'truth', 'pragmatist');
+  }
+  if (terms.includes('probabilistic') || terms.includes('probability')) {
+    expandedTerms.push('probabilistic', 'probability', 'probabilism');
+  }
+  if (terms.includes('algorithmic') || terms.includes('algorithm')) {
+    expandedTerms.push('algorithmic', 'algorithm', 'computation', 'computational');
+  }
+  if (terms.includes('intelligence') || terms.includes('rationality')) {
+    expandedTerms.push('intelligence', 'rationality', 'rational', 'intelligent');
+  }
+  
+  // Deduplicate and limit
+  return [...new Set(expandedTerms)].slice(0, 20);
 }
 
 // SEMANTIC SEARCH: Find content that matches the user's query topic
