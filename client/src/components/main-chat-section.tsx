@@ -12,7 +12,7 @@ import { ThinkerAvatar } from "./thinker-avatar";
 import { SkeletonPopup } from "./skeleton-popup";
 import { SkeletonBuildPopup } from "./skeleton-build-popup";
 import { StreamingPopup } from "./streaming-popup";
-import { streamResponse } from "@/lib/streaming";
+import { streamResponseSimple } from "@/lib/streaming";
 import { useToast } from "@/hooks/use-toast";
 import { THINKERS } from "@shared/schema";
 
@@ -175,39 +175,23 @@ export function MainChatSection() {
       console.log("[STREAM] Response status:", response.status, response.ok);
       if (!response.ok) throw new Error("Failed to get response");
 
-      let skeletonContent = "";
+      // Show output popup immediately for streaming
+      setShowOutputPopup(true);
+      setIsSkeletonBuilding(false);
+      
       let mainContent = "";
       let chunkCount = 0;
-      let contentStarted = false;
       
-      for await (const chunk of streamResponse(response)) {
+      for await (const chunk of streamResponseSimple(response)) {
         chunkCount++;
+        mainContent += chunk;
+        setStreamingContent(mainContent);
         
-        // Route chunks based on their type (new format)
-        if (chunk.type === "skeleton") {
-          skeletonContent += chunk.content;
-          setSkeletonBuildContent(skeletonContent);
-          
-          // Check for skeleton complete signal
-          if (chunk.content.includes("[SKELETON_COMPLETE]")) {
-            setIsSkeletonBuilding(false);
-          }
-        } else if (chunk.type === "content" || chunk.type === "raw") {
-          // First content chunk - show output popup
-          if (!contentStarted) {
-            contentStarted = true;
-            setIsSkeletonBuilding(false);
-            setShowOutputPopup(true);
-          }
-          mainContent += chunk.content;
-          setStreamingContent(mainContent);
-        }
-        
-        if (chunkCount <= 5 || chunkCount % 100 === 0) {
-          console.log("[STREAM] Chunk", chunkCount, "type:", chunk.type);
+        if (chunkCount <= 3 || chunkCount % 200 === 0) {
+          console.log("[STREAM] Chunk", chunkCount, "length:", mainContent.length);
         }
       }
-      console.log("[STREAM] Completed. Total chunks:", chunkCount);
+      console.log("[STREAM] Completed. Total chunks:", chunkCount, "Total length:", mainContent.length);
     } catch (error: any) {
       if (error.name !== "AbortError") {
         console.error("Chat error:", error);
