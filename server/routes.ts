@@ -194,7 +194,7 @@ function extractSearchTerms(query: string): string[] {
   }
   
   // Deduplicate and limit
-  return [...new Set(expandedTerms)].slice(0, 20);
+  return Array.from(new Set(expandedTerms)).slice(0, 20);
 }
 
 // SEMANTIC SEARCH: Find content that matches the user's query topic
@@ -215,7 +215,7 @@ async function getThinkerContext(thinkerId: string, query: string, quoteCount: n
       ORDER BY priority DESC, id
       LIMIT ${quoteCount * 2}
     `);
-    return result.rows || [];
+    return (result as any).rows || result || [];
   }, []);
   
   // Also get general CORE content as fallback
@@ -227,7 +227,7 @@ async function getThinkerContext(thinkerId: string, query: string, quoteCount: n
       ORDER BY priority DESC, id
       LIMIT ${quoteCount}
     `);
-    return result.rows || [];
+    return (result as any).rows || result || [];
   }, []);
   
   const allCoreContent = [...coreContent, ...generalCoreContent];
