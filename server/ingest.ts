@@ -24,10 +24,28 @@ interface IngestResult {
   error?: string;
 }
 
-function parseFileName(fileName: string): { author: string; type: string; number: string } | null {
+interface ParsedFileName {
+  author: string;
+  type: string;
+  number: string;
+  isCore: boolean;
+}
+
+function parseFileName(fileName: string): ParsedFileName | null {
   const baseName = path.basename(fileName, path.extname(fileName));
   const parts = baseName.split("_");
   
+  // Check for CORE_ prefix: CORE_AUTHOR_N.txt
+  if (parts[0].toUpperCase() === "CORE" && parts.length >= 3) {
+    return {
+      author: parts[1],
+      type: "CORE",
+      number: parts[2],
+      isCore: true
+    };
+  }
+  
+  // Standard format: AUTHOR_TYPE_N.txt
   if (parts.length < 3) return null;
   
   const author = parts[0];
@@ -38,7 +56,106 @@ function parseFileName(fileName: string): { author: string; type: string; number
     return null;
   }
   
-  return { author, type, number };
+  return { author, type, number, isCore: false };
+}
+
+interface CoreRecord {
+  type: string;
+  content: string;
+}
+
+function parseCoreDocument(content: string, author: string, fileName: string): CoreRecord[] {
+  const records: CoreRecord[] = [];
+  
+  // Parse sections from CORE document
+  const sections = [
+    { header: "=== DETAILED OUTLINE ===", type: "outline" },
+    { header: "=== KEY POSITIONS ===", type: "position" },
+    { header: "=== KEY ARGUMENTS ===", type: "argument" },
+    { header: "=== TRENDS OF THOUGHT ===", type: "trend" },
+    { header: "=== QUESTIONS AND ANSWERS ===", type: "qa" }
+  ];
+  
+  for (let i = 0; i < sections.length; i++) {
+    const section = sections[i];
+    const nextSection = sections[i + 1];
+    
+    const startIdx = content.indexOf(section.header);
+    if (startIdx === -1) continue;
+    
+    let endIdx = content.length;
+    if (nextSection) {
+      const nextIdx = content.indexOf(nextSection.header);
+      if (nextIdx > startIdx) endIdx = nextIdx;
+    }
+    
+    const sectionContent = content.substring(startIdx + section.header.length, endIdx).trim();
+    
+    if (section.type === "outline") {
+      // Store entire outline as one record
+      if (sectionContent) {
+        records.push({ type: "outline", content: sectionContent });
+      }
+    } else if (section.type === "position") {
+      // Parse each POSITION: line
+      const lines = sectionContent.split("\n");
+      for (const line of lines) {
+        const match = line.match(/^POSITION:\s*(.+)$/i);
+        if (match && match[1].trim()) {
+          records.push({ type: "position", content: match[1].trim() });
+        }
+      }
+    } else if (section.type === "argument") {
+      // Parse each ARGUMENT: line  
+      const lines = sectionContent.split("\n");
+      for (const line of lines) {
+        const match = line.match(/^ARGUMENT:\s*(.+)$/i);
+        if (match && match[1].trim()) {
+          records.push({ type: "argument", content: match[1].trim() });
+        }
+      }
+    } else if (section.type === "trend") {
+      // Parse each TREND: line
+      const lines = sectionContent.split("\n");
+      for (const line of lines) {
+        const match = line.match(/^TREND:\s*(.+)$/i);
+        if (match && match[1].trim()) {
+          records.push({ type: "trend", content: match[1].trim() });
+        }
+      }
+    } else if (section.type === "qa") {
+      // Parse Q/A pairs line by line
+      const lines = sectionContent.split("\n");
+      let currentQ = "";
+      let currentA = "";
+      
+      for (const line of lines) {
+        const qMatch = line.match(/^Q\d+:\s*(.+)$/);
+        const aMatch = line.match(/^A\d+:\s*(.+)$/);
+        
+        if (qMatch) {
+          // If we had a complete Q/A pair, save it
+          if (currentQ && currentA) {
+            records.push({ type: "qa", content: `Q: ${currentQ}\nA: ${currentA}` });
+          }
+          currentQ = qMatch[1].trim();
+          currentA = "";
+        } else if (aMatch) {
+          currentA = aMatch[1].trim();
+        } else if (currentA && line.trim()) {
+          // Continuation of answer
+          currentA += " " + line.trim();
+        }
+      }
+      // Save last pair
+      if (currentQ && currentA) {
+        records.push({ type: "qa", content: `Q: ${currentQ}\nA: ${currentA}` });
+      }
+    }
+  }
+  
+  console.log(`Parsed ${records.length} records from CORE document for ${author}`);
+  return records;
 }
 
 async function ensureTablesExist(): Promise<boolean> {
@@ -79,6 +196,17 @@ async function ensureTablesExist(): Promise<boolean> {
         source_document TEXT
       )
     `);
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS core_content (
+        id SERIAL PRIMARY KEY,
+        thinker TEXT NOT NULL,
+        content_type TEXT NOT NULL,
+        content TEXT NOT NULL,
+        source_document TEXT,
+        priority INTEGER DEFAULT 1,
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
     return true;
   } catch (error) {
     console.error("Failed to ensure tables exist:", error);
@@ -101,14 +229,46 @@ async function ingestFile(filePath: string): Promise<IngestResult> {
     };
   }
   
-  const { author: rawAuthor, type } = parsed;
+  const { author: rawAuthor, type, isCore } = parsed;
   const author = normalizeAuthorName(rawAuthor);
   
   try {
     const content = fs.readFileSync(filePath, "utf-8");
-    const lines = content.split("\n").filter(line => line.trim().length > 0);
-    
     let recordsInserted = 0;
+    
+    // Handle CORE documents specially - parse sections
+    if (isCore) {
+      const coreRecords = parseCoreDocument(content, author, fileName);
+      
+      for (const record of coreRecords) {
+        try {
+          const escapedContent = record.content.replace(/'/g, "''");
+          const escapedAuthor = author.replace(/'/g, "''");
+          const escapedSource = fileName.replace(/'/g, "''");
+          
+          await db.execute(sql.raw(`
+            INSERT INTO core_content (thinker, content_type, content, source_document, priority)
+            VALUES ('${escapedAuthor}', '${record.type}', '${escapedContent}', '${escapedSource}', 1)
+          `));
+          recordsInserted++;
+        } catch (insertError: any) {
+          console.error(`CORE insert error for ${fileName}:`, insertError.message);
+        }
+      }
+      
+      fs.unlinkSync(filePath);
+      
+      return {
+        file: fileName,
+        type: "CORE",
+        author,
+        recordsInserted,
+        success: true
+      };
+    }
+    
+    // Standard file processing
+    const lines = content.split("\n").filter(line => line.trim().length > 0);
     const BATCH_SIZE = 500;
     
     for (let i = 0; i < lines.length; i += BATCH_SIZE) {
