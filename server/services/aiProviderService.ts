@@ -114,4 +114,4 @@ export function delay(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-export const CHUNK_DELAY_MS = 15000;
+export const CHUNK_DELAY_MS = 2000;

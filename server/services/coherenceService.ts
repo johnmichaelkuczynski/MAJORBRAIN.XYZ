@@ -16,6 +16,12 @@ export interface GlobalSkeleton {
     arguments: string[];
     works: string[];
   };
+  perSpeakerContent?: Record<string, {
+    positions: string[];
+    quotes: string[];
+    arguments: string[];
+    works: string[];
+  }>;
 }
 
 export interface ChunkDelta {
@@ -30,6 +36,13 @@ export interface CoherenceOptions {
   thinkerId: string;
   thinkerName: string;
   secondSpeaker?: string;
+  allSpeakers?: string[];
+  perSpeakerContent?: Record<string, {
+    positions: any[];
+    quotes: any[];
+    arguments: any[];
+    works: any[];
+  }>;
   userPrompt: string;
   targetWords: number;
   model: ModelId;
@@ -44,7 +57,6 @@ export interface CoherenceOptions {
 }
 
 function sendSSE(res: Response, data: string) {
-  // Send in format expected by streamResponseSimple: { content: "word" }
   res.write(`data: ${JSON.stringify({ content: data })}\n\n`);
   if (typeof (res as any).flush === "function") {
     (res as any).flush();
@@ -141,11 +153,24 @@ async function saveStitchResult(sessionId: string, totalWords: number, conflicts
     .where(eq(coherenceSessions.id, sessionId));
 }
 
+function formatDbContent(items: any[], type: "P" | "Q" | "A" | "W", speakerName: string, limit: number = 20): string[] {
+  return items.slice(0, limit).map((item: any, i: number) => {
+    const code = `[${type}${i + 1}]`;
+    if (type === "P") return `${code} ${item.positionText || item.position_text}`;
+    if (type === "Q") return `${code} "${item.quoteText || item.quote_text}"`;
+    if (type === "A") return `${code} ${item.argumentText || item.argument_text}`;
+    if (type === "W") return `${code} ${(item.workText || item.work_text || '').substring(0, 500)}...`;
+    return "";
+  });
+}
+
 export async function extractGlobalSkeleton(
   userPrompt: string,
   thinkerName: string,
   databaseContent: CoherenceOptions["databaseContent"],
-  model: ModelId
+  model: ModelId,
+  perSpeakerContent?: CoherenceOptions["perSpeakerContent"],
+  allSpeakers?: string[]
 ): Promise<GlobalSkeleton> {
   const positionTexts = databaseContent.positions.slice(0, 20).map((p: any, i: number) => 
     `[P${i + 1}] ${p.positionText || p.position_text}`
@@ -180,6 +205,7 @@ ${workTexts.join("\n")}
 
 Return ONLY the JSON skeleton.`;
 
+  let parsedSkeleton: any = null;
   try {
     const response = await generateText({
       model,
@@ -191,31 +217,18 @@ Return ONLY the JSON skeleton.`;
 
     const jsonMatch = response.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
-      const parsed = JSON.parse(jsonMatch[0]);
-      return {
-        thesis: parsed.thesis || "",
-        outline: parsed.outline || [],
-        keyTerms: parsed.keyTerms || {},
-        commitments: parsed.commitments || [],
-        entities: parsed.entities || [],
-        databaseContent: {
-          positions: positionTexts,
-          quotes: quoteTexts,
-          arguments: argumentTexts,
-          works: workTexts,
-        },
-      };
+      parsedSkeleton = JSON.parse(jsonMatch[0]);
     }
   } catch (error) {
     console.error("Skeleton extraction error:", error);
   }
 
-  return {
-    thesis: userPrompt,
-    outline: ["Introduction", "Main Analysis", "Conclusion"],
-    keyTerms: {},
-    commitments: [],
-    entities: [],
+  const result: GlobalSkeleton = {
+    thesis: parsedSkeleton?.thesis || userPrompt,
+    outline: parsedSkeleton?.outline || ["Introduction", "Main Analysis", "Conclusion"],
+    keyTerms: parsedSkeleton?.keyTerms || {},
+    commitments: parsedSkeleton?.commitments || [],
+    entities: parsedSkeleton?.entities || [],
     databaseContent: {
       positions: positionTexts,
       quotes: quoteTexts,
@@ -223,6 +236,23 @@ Return ONLY the JSON skeleton.`;
       works: workTexts,
     },
   };
+
+  if (perSpeakerContent && allSpeakers) {
+    result.perSpeakerContent = {};
+    for (const speaker of allSpeakers) {
+      const sc = perSpeakerContent[speaker];
+      if (sc) {
+        result.perSpeakerContent[speaker] = {
+          positions: formatDbContent(sc.positions, "P", speaker, 15),
+          quotes: formatDbContent(sc.quotes, "Q", speaker, 15),
+          arguments: formatDbContent(sc.arguments, "A", speaker, 8),
+          works: formatDbContent(sc.works, "W", speaker, 3),
+        };
+      }
+    }
+  }
+
+  return result;
 }
 
 function buildChunkPrompt(
@@ -234,12 +264,12 @@ function buildChunkPrompt(
   priorDeltas: ChunkDelta[],
   enhanced: boolean = true,
   sessionType: "chat" | "debate" | "interview" | "dialogue" | "document" = "document",
-  secondSpeaker: string = "Interviewer"
+  secondSpeaker: string = "Interviewer",
+  allSpeakers?: string[]
 ): { system: string; user: string } {
   const priorClaimsStr = priorDeltas.flatMap(d => d.claimsAdded || []).join("; ");
   const minWords = Math.ceil(targetWordsPerChunk * 1.2);
   
-  // FORMAT-SPECIFIC INSTRUCTIONS based on sessionType
   let formatInstructions = "";
   
   if (sessionType === "interview") {
@@ -260,6 +290,29 @@ RULES:
 - ${thinkerName} gives substantive answers (3-6 sentences each)
 - NO essay paragraphs. ONLY speaker turns with "NAME: text" format
 - Every single line of output must start with either "${secondSpeaker}:" or "${thinkerName}:"
+`;
+  } else if (sessionType === "debate" && allSpeakers && allSpeakers.length > 2) {
+    const speakerList = allSpeakers.join(", ");
+    formatInstructions = `
+=== MANDATORY MULTI-SPEAKER DEBATE FORMAT ===
+This is a DEBATE with ${allSpeakers.length} speakers: ${speakerList}
+ALL speakers must participate actively. EVERY line must start with a speaker name and colon.
+
+EXACT FORMAT REQUIRED:
+${allSpeakers[0]}: [makes an argument or claim, citing their database items]
+${allSpeakers[1]}: [challenges or responds, citing their own database items]
+${allSpeakers[2]}: [adds perspective or disagrees, citing their database items]
+${allSpeakers.length > 3 ? `${allSpeakers[3]}: [contributes their view, citing their database items]\n` : ""}
+
+RULES:
+- ALL ${allSpeakers.length} speakers MUST appear in EVERY chunk
+- Speakers DISAGREE, CHALLENGE, and DEBATE each other
+- Each turn is a direct response to previous speakers
+- Sharp, pointed exchanges - no agreement or pleasantries
+- NO essay paragraphs. ONLY speaker turns with "NAME: text" format
+- Every single line of output must start with one of: ${allSpeakers.map(s => `"${s}:"`).join(", ")}
+- Each speaker cites THEIR OWN database items (marked with their name)
+- Rotate through all speakers - do not skip anyone
 `;
   } else if (sessionType === "debate") {
     formatInstructions = `
@@ -301,7 +354,6 @@ RULES:
 `;
   }
 
-  // CORE REQUIREMENTS - same for both modes
   const coreRules = `
 === ABSOLUTE REQUIREMENTS ===
 
@@ -341,10 +393,48 @@ WORD COUNT: AT LEAST ${minWords} words of SUBSTANCE.`;
 
   let system: string;
   
-  // For conversation formats, use different prompts
   const isConversation = sessionType === "interview" || sessionType === "debate" || sessionType === "dialogue";
+  const isMultiSpeakerDebate = sessionType === "debate" && allSpeakers && allSpeakers.length > 2 && skeleton.perSpeakerContent;
   
-  if (isConversation) {
+  if (isMultiSpeakerDebate && skeleton.perSpeakerContent) {
+    let perSpeakerSection = "";
+    for (const speaker of allSpeakers!) {
+      const sc = skeleton.perSpeakerContent[speaker];
+      if (sc) {
+        perSpeakerSection += `\n=== ${speaker.toUpperCase()}'S DATABASE CONTENT (${speaker} MUST cite THESE) ===\n`;
+        perSpeakerSection += `${speaker}'s POSITIONS:\n${sc.positions.slice(0, 6).join("\n")}\n`;
+        perSpeakerSection += `${speaker}'s QUOTES:\n${sc.quotes.slice(0, 5).join("\n")}\n`;
+        perSpeakerSection += `${speaker}'s ARGUMENTS:\n${sc.arguments.slice(0, 4).join("\n")}\n\n`;
+      }
+    }
+
+    system = `You are generating a ${allSpeakers!.length}-SPEAKER DEBATE.
+${formatInstructions}
+${coreRules}
+
+${perSpeakerSection}
+
+TOPIC: ${skeleton.thesis}
+
+${priorClaimsStr ? `PRIOR CLAIMS MADE: ${priorClaimsStr}` : ""}
+
+=== GROUNDING REQUIREMENTS (NON-NEGOTIABLE) ===
+EVERY speaker's response MUST:
+1. CITE their own database content with codes: [P1], [P2], [Q1], [Q2], [A1], etc.
+2. USE the EXACT positions, quotes, and arguments listed under THEIR name above
+3. NOT fabricate or invent positions not in the database
+4. Quote directly from [Q#] items when making claims
+5. Reference specific [P#] positions when explaining views
+6. EVERY turn by EVERY speaker must include at least 2 citation codes
+
+EXAMPLE of correct turn:
+"${allSpeakers![0]}: The DN model fails in psychological explanation [P1]. As I wrote, 'the cause of many a psychological event is known' [Q2]. This argument [A1] shows..."
+
+WRONG (ungrounded fabrication):
+"${allSpeakers![0]}: I believe psychological explanations are complex and involve many factors..."
+
+CRITICAL: ALL ${allSpeakers!.length} speakers must appear. Output ONLY speaker turns. Format: "NAME: text"`;
+  } else if (isConversation) {
     system = `You are generating a ${sessionType.toUpperCase()}.
 ${formatInstructions}
 ${coreRules}
@@ -422,7 +512,17 @@ ${priorClaimsStr ? `PRIOR CLAIMS MADE: ${priorClaimsStr}` : ""}
   
   let user: string;
   
-  if (isConversation) {
+  if (isMultiSpeakerDebate) {
+    user = `Continue the ${allSpeakers!.length}-speaker debate on: "${outlineSection}"
+
+Write ${minWords}+ words as alternating speaker turns.
+ALL ${allSpeakers!.length} speakers (${allSpeakers!.join(", ")}) MUST appear in this section.
+Format: "SPEAKER_NAME: [what they say with [P#], [Q#], [A#] citations]"
+
+Start with ${allSpeakers![chunkIndex % allSpeakers!.length]}:
+
+BEGIN NOW with speaker turns only. Every speaker must cite their database items.`;
+  } else if (isConversation) {
     user = `Continue the ${sessionType} on: "${outlineSection}"
 
 Write ${minWords}+ words as alternating speaker turns.
@@ -475,7 +575,6 @@ function extractDeltaFromOutput(output: string, skeleton: GlobalSkeleton): Chunk
   };
 }
 
-// Send skeleton data to a separate channel (prefixed for frontend parsing)
 function sendSkeletonSSE(res: Response, data: string) {
   res.write(`data: ${JSON.stringify({ type: "skeleton", content: data })}\n\n`);
   if (typeof (res as any).flush === "function") {
@@ -483,7 +582,6 @@ function sendSkeletonSSE(res: Response, data: string) {
   }
 }
 
-// Send content data (the actual response - NO metadata)
 function sendContentSSE(res: Response, data: string) {
   res.write(`data: ${JSON.stringify({ type: "content", content: data })}\n\n`);
   if (typeof (res as any).flush === "function") {
@@ -492,22 +590,22 @@ function sendContentSSE(res: Response, data: string) {
 }
 
 export async function processWithCoherence(options: CoherenceOptions): Promise<void> {
-  const { sessionType, thinkerId, thinkerName, secondSpeaker = "Interviewer", userPrompt, targetWords, model, enhanced, databaseContent, res } = options;
+  const { sessionType, thinkerId, thinkerName, secondSpeaker = "Interviewer", allSpeakers, perSpeakerContent, userPrompt, targetWords, model, enhanced, databaseContent, res } = options;
 
   const WORDS_PER_CHUNK = 1000;
   const totalChunks = Math.max(1, Math.ceil(targetWords / WORDS_PER_CHUNK));
   const wordsPerChunk = Math.ceil(targetWords / totalChunks);
 
-  // SKELETON PHASE - sent to skeleton popup only
   sendSkeletonSSE(res, `Building skeleton from database...\n`);
   sendSkeletonSSE(res, `Target: ${targetWords.toLocaleString()} words\n\n`);
 
+  sendContentSSE(res, `[Searching database and building structure...]\n\n`);
+
   const sessionId = await createSession(options);
 
-  const skeleton = await extractGlobalSkeleton(userPrompt, thinkerName, databaseContent, model);
+  const skeleton = await extractGlobalSkeleton(userPrompt, thinkerName, databaseContent, model, perSpeakerContent, allSpeakers);
   await updateSessionSkeleton(sessionId, skeleton, totalChunks);
 
-  // Stream clean skeleton to skeleton popup
   sendSkeletonSSE(res, `THESIS\n${skeleton.thesis}\n\n`);
   
   sendSkeletonSSE(res, `OUTLINE\n`);
@@ -534,12 +632,18 @@ export async function processWithCoherence(options: CoherenceOptions): Promise<v
   sendSkeletonSSE(res, `Quotes: ${skeleton.databaseContent.quotes.length}\n`);
   sendSkeletonSSE(res, `Arguments: ${skeleton.databaseContent.arguments.length}\n`);
   sendSkeletonSSE(res, `Works: ${skeleton.databaseContent.works.length}\n`);
+
+  if (skeleton.perSpeakerContent) {
+    sendSkeletonSSE(res, `\nPER-SPEAKER CONTENT\n`);
+    for (const [speaker, sc] of Object.entries(skeleton.perSpeakerContent)) {
+      sendSkeletonSSE(res, `${speaker}: ${sc.positions.length}P, ${sc.quotes.length}Q, ${sc.arguments.length}A, ${sc.works.length}W\n`);
+    }
+  }
   
   sendSkeletonSSE(res, `\n[SKELETON_COMPLETE]\n`);
 
-  await delay(500);
+  await delay(300);
 
-  // CONTENT PHASE - only actual content goes to main popup (NO METADATA)
   let totalOutput = "";
   let totalWordCount = 0;
 
@@ -551,12 +655,11 @@ export async function processWithCoherence(options: CoherenceOptions): Promise<v
     }
 
     const priorDeltas = await getPriorDeltas(sessionId);
-    const { system, user } = buildChunkPrompt(dbSkeleton, i, totalChunks, wordsPerChunk, thinkerName, priorDeltas, enhanced, sessionType, secondSpeaker);
+    const { system, user } = buildChunkPrompt(dbSkeleton, i, totalChunks, wordsPerChunk, thinkerName, priorDeltas, enhanced, sessionType, secondSpeaker, allSpeakers);
 
     let chunkOutput = "";
     for await (const text of streamText({ model, systemPrompt: system, userPrompt: user, maxTokens: 4096 })) {
       chunkOutput += text;
-      // Stream ONLY content to user - no metadata
       sendContentSSE(res, text);
     }
 
@@ -567,24 +670,21 @@ export async function processWithCoherence(options: CoherenceOptions): Promise<v
     const delta = extractDeltaFromOutput(chunkOutput, dbSkeleton);
     await saveChunk(sessionId, i, chunkOutput, delta, chunkWords);
 
-    // Log progress to console only, NOT to user
     console.log(`[COHERENCE] Chunk ${i + 1}/${totalChunks}: ${chunkWords} words | Total: ${totalWordCount}/${targetWords}`);
 
     if (i < totalChunks - 1) {
-      // Add paragraph break between chunks, pause for rate limit
       sendContentSSE(res, "\n\n");
-      await delay(CHUNK_DELAY_MS);
+      await delay(2000);
     }
   }
 
-  // Check if we need more content
   if (totalWordCount < targetWords * 0.9) {
     const shortfall = targetWords - totalWordCount;
     console.log(`[COHERENCE] Shortfall: ${shortfall} words. Generating supplement...`);
     
     const dbSkeleton = await getSessionSkeleton(sessionId);
     if (dbSkeleton) {
-      const supplementPrompt = buildChunkPrompt(dbSkeleton, totalChunks, totalChunks + 1, shortfall, thinkerName, await getPriorDeltas(sessionId), enhanced, sessionType, secondSpeaker);
+      const supplementPrompt = buildChunkPrompt(dbSkeleton, totalChunks, totalChunks + 1, shortfall, thinkerName, await getPriorDeltas(sessionId), enhanced, sessionType, secondSpeaker, allSpeakers);
       let supplementOutput = "";
       
       sendContentSSE(res, "\n\n");
@@ -604,6 +704,7 @@ export async function processWithCoherence(options: CoherenceOptions): Promise<v
   const allConflicts = allDeltas.flatMap(d => d.conflictsDetected || []);
   await saveStitchResult(sessionId, totalWordCount, allConflicts);
 
-  // Log completion to console only
+  sendContentSSE(res, `\n\n[Word Count: ${totalWordCount.toLocaleString()}]`);
+
   console.log(`[COHERENCE] Complete: ${totalWordCount} words | Session: ${sessionId} | Conflicts: ${allConflicts.length}`);
 }
