@@ -299,6 +299,57 @@ async function legacyGetThinkerContext(thinkerId: string, query: string, quoteCo
   };
 }
 
+// Split uploaded document content into meaningful chunks for per-debater material
+function splitUploadedContent(text: string, targetWordsPerChunk: number = 200): string[] {
+  const paragraphs = text.split(/\n\s*\n/).filter(p => p.trim().length > 0);
+  const chunks: string[] = [];
+  let currentChunk = "";
+  let currentWords = 0;
+
+  for (const para of paragraphs) {
+    const paraWords = para.split(/\s+/).filter(Boolean).length;
+    if (currentWords + paraWords > targetWordsPerChunk && currentChunk.trim()) {
+      chunks.push(currentChunk.trim());
+      currentChunk = para;
+      currentWords = paraWords;
+    } else {
+      currentChunk += (currentChunk ? "\n\n" : "") + para;
+      currentWords += paraWords;
+    }
+  }
+  if (currentChunk.trim()) {
+    chunks.push(currentChunk.trim());
+  }
+
+  // If we got a single huge chunk (no paragraph breaks), split by sentences
+  if (chunks.length === 1 && chunks[0].split(/\s+/).length > targetWordsPerChunk * 1.5) {
+    const bigText = chunks[0];
+    const sentences = bigText.split(/(?<=[.!?])\s+/).filter(s => s.trim().length > 0);
+    const sentenceChunks: string[] = [];
+    let sc = "";
+    let sw = 0;
+    for (const sentence of sentences) {
+      const sWords = sentence.split(/\s+/).filter(Boolean).length;
+      if (sw + sWords > targetWordsPerChunk && sc.trim()) {
+        sentenceChunks.push(sc.trim());
+        sc = sentence;
+        sw = sWords;
+      } else {
+        sc += (sc ? " " : "") + sentence;
+        sw += sWords;
+      }
+    }
+    if (sc.trim()) sentenceChunks.push(sc.trim());
+    if (sentenceChunks.length > 1) return sentenceChunks;
+  }
+
+  if (chunks.length === 0 && text.trim()) {
+    chunks.push(text.trim());
+  }
+
+  return chunks;
+}
+
 // Build a SKELETON from database content that the AI MUST use
 function buildDatabaseSkeleton(context: any, thinkerName: string, quoteCount: number): string {
   let skeleton = `\n\n=== MANDATORY DATABASE CONTENT - YOU MUST USE THIS AS YOUR SKELETON ===\n`;
@@ -866,7 +917,7 @@ Every substantive claim must cite a specific database item. NO FREELANCING.`;
 
   // Debate Generator (streaming) - USES DATABASE AS SKELETON
   app.post("/api/debate/generate", async (req: Request, res: Response) => {
-    const { topic, debaters, wordCount = 2000, quoteCount = 20, enhanced = false, model = "gpt-4o" } = req.body;
+    const { topic, debaters, wordCount = 2000, quoteCount = 20, enhanced = false, model = "gpt-4o", debaterDocuments = {} } = req.body;
 
     if (!topic || !debaters || debaters.length < 2) {
       return res.status(400).json({ error: "Topic and at least 2 debaters are required" });
@@ -879,6 +930,24 @@ Every substantive claim must cite a specific database item. NO FREELANCING.`;
     );
 
     const debaterNames = debaters.map((d: string) => normalizeThinkerName(d));
+
+    // Process per-debater uploaded documents into positions-like items
+    // These get merged into each debater's context so they can cite them as [UD1], [UD2], etc.
+    const MAX_DEBATER_DOC_WORDS = 50000;
+    const debaterUploadedContent: Record<string, string[]> = {};
+    for (let idx = 0; idx < debaters.length; idx++) {
+      const debaterId = debaters[idx];
+      const docContent = debaterDocuments[debaterId];
+      if (docContent && typeof docContent === "string" && docContent.trim().length > 0) {
+        // Enforce server-side word limit
+        const words = docContent.trim().split(/\s+/).filter(Boolean);
+        const limitedText = words.length > MAX_DEBATER_DOC_WORDS
+          ? words.slice(0, MAX_DEBATER_DOC_WORDS).join(" ")
+          : docContent.trim();
+        const chunks = splitUploadedContent(limitedText, 200);
+        debaterUploadedContent[debaterNames[idx]] = chunks;
+      }
+    }
 
     // For outputs > 500 words, use Cross-Chunk Coherence system
     if (wordCount > 500) {
@@ -895,13 +964,31 @@ Every substantive claim must cite a specific database item. NO FREELANCING.`;
       // Build per-speaker content map so each debater gets their own citations
       const perSpeakerContent: Record<string, { positions: any[]; quotes: any[]; arguments: any[]; works: any[] }> = {};
       debaterNames.forEach((name: string, idx: number) => {
+        const uploadedItems = debaterUploadedContent[name] || [];
         perSpeakerContent[name] = {
-          positions: contexts[idx].positions || [],
+          positions: [
+            ...(contexts[idx].positions || []),
+            ...uploadedItems.map((text, i) => ({
+              positionText: text,
+              position_text: text,
+              _uploadedDoc: true,
+              _udIndex: i + 1,
+            })),
+          ],
           quotes: contexts[idx].quotes || [],
           arguments: contexts[idx].arguments || [],
           works: contexts[idx].works || [],
         };
       });
+
+      // Add uploaded content to combined content
+      const allUploadedPositions = Object.values(debaterUploadedContent).flat().map((text, i) => ({
+        positionText: text,
+        position_text: text,
+        _uploadedDoc: true,
+        _udIndex: i + 1,
+      }));
+      combinedContent.positions = [...combinedContent.positions, ...allUploadedPositions];
 
       await processWithCoherence({
         sessionType: "debate",
@@ -929,6 +1016,15 @@ Every substantive claim must cite a specific database item. NO FREELANCING.`;
       const ctx = contexts[i];
       const name = debaterNames[i];
       allSkeletons += buildDatabaseSkeleton(ctx, name, Math.floor(quoteCount / debaters.length));
+
+      // Append uploaded document content for this debater
+      const uploadedChunks = debaterUploadedContent[name];
+      if (uploadedChunks && uploadedChunks.length > 0) {
+        allSkeletons += `\n=== ${name.toUpperCase()}'s UPLOADED MATERIAL (cite as [UD1], [UD2], etc.) ===\n`;
+        uploadedChunks.forEach((chunk, j) => {
+          allSkeletons += `[UD${j + 1}] ${chunk}\n\n`;
+        });
+      }
     });
 
     const modeInstruction = enhanced 
@@ -936,13 +1032,15 @@ Every substantive claim must cite a specific database item. NO FREELANCING.`;
       : "STRICT MODE: Use ONLY database content. Explain and elaborate on database items but do not add external content.";
 
     const speakerList = debaterNames.join(", ");
-    const speakerExample = debaterNames.map((n: string) => `${n}: [Their argument citing [P#], [Q#], [A#]...]`).join("\n\n");
+    const hasUploadedMaterial = Object.keys(debaterUploadedContent).length > 0;
+    const citationTypes = hasUploadedMaterial ? "[P#], [Q#], [A#], [W#], [UD#]" : "[P#], [Q#], [A#], [W#]";
+    const speakerExample = debaterNames.map((n: string) => `${n}: [Their argument citing ${citationTypes}...]`).join("\n\n");
 
     const systemPrompt = `You are creating a formal philosophical DEBATE between ${debaterNames.length} speakers: ${speakerList}.
 
 === YOUR ROLE ===
 You are the VOICE, not the BRAIN. The database content below IS the brain.
-Every substantive claim must trace to a specific database item.
+Every substantive claim must trace to a specific database item or uploaded material.
 You DO NOT fabricate what thinkers "probably" think. You DO NOT substitute generic LLM knowledge.
 
 FORMAT REQUIREMENT - THIS IS A DEBATE, NOT AN ESSAY:
@@ -962,18 +1060,19 @@ WORD COUNT: At least ${wordCount} words total.
 
 CONTENT RULES:
 1. Build from database content below - EACH speaker has their own database items
-2. Include at least ${quoteCount} database citations [P#], [Q#], [A#], [W#]
+2. Include at least ${quoteCount} database citations ${citationTypes}
 3. ${modeInstruction}
 4. Each speaker argues FROM THEIR OWN PERSPECTIVE in first person
 5. NO MARKDOWN - plain text only
 6. Speakers should DISAGREE and CHALLENGE each other
 7. ALL ${debaterNames.length} speakers MUST appear throughout - do NOT skip anyone
-8. DO NOT FREELANCE - every substantive claim must cite a database item
+8. DO NOT FREELANCE - every substantive claim must cite a database item or uploaded material
+${hasUploadedMaterial ? `9. Some debaters have UPLOADED MATERIAL marked with [UD#] codes - these are EXCLUSIVE to that debater and should be cited alongside database items` : ""}
 
 ${allSkeletons}
 
 Write a ${wordCount}-word debate on "${topic}" with ALL ${debaterNames.length} speakers (${speakerList}) taking turns.
-Every substantive claim must cite a specific database item. NO FREELANCING.`;
+Every substantive claim must cite a specific database item or uploaded material. NO FREELANCING.`;
 
     try {
       if (isOpenAIModel(model)) {

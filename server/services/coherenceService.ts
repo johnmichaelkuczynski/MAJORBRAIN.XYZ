@@ -304,7 +304,10 @@ async function saveStitchResult(sessionId: string, totalWords: number, conflicts
 }
 
 function formatDbContent(items: any[], type: "P" | "Q" | "A" | "W", speakerName: string, limit: number = 20): string[] {
-  return items.slice(0, limit).map((item: any, i: number) => {
+  const regularItems = items.filter((item: any) => !item._uploadedDoc);
+  const uploadedItems = items.filter((item: any) => item._uploadedDoc);
+
+  const formatted = regularItems.slice(0, limit).map((item: any, i: number) => {
     const code = `[${type}${i + 1}]`;
     if (type === "P") return `${code} ${item.positionText || item.position_text}`;
     if (type === "Q") return `${code} "${item.quoteText || item.quote_text}"`;
@@ -312,6 +315,14 @@ function formatDbContent(items: any[], type: "P" | "Q" | "A" | "W", speakerName:
     if (type === "W") return `${code} ${(item.workText || item.work_text || '').substring(0, 500)}...`;
     return "";
   });
+
+  // Format uploaded document items with [UD#] codes
+  const uploadedFormatted = uploadedItems.slice(0, 50).map((item: any, i: number) => {
+    const code = `[UD${item._udIndex || (i + 1)}]`;
+    return `${code} ${item.positionText || item.position_text}`;
+  });
+
+  return [...formatted, ...uploadedFormatted];
 }
 
 export async function extractGlobalSkeleton(
@@ -322,8 +333,13 @@ export async function extractGlobalSkeleton(
   perSpeakerContent?: CoherenceOptions["perSpeakerContent"],
   allSpeakers?: string[]
 ): Promise<GlobalSkeleton> {
-  const positionTexts = databaseContent.positions.slice(0, 20).map((p: any, i: number) => 
+  const regularPositions = databaseContent.positions.filter((p: any) => !p._uploadedDoc);
+  const uploadedPositions = databaseContent.positions.filter((p: any) => p._uploadedDoc);
+  const positionTexts = regularPositions.slice(0, 20).map((p: any, i: number) => 
     `[P${i + 1}] ${p.positionText || p.position_text}`
+  );
+  const uploadedTexts = uploadedPositions.slice(0, 50).map((p: any, i: number) => 
+    `[UD${p._udIndex || (i + 1)}] ${p.positionText || p.position_text}`
   );
   const quoteTexts = databaseContent.quotes.slice(0, 20).map((q: any, i: number) => 
     `[Q${i + 1}] "${q.quoteText || q.quote_text}"`
@@ -352,6 +368,7 @@ ${positionTexts.join("\n")}
 ${quoteTexts.join("\n")}
 ${argumentTexts.join("\n")}
 ${workTexts.join("\n")}
+${uploadedTexts.length > 0 ? `\nUPLOADED MATERIAL:\n${uploadedTexts.join("\n")}` : ""}
 
 Return ONLY the JSON skeleton.`;
 
@@ -380,7 +397,7 @@ Return ONLY the JSON skeleton.`;
     commitments: parsedSkeleton?.commitments || [],
     entities: parsedSkeleton?.entities || [],
     databaseContent: {
-      positions: positionTexts,
+      positions: [...positionTexts, ...uploadedTexts],
       quotes: quoteTexts,
       arguments: argumentTexts,
       works: workTexts,

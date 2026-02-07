@@ -14,6 +14,69 @@ import { FileUpload } from "./file-upload";
 import { streamResponseSimple, downloadText, copyToClipboard } from "@/lib/streaming";
 import { THINKERS } from "@shared/schema";
 
+const MAX_DEBATER_WORDS = 50000;
+
+function DebaterFileUpload({ debaterId, onContent, content, disabled }: {
+  debaterId: string;
+  onContent: (content: string, fileName: string) => void;
+  content: string;
+  disabled: boolean;
+}) {
+  const thinker = THINKERS.find(t => t.id === debaterId);
+  const name = thinker?.name || debaterId;
+  const wordCount = content ? content.split(/\s+/).filter(Boolean).length : 0;
+  const isOverLimit = wordCount > MAX_DEBATER_WORDS;
+
+  return (
+    <div className="space-y-1" data-testid={`debater-upload-${debaterId}`}>
+      <Label className="text-sm font-medium flex items-center gap-2">
+        <Badge variant="outline" className="text-xs">{name}</Badge>
+        Material
+      </Label>
+      <FileUpload
+        onFileContent={(text, fileName) => {
+          const words = text.split(/\s+/).filter(Boolean);
+          if (words.length > MAX_DEBATER_WORDS) {
+            onContent(words.slice(0, MAX_DEBATER_WORDS).join(" "), fileName);
+          } else {
+            onContent(text, fileName);
+          }
+        }}
+        disabled={disabled}
+      />
+      {content && (
+        <div className="flex items-center justify-between">
+          <p className={`text-xs ${isOverLimit ? "text-destructive" : "text-muted-foreground"}`}>
+            {wordCount.toLocaleString()} / {MAX_DEBATER_WORDS.toLocaleString()} words loaded for {name}
+          </p>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onContent("", "")}
+            data-testid={`button-clear-debater-doc-${debaterId}`}
+          >
+            <X className="h-3 w-3" />
+          </Button>
+        </div>
+      )}
+      <Textarea
+        value={content}
+        onChange={(e) => {
+          const text = e.target.value;
+          const words = text.split(/\s+/).filter(Boolean);
+          if (words.length <= MAX_DEBATER_WORDS) {
+            onContent(text, "typed-content");
+          }
+        }}
+        placeholder={`Paste or type material specifically for ${name} to draw from in the debate (up to ${MAX_DEBATER_WORDS.toLocaleString()} words)...`}
+        className="min-h-[80px] text-sm"
+        disabled={disabled}
+        data-testid={`textarea-debater-doc-${debaterId}`}
+      />
+    </div>
+  );
+}
+
 export function DebateCreatorSection() {
   const [topic, setTopic] = useState("");
   const [documentContent, setDocumentContent] = useState("");
@@ -25,6 +88,7 @@ export function DebateCreatorSection() {
   const [wordCount, setWordCount] = useState(2000);
   const [quoteCount, setQuoteCount] = useState(10);
   const [enhanced, setEnhanced] = useState(true);
+  const [debaterDocuments, setDebaterDocuments] = useState<Record<string, string>>({});
 
   const addDebater = () => {
     if (currentDebater && !debaters.includes(currentDebater) && debaters.length < 4) {
@@ -35,6 +99,11 @@ export function DebateCreatorSection() {
 
   const removeDebater = (id: string) => {
     setDebaters(prev => prev.filter(d => d !== id));
+    setDebaterDocuments(prev => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
   };
 
   const handleFileContent = (content: string, fileName: string) => {
@@ -42,6 +111,13 @@ export function DebateCreatorSection() {
     if (!topic.trim()) {
       setTopic(`Discussion of: ${fileName}`);
     }
+  };
+
+  const handleDebaterDocument = (debaterId: string, content: string, _fileName: string) => {
+    setDebaterDocuments(prev => ({
+      ...prev,
+      [debaterId]: content,
+    }));
   };
 
   const handleGenerate = async () => {
@@ -52,10 +128,29 @@ export function DebateCreatorSection() {
 
     try {
       const fullTopic = documentContent ? `${topic}\n\n--- DOCUMENT TO DISCUSS ---\n${documentContent}` : topic;
+
+      const hasDebaterDocs = Object.values(debaterDocuments).some(d => d.trim().length > 0);
+      const debaterDocsPayload: Record<string, string> = {};
+      if (hasDebaterDocs) {
+        for (const [id, doc] of Object.entries(debaterDocuments)) {
+          if (doc.trim()) {
+            debaterDocsPayload[id] = doc.trim();
+          }
+        }
+      }
+
       const response = await fetch("/api/debate/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic: fullTopic.trim(), debaters, wordCount, quoteCount, enhanced, model: selectedModel }),
+        body: JSON.stringify({
+          topic: fullTopic.trim(),
+          debaters,
+          wordCount,
+          quoteCount,
+          enhanced,
+          model: selectedModel,
+          ...(Object.keys(debaterDocsPayload).length > 0 && { debaterDocuments: debaterDocsPayload }),
+        }),
       });
 
       if (!response.ok) throw new Error("Failed to generate debate");
@@ -71,7 +166,7 @@ export function DebateCreatorSection() {
     }
   };
 
-  const handleClear = () => { setTopic(""); setDocumentContent(""); setDebaters([]); setOutput(""); };
+  const handleClear = () => { setTopic(""); setDocumentContent(""); setDebaters([]); setDebaterDocuments({}); setOutput(""); };
   const handleCopy = () => { copyToClipboard(output); };
   const handleDownload = () => { downloadText(output, `philosophical-debate-${Date.now()}.txt`); };
 
@@ -89,8 +184,11 @@ export function DebateCreatorSection() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-4">
           <div>
-            <Label className="mb-2 block">Upload Document (Optional)</Label>
+            <Label className="mb-2 block">General Document (Optional, shared by all debaters)</Label>
             <FileUpload onFileContent={handleFileContent} disabled={isStreaming} />
+            {documentContent && (
+              <p className="text-xs text-muted-foreground mt-1">General document loaded: {documentContent.split(/\s+/).length.toLocaleString()} words</p>
+            )}
           </div>
 
           <div>
@@ -102,9 +200,6 @@ export function DebateCreatorSection() {
               className="min-h-[200px] text-base"
               data-testid="input-debate-topic" 
             />
-            {documentContent && (
-              <p className="text-xs text-muted-foreground mt-1">Document loaded: {documentContent.split(/\s+/).length.toLocaleString()} words</p>
-            )}
           </div>
 
           <div>
@@ -129,6 +224,25 @@ export function DebateCreatorSection() {
               })}
             </div>
           </div>
+
+          {debaters.length > 0 && (
+            <div className="space-y-3">
+              <Label className="block text-sm font-medium">Per-Debater Material (Optional, up to {MAX_DEBATER_WORDS.toLocaleString()} words each)</Label>
+              <p className="text-xs text-muted-foreground">
+                Upload, paste, or type material that only this specific debater will draw from.
+                Each debater also draws from the database as usual.
+              </p>
+              {debaters.map(id => (
+                <DebaterFileUpload
+                  key={id}
+                  debaterId={id}
+                  content={debaterDocuments[id] || ""}
+                  onContent={(content, fileName) => handleDebaterDocument(id, content, fileName)}
+                  disabled={isStreaming}
+                />
+              ))}
+            </div>
+          )}
 
           <GenerationControls wordCount={wordCount} onWordCountChange={setWordCount} quoteCount={quoteCount} onQuoteCountChange={setQuoteCount} enhanced={enhanced} onEnhancedChange={setEnhanced} />
 
