@@ -1,0 +1,52 @@
+# CRITICAL FIX: Dialectical Progression Constraint
+
+## Problem
+
+The dialogue generator produces catastrophically repetitive output. Thinkers restate their opening positions verbatim across dozens of turns. No one concedes anything, no one introduces new evidence, and no one synthesizes. The result is three parallel monologues masquerading as a dialogue — 6,000+ words that contain roughly 1,500 words of actual content. Additionally, when a thinker has extensive work directly on the topic under discussion, the retrieval layer ignores that work and instead loops back to tangentially related material (e.g., pulling logic articles for a mental illness question when the thinker has written extensively on mental illness itself).
+
+## Required Implementation
+
+### 1. Maintain a Turn-Level State Tracker
+
+Before generating each dialogue turn, the system MUST maintain and consult a running state object that tracks:
+
+- **`cited_positions`**: A set of every position ID (P1, Q1, A3, etc.) already cited in the dialogue so far, per thinker.
+- **`claims_made`**: A list of natural-language summaries of each substantive claim made by each thinker (1 sentence each).
+- **`concessions_made`**: A record of any concessions or modifications to prior positions, per thinker.
+- **`synthesis_attempts`**: A record of any novel integrations across thinkers' positions.
+
+### 2. Enforce the Escalation Rule
+
+Every single dialogue turn MUST satisfy at least one of the following three conditions. If it satisfies none of them, it MUST be rejected and regenerated. No exceptions.
+
+**(a) NEW EVIDENCE**: The turn introduces at least one position or quote from the database that has NOT yet been cited in the dialogue. The citation must be substantively integrated into the argument, not decoratively appended.
+
+**(b) GENUINE CONCESSION**: The thinker explicitly acknowledges that a specific claim made by another interlocutor is correct or partially correct, and modifies their own position in response. "I see your point, but..." followed by restating the original position does NOT count as a concession. The thinker's subsequent claims must demonstrably differ from their prior claims.
+
+**(c) NOVEL SYNTHESIS**: The thinker produces a claim that is not reducible to any single prior claim in the dialogue — it must combine elements from at least two thinkers' positions into something new that neither has said before.
+
+### 3. Enforce Retrieval Relevance
+
+When querying the database for a thinker's positions, the retrieval layer MUST:
+
+- **Prioritize topic-matched positions.** If the dialogue topic is "mental illness recovery," retrieve positions the thinker has written ABOUT mental illness recovery FIRST. Do NOT default to the thinker's most frequently cited or most general work when they have directly relevant material available.
+- **Exhaust directly relevant positions before falling back to adjacent work.** Only after all directly on-topic positions have been cited should the system retrieve positions from tangentially related domains (e.g., formal logic, epistemology) and ONLY if the thinker explicitly connects them to the topic at hand.
+- **Never cite the same position twice.** If a position ID is already in `cited_positions`, it is ineligible for retrieval in subsequent turns.
+
+### 4. Enforce Length Discipline
+
+- **Maximum dialogue length**: 3,000 words unless the user specifies otherwise.
+- **Maximum turns per thinker**: 6 (for a 3-thinker dialogue, this means 18 turns maximum).
+- **Minimum substantive density per turn**: Each turn must contain at least one claim that is NOT present in any prior turn. If the system cannot generate a turn meeting this criterion, the dialogue MUST end with a synthesis/conclusion rather than padding with repetition.
+
+### 5. Repetition Detection (Hard Block)
+
+Before finalizing any turn, run the following check:
+
+- Compute semantic similarity between the candidate turn and ALL prior turns by the same thinker.
+- If the candidate turn has >70% semantic overlap with any prior turn by the same thinker, REJECT it and regenerate with an explicit instruction to escalate the argument.
+- This is a hard block, not a soft suggestion. Repetitive turns must never reach the output.
+
+## Summary
+
+The dialogue generator must produce output where every turn advances the conversation. Thinkers must change their minds, introduce new evidence, or synthesize — not repeat themselves. Retrieval must prioritize directly relevant work over tangentially related material. The current behavior — looping the same three positions for 6,000 words — is unacceptable and must be architecturally prevented, not merely discouraged.

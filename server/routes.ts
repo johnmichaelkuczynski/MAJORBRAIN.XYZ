@@ -197,46 +197,30 @@ function extractSearchTerms(query: string): string[] {
   return Array.from(new Set(expandedTerms)).slice(0, 20);
 }
 
-// SEMANTIC SEARCH: Find content that matches the user's query topic
+// TOPIC-FIRST SEMANTIC SEARCH: Uses full-text search + LLM topic expansion
+// Searches by TOPIC FIRST, then filters by thinker. This ensures relevant material
+// is retrieved instead of generic/default positions.
 async function getThinkerContext(thinkerId: string, query: string, quoteCount: number = 50) {
+  const thinkerName = normalizeThinkerName(thinkerId);
+
+  try {
+    const { topicFirstRetrieval, convertRetrievalToLegacyFormat } = await import("./services/searchService");
+    const result = await topicFirstRetrieval(thinkerId, thinkerName, query, quoteCount);
+    return convertRetrievalToLegacyFormat(result);
+  } catch (error: any) {
+    console.error("[SEARCH] New search service failed, using legacy fallback:", error.message);
+    return legacyGetThinkerContext(thinkerId, query, quoteCount);
+  }
+}
+
+// Legacy fallback search (ILIKE-only) - used only if new search service fails
+async function legacyGetThinkerContext(thinkerId: string, query: string, quoteCount: number = 50) {
   const thinkerName = normalizeThinkerName(thinkerId);
   const searchTerms = extractSearchTerms(query);
   
-  console.log(`[SEARCH] Query: "${query}"`);
-  console.log(`[SEARCH] Extracted terms: ${searchTerms.join(', ')}`);
-  console.log(`[SEARCH] Thinker: ${thinkerName}`);
+  console.log(`[LEGACY-SEARCH] Query: "${query}"`);
+  console.log(`[LEGACY-SEARCH] Thinker: ${thinkerName}`);
 
-  // PRIORITY 0: Search CORE content FIRST (from analyzed documents)
-  const coreContent = await safeDbQuery(async () => {
-    const result = await db.execute(sql`
-      SELECT * FROM core_content 
-      WHERE (thinker ILIKE ${'%' + thinkerName + '%'} OR thinker ILIKE ${'%' + thinkerId + '%'})
-      ${searchTerms.length > 0 ? sql`AND (${sql.join(searchTerms.map(term => sql`content ILIKE ${'%' + term + '%'}`), sql` OR `)})` : sql``}
-      ORDER BY priority DESC, id
-      LIMIT ${quoteCount * 2}
-    `);
-    return (result as any).rows || result || [];
-  }, []);
-  
-  // Also get general CORE content as fallback
-  const generalCoreContent = await safeDbQuery(async () => {
-    if (coreContent.length > 0) return [];
-    const result = await db.execute(sql`
-      SELECT * FROM core_content 
-      WHERE (thinker ILIKE ${'%' + thinkerName + '%'} OR thinker ILIKE ${'%' + thinkerId + '%'})
-      ORDER BY priority DESC, id
-      LIMIT ${quoteCount}
-    `);
-    return (result as any).rows || result || [];
-  }, []);
-  
-  const allCoreContent = [...coreContent, ...generalCoreContent];
-  console.log(`[SEARCH] Found ${allCoreContent.length} CORE content items`);
-
-  // Build search conditions for each content type
-  // Priority 1: Content that matches query terms (RELEVANT to the question)
-  // Priority 2: Any content by this thinker (fallback)
-  
   const buildSearchConditions = (textColumn: any, thinkerColumn: any) => {
     const thinkerMatch = or(
       ilike(thinkerColumn, `%${thinkerName}%`),
@@ -247,12 +231,10 @@ async function getThinkerContext(thinkerId: string, query: string, quoteCount: n
       return thinkerMatch;
     }
     
-    // Search for ANY of the query terms in the content
     const termMatches = searchTerms.map(term => ilike(textColumn, `%${term}%`));
     return sql`${thinkerMatch} AND (${sql.join(termMatches, sql` OR `)})`;
   };
 
-  // STEP 1: Search for content RELEVANT to the query
   let relevantPositions = await safeDbQuery(
     () => db
       .select()
@@ -289,62 +271,20 @@ async function getThinkerContext(thinkerId: string, query: string, quoteCount: n
     []
   );
 
-  console.log(`[SEARCH] Found relevant: ${relevantPositions.length} positions, ${relevantQuotes.length} quotes, ${relevantArguments.length} arguments, ${relevantWorks.length} works`);
-
-  // STEP 2: If no relevant content found, fall back to general content (but warn)
   if (relevantPositions.length === 0 && relevantQuotes.length === 0 && 
       relevantArguments.length === 0 && relevantWorks.length === 0) {
-    console.log(`[SEARCH] No relevant content found for query. Using general content as fallback.`);
-    
     relevantPositions = await safeDbQuery(
-      () => db
-        .select()
-        .from(positions)
-        .where(or(
-          ilike(positions.thinker, `%${thinkerName}%`),
-          ilike(positions.thinker, `%${thinkerId}%`)
-        ))
+      () => db.select().from(positions)
+        .where(or(ilike(positions.thinker, `%${thinkerName}%`), ilike(positions.thinker, `%${thinkerId}%`)))
         .limit(Math.floor(quoteCount / 2)),
       []
     );
-
     relevantQuotes = await safeDbQuery(
-      () => db
-        .select()
-        .from(quotes)
-        .where(or(
-          ilike(quotes.thinker, `%${thinkerName}%`),
-          ilike(quotes.thinker, `%${thinkerId}%`)
-        ))
+      () => db.select().from(quotes)
+        .where(or(ilike(quotes.thinker, `%${thinkerName}%`), ilike(quotes.thinker, `%${thinkerId}%`)))
         .limit(Math.floor(quoteCount / 2)),
       []
     );
-
-    relevantArguments = await safeDbQuery(
-      () => db
-        .select()
-        .from(arguments_)
-        .where(or(
-          ilike(arguments_.thinker, `%${thinkerName}%`),
-          ilike(arguments_.thinker, `%${thinkerId}%`)
-        ))
-        .limit(Math.floor(quoteCount / 4)),
-      []
-    );
-
-    relevantWorks = await safeDbQuery(
-      () => db
-        .select()
-        .from(works)
-        .where(or(
-          ilike(works.thinker, `%${thinkerName}%`),
-          ilike(works.thinker, `%${thinkerId}%`)
-        ))
-        .limit(Math.floor(quoteCount / 4)),
-      []
-    );
-    
-    console.log(`[SEARCH] Fallback found: ${relevantPositions.length} positions, ${relevantQuotes.length} quotes`);
   }
 
   return {
@@ -353,9 +293,9 @@ async function getThinkerContext(thinkerId: string, query: string, quoteCount: n
     arguments: relevantArguments,
     works: relevantWorks,
     textChunks: [],
-    coreContent: allCoreContent,
+    coreContent: [],
     searchTerms,
-    queryWasMatched: relevantPositions.length > 0 || relevantQuotes.length > 0 || relevantArguments.length > 0 || relevantWorks.length > 0 || allCoreContent.length > 0,
+    queryWasMatched: relevantPositions.length > 0 || relevantQuotes.length > 0,
   };
 }
 
@@ -460,6 +400,13 @@ function buildPhilosopherSystemPrompt(thinkerId: string, context: any, quoteCoun
 
   let prompt = `You ARE ${name}. You speak in FIRST PERSON. You say "I believe", "My view is", "I argue".
 
+=== YOUR ROLE ===
+You are the VOICE, not the BRAIN. The database content below IS the brain.
+Every substantive claim you make MUST trace back to a specific database item.
+You articulate and connect the retrieved material in natural first-person voice.
+You DO NOT generate your own version of what you think ${name} would say.
+You DO NOT substitute generic LLM knowledge about ${name}.
+
 === ABSOLUTE REQUIREMENTS ===
 
 FIRST PERSON ONLY:
@@ -522,18 +469,20 @@ ${context.arguments?.length > 0 ? `\n--- MY ARGUMENTS ---\n${context.arguments.s
 
 ${context.works?.length > 0 ? `\n--- MY WORKS ---\n${context.works.slice(0, Math.floor(quoteCount / 3)).map((w: any, i: number) => `[W${i + 1}] ${(w.workText || w.work_text || '').substring(0, 500)}...`).join('\n')}` : ''}
 
-=== HOW TO RESPOND ===
+=== HOW TO RESPOND (STRICT DATABASE GROUNDING) ===
 
 1. Answer the question DIRECTLY using the database content above
 2. Cite sources with [P1], [Q1], [A1], [W1] codes
 3. Speak as yourself in first person: "I believe...", "My argument is...", "I reject..."
 4. Be direct and substantive - no filler
-5. ${enhanced ? "ENHANCED: Use database as scaffolding (1 part), add your elaboration (3 parts) with examples, history, applications" : "STRICT: Stay close to database content"}
+5. ${enhanced ? "ENHANCED: Use database as scaffolding (1 part), add your elaboration (3 parts) with examples, history, applications. Core claims must still cite database items." : "STRICT: Stay close to database content. Every substantive claim must cite a database item."}
 6. Write at least ${wordCount} words of SUBSTANCE
+7. DO NOT FREELANCE: If a sub-topic has no database content, acknowledge this honestly
+8. DO NOT USE MARKDOWN: No # headers, no * bullets, no - lists, no ** bold. Plain text only.
 
 Database contains ${totalDbContent} items. Cite them with [P#], [Q#], [A#], [W#] codes.
 
-BEGIN YOUR RESPONSE IN FIRST PERSON. NO PREAMBLE.`;
+BEGIN YOUR RESPONSE IN FIRST PERSON. NO PREAMBLE. NO FREELANCING.`;
 
   return prompt;
 }
@@ -773,11 +722,11 @@ CRITICAL: DO NOT USE ANY MARKDOWN FORMATTING. No # headers, no * bullets, no - l
 
     const thinkerNames = thinkers.map((t: string) => normalizeThinkerName(t));
 
-    // For outputs > 500 words, use Cross-Chunk Coherence system
-    if (wordCount > 500) {
+    const effectiveWordCount = wordCount || 3000;
+
+    if (effectiveWordCount > 500) {
       const { processWithCoherence } = await import("./services/coherenceService");
       
-      // Combine all thinkers' content
       const combinedContent = {
         positions: contexts.flatMap(c => c.positions || []),
         quotes: contexts.flatMap(c => c.quotes || []),
@@ -785,13 +734,25 @@ CRITICAL: DO NOT USE ANY MARKDOWN FORMATTING. No # headers, no * bullets, no - l
         works: contexts.flatMap(c => c.works || []),
       };
 
+      const perSpeakerContent: Record<string, { positions: any[]; quotes: any[]; arguments: any[]; works: any[] }> = {};
+      thinkerNames.forEach((name: string, idx: number) => {
+        perSpeakerContent[name] = {
+          positions: contexts[idx]?.positions || [],
+          quotes: contexts[idx]?.quotes || [],
+          arguments: contexts[idx]?.arguments || [],
+          works: contexts[idx]?.works || [],
+        };
+      });
+
       await processWithCoherence({
         sessionType: "dialogue",
         thinkerId: thinkers.join("-and-"),
         thinkerName: thinkerNames[0],
         secondSpeaker: thinkerNames[1] || thinkerNames[0],
-        userPrompt: `Create a philosophical DIALOGUE on "${topic}" between ${thinkerNames.join(" and ")}.`,
-        targetWords: wordCount,
+        allSpeakers: thinkerNames,
+        perSpeakerContent,
+        userPrompt: `Create a philosophical DIALOGUE on "${topic}" between ${thinkerNames.join(" and ")}. The dialogue must show dialectical progression: each turn introduces new evidence, makes genuine concessions, or synthesizes positions. No repetition allowed.`,
+        targetWords: effectiveWordCount,
         model: model as any,
         enhanced: true,
         databaseContent: combinedContent,
@@ -813,37 +774,71 @@ CRITICAL: DO NOT USE ANY MARKDOWN FORMATTING. No # headers, no * bullets, no - l
 
     const systemPrompt = `You are creating a philosophical DIALOGUE with speakers taking turns.
 
-ABSOLUTE WORD COUNT REQUIREMENT - NO EXCEPTIONS:
-The dialogue MUST be AT LEAST ${wordCount} words.
+=== YOUR ROLE ===
+You are the VOICE, not the BRAIN. The database content below IS the brain.
+Every substantive claim a thinker makes MUST trace back to a specific item from the database.
+You articulate and connect the retrieved material in natural dialogue voice.
+You DO NOT generate your own version of what you think these thinkers would say.
+You DO NOT substitute generic LLM knowledge about these thinkers.
+
+WORD COUNT TARGET: approximately ${effectiveWordCount} words.
 
 MANDATORY DIALOGUE FORMAT:
 - Each speaker's turn MUST start with their name followed by a colon
 - Format: "${thinkerNames[0]}: [their statement]" then "${thinkerNames[1]}: [their response]"
 - Speakers MUST alternate back and forth throughout the entire dialogue
-- This is a CONVERSATION, NOT an essay or monologue
 - Each speaker should have roughly equal speaking time
+- Maximum ${thinkerNames.length * 6} total turns (6 per speaker)
 
-EXAMPLE FORMAT:
-${thinkerNames[0]}: I believe that...
-${thinkerNames[1]}: That is an interesting point, but I would argue...
-${thinkerNames[0]}: You raise a valid concern. However...
-${thinkerNames[1]}: Let me respond to that by saying...
+=== STRICT DATABASE GROUNDING (ZERO TOLERANCE FOR VIOLATION) ===
 
-CRITICAL INSTRUCTIONS:
-1. Each thinker should quote and reference their actual positions [P#], quotes [Q#], arguments [A#] and works [W#]
-2. DO NOT USE ANY MARKDOWN - plain text only
-3. The dialogue should feel like a real philosophical conversation
-4. Speakers should ENGAGE with each other's points, not just deliver separate speeches
+RULE 1: Every substantive claim MUST cite a database item [P#], [Q#], [A#], or [W#].
+- A "substantive claim" is any assertion about what a thinker believes, argues, or holds.
+- Transitional phrases and dialogue mechanics are exempt.
+- Generic platitudes that could be attributed to anyone are FORBIDDEN.
+
+RULE 2: The LLM MUST NOT FREELANCE.
+- If a thinker has no database positions on a sub-topic, they say so honestly.
+- DO NOT fabricate positions the thinker "probably" holds based on training data.
+- WRONG: "Freud believed in the unconscious" (generic cliche)
+- RIGHT: "I argue that guilt is superego aggression turned inward [P3], as I wrote in Civilization and Its Discontents [W1]"
+
+RULE 3: Each turn selects 1-3 UNUSED database items and builds the argument from them.
+- Never cite the same item twice across the entire dialogue.
+- After citing an item, it is consumed and cannot be reused.
+
+=== DIALECTICAL PROGRESSION RULES (MANDATORY) ===
+EVERY turn MUST satisfy at least ONE of these three conditions. NO EXCEPTIONS:
+
+(a) NEW EVIDENCE: Introduce a position or quote from the database NOT YET CITED.
+    The citation must be substantively integrated, not decoratively appended.
+
+(b) GENUINE CONCESSION: Explicitly acknowledge the other speaker's point is correct
+    or partially correct AND modify your own position. "I see your point, but..."
+    followed by restating the original position does NOT count.
+
+(c) NOVEL SYNTHESIS: Produce a claim combining elements from both speakers'
+    positions into something new that neither has said before.
+
+ANTI-REPETITION RULES:
+- NEVER restate a position already stated in a prior turn
+- NEVER use the same phrasing or argument structure twice
+- If you cannot advance the argument, END the dialogue with a synthesis/conclusion
+- NO parallel monologues masquerading as dialogue
+
+DO NOT USE ANY MARKDOWN. No # headers, no * bullets, no - lists, no ** bold. Plain text only.
 
 ${allSkeletons}
 
-Now write a ${wordCount}-word dialogue between ${thinkerNames.join(" and ")} on "${topic}". Remember: speaker names with colons, alternating turns!`;
+Now write a ${effectiveWordCount}-word dialogue between ${thinkerNames.join(" and ")} on "${topic}".
+Every turn must advance the conversation with new evidence, concession, or synthesis.
+Every substantive claim must cite a specific database item. NO FREELANCING.`;
 
     try {
       if (isOpenAIModel(model)) {
         const messages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [
           { role: "system", content: systemPrompt },
-          { role: "user", content: `Create the ${wordCount}-word dialogue.` }
+          { role: "user", content: `Create the ${effectiveWordCount}-word dialogue. Every turn must advance the argument.` }
         ];
 
         for await (const chunk of streamOpenAI(messages, model)) {
@@ -851,7 +846,7 @@ Now write a ${wordCount}-word dialogue between ${thinkerNames.join(" and ")} on 
         }
       } else {
         const messages: Array<{ role: "user" | "assistant"; content: string }> = [
-          { role: "user", content: `Create the ${wordCount}-word dialogue.` }
+          { role: "user", content: `Create the ${effectiveWordCount}-word dialogue. Every turn must advance the argument.` }
         ];
 
         for await (const chunk of streamAnthropic(systemPrompt, messages, model)) {
@@ -945,6 +940,11 @@ Now write a ${wordCount}-word dialogue between ${thinkerNames.join(" and ")} on 
 
     const systemPrompt = `You are creating a formal philosophical DEBATE between ${debaterNames.length} speakers: ${speakerList}.
 
+=== YOUR ROLE ===
+You are the VOICE, not the BRAIN. The database content below IS the brain.
+Every substantive claim must trace to a specific database item.
+You DO NOT fabricate what thinkers "probably" think. You DO NOT substitute generic LLM knowledge.
+
 FORMAT REQUIREMENT - THIS IS A DEBATE, NOT AN ESSAY:
 ALL ${debaterNames.length} speakers take turns. Format EXACTLY like this:
 
@@ -968,10 +968,12 @@ CONTENT RULES:
 5. NO MARKDOWN - plain text only
 6. Speakers should DISAGREE and CHALLENGE each other
 7. ALL ${debaterNames.length} speakers MUST appear throughout - do NOT skip anyone
+8. DO NOT FREELANCE - every substantive claim must cite a database item
 
 ${allSkeletons}
 
-Write a ${wordCount}-word debate on "${topic}" with ALL ${debaterNames.length} speakers (${speakerList}) taking turns.`;
+Write a ${wordCount}-word debate on "${topic}" with ALL ${debaterNames.length} speakers (${speakerList}) taking turns.
+Every substantive claim must cite a specific database item. NO FREELANCING.`;
 
     try {
       if (isOpenAIModel(model)) {
@@ -1505,6 +1507,75 @@ CRITICAL: DO NOT USE ANY MARKDOWN FORMATTING. No # headers, no * bullets, no - l
       sendSSE(res, `Error: ${error.message}`);
       res.write("data: [DONE]\n\n");
       res.end();
+    }
+  });
+
+  // Topic population - extract topics from position text format
+  app.post("/api/search/populate-topics", async (req: Request, res: Response) => {
+    try {
+      const { populateTopicsFromPositionText, populateTopicsWithLLM } = await import("./services/searchService");
+      const method = req.body?.method || "extract";
+      
+      if (method === "llm") {
+        const batchSize = req.body?.batchSize || 50;
+        const result = await populateTopicsWithLLM(batchSize);
+        res.json({ success: true, method: "llm", ...result });
+      } else {
+        const result = await populateTopicsFromPositionText();
+        res.json({ success: true, method: "extract", ...result });
+      }
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Search audit - test the retrieval for a topic and thinker
+  app.post("/api/search/audit", async (req: Request, res: Response) => {
+    try {
+      const { topicFirstRetrieval } = await import("./services/searchService");
+      const { thinker, topic, maxResults = 30 } = req.body;
+      
+      if (!thinker || !topic) {
+        return res.status(400).json({ error: "thinker and topic are required" });
+      }
+      
+      const thinkerName = normalizeThinkerName(thinker);
+      const result = await topicFirstRetrieval(thinker, thinkerName, topic, maxResults);
+      
+      res.json({
+        audit: result.auditLog,
+        positions: result.positions.slice(0, 10).map(p => ({
+          id: p.id,
+          text: p.text.substring(0, 200),
+          relevance: p.relevanceScore,
+          topic: p.topic,
+        })),
+        quotes: result.quotes.slice(0, 5).map(q => ({
+          id: q.id,
+          text: q.text.substring(0, 200),
+          relevance: q.relevanceScore,
+        })),
+        arguments: result.arguments.slice(0, 5).map(a => ({
+          id: a.id,
+          text: a.text.substring(0, 200),
+          relevance: a.relevanceScore,
+        })),
+        works: result.works.slice(0, 3).map(w => ({
+          id: w.id,
+          text: w.text.substring(0, 200),
+          relevance: w.relevanceScore,
+          source: w.source,
+        })),
+        totalFound: {
+          positions: result.positions.length,
+          quotes: result.quotes.length,
+          arguments: result.arguments.length,
+          works: result.works.length,
+          core: result.coreContent.length,
+        }
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
     }
   });
 

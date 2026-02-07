@@ -1,0 +1,102 @@
+# CRITICAL FIX: Database Retrieval Failure
+
+## The Problem in Concrete Terms
+
+When asked "Are people capable of getting over mental illness on their own?", the app assigned Kuczynski positions about **formal logic and System L** — material from an epistemology paper that is, at most, tangentially related. Meanwhile, the database contains the following directly on-topic material that was NEVER retrieved:
+
+**From "OCD and Philosophy" (in database):**
+- OCD is a voluntary affliction of the will, unlike cancer or asthma
+- Recovery = choosing to re-engage the world; the obsessive-compulsive's bubble is a defensive retreat from anxiety
+- OCD assumes productive forms (Beethoven, Einstein) when the subject exercises will in growth-oriented ways
+- CBT effects are "shallow and short-lived" absent a determination to grow
+- Mental illness is contextual: OCD is a liability in some contexts, an asset in others
+- Mental illness serves a defensive function — psychosis is a withdrawal from destructive negativity
+- Mental illnesses involve misdeployed strengths (OCD = misdeployed intelligence; schizophrenia = misdeployed creativity)
+- The philosopher and the obsessive-compulsive are structurally identical: compulsive doubters, impotent, retreating into symbolic manipulation
+- Auto-hypnosis vs. rationalization: auto-hypnosis draws enthusiasm from within (recovery tool); rationalization generates conviction from warped understanding of reality (anti-recovery)
+
+**From "Why Does AA Work?" (in database):**
+- The "higher power" in AA is a secular stand-in for the externalized superego
+- Recovery requires surrender of will — not to God but to an internal moral authority the addict has been defying
+- Will vs. desire: the alcoholic's problem is not weak will but will in service of desire rather than superego
+- Internal unity = superego-compliance; sanity = superego-compliance
+- Integrates William James's Varieties of Religious Experience: the "twice-born" soul, the divided self, religious conversion as achieving inner unity
+- James's radical empiricism applied to recovery: truth of a belief tested by how it works, not by its origin
+- Faith vs. psychosis: structurally similar (belief beyond evidence) but functionally opposite (faith integrates, psychosis fragments)
+
+**Also in database:** Summaries of these documents, extracted positions from these documents, and thematic tags linking them to mental illness, recovery, OCD, addiction, will, superego, defense mechanisms, etc.
+
+The app retrieved NONE of this. Instead it looped Kuczynski's positions on System L, discovery vs. verification, and the inadequacy of classical logic — material from a completely different domain — and forced him to argue about epistemology when he has written extensively and specifically about the very question being asked.
+
+## Root Cause
+
+The retrieval layer is not performing semantic search against the dialogue topic. It is either:
+
+1. Retrieving by thinker name alone (grabbing whatever positions are most frequently cited or most recently inserted), OR
+2. Using keyword matching that fails to connect "mental illness recovery" to the actual mental illness content in the database, OR
+3. Defaulting to a small subset of "representative" positions per thinker rather than searching the full corpus for topic relevance.
+
+All three failure modes produce the same result: the thinker's most distinctive and relevant work is ignored in favor of generic or default material.
+
+## Required Fix
+
+### 1. Topic-First Retrieval
+
+When generating a dialogue on topic T, the retrieval query MUST be:
+
+```
+SELECT positions WHERE thinker = X AND topic SEMANTICALLY MATCHES T
+ORDER BY semantic_similarity(position_text, T) DESC
+```
+
+NOT:
+
+```
+SELECT positions WHERE thinker = X
+ORDER BY id DESC LIMIT 10
+```
+
+The dialogue topic must be the PRIMARY filter. Thinker identity is the SECONDARY filter. The system must find what this thinker has said about THIS topic, not what this thinker has said in general.
+
+### 2. Multi-Level Retrieval with Fallback
+
+The retrieval layer must search in this order:
+
+**(a) EXACT TOPIC MATCH:** Search for positions where the topic field or the position text directly addresses the dialogue question. For "Can people overcome mental illness on their own?", this means positions tagged with mental illness, OCD, recovery, addiction, psychosis, neurosis, defense mechanisms, will, therapy, etc.
+
+**(b) DOCUMENT-LEVEL SEARCH:** If the database contains full documents or document summaries, search those for semantic relevance to the dialogue topic. A document titled "OCD and Philosophy" or "Why Does AA Work?" should be flagged as highly relevant to a question about mental illness recovery. Extract positions FROM those documents.
+
+**(c) SUMMARY-LEVEL SEARCH:** If the database contains summaries of documents, search those summaries. A summary that mentions "OCD is a voluntary affliction" or "higher power as externalized superego" should trigger retrieval of the underlying positions.
+
+**(d) ADJACENT TOPIC FALLBACK (ONLY AFTER a-c ARE EXHAUSTED):** Only after all directly relevant positions have been retrieved and cited should the system fall back to adjacent domains (epistemology, logic, philosophy of mind) — and ONLY if the thinker explicitly connects those domains to the topic. System L is not relevant to mental illness recovery unless Kuczynski himself makes that connection in a specific text.
+
+### 3. Minimum Relevance Threshold
+
+Every retrieved position must pass a relevance check before being included in the dialogue. The check is:
+
+> "Does this position directly address, or provide a specific argument about, the dialogue topic?"
+
+If the answer is no, the position is excluded. A position about "the inadequacy of classical logic in reasoning contexts" does NOT pass this check for a dialogue about mental illness recovery — even though it is by the same thinker — unless it appears in a document that is specifically about mental illness.
+
+### 4. Cross-Document Awareness
+
+When a thinker has written a document that integrates multiple other thinkers (e.g., the AA paper integrates Kuczynski's analysis with James and Freud/Kernberg), the retrieval layer must:
+
+- Recognize that this document is relevant to ALL thinkers it discusses
+- Retrieve positions from it for each thinker's voice in the dialogue
+- Use it as a source of genuine points of contact and disagreement between thinkers, rather than manufacturing artificial disagreements from unrelated material
+
+### 5. Retrieval Audit Log
+
+For debugging purposes, the system should log:
+
+- The dialogue topic as parsed
+- The search queries generated for each thinker
+- The positions retrieved and their relevance scores
+- The positions that were available but not retrieved (and why)
+
+This log will make it immediately visible when the system is ignoring directly relevant material.
+
+## Summary
+
+The retrieval layer must search the database BY TOPIC FIRST, not by thinker first. When a thinker has written 20+ pieces directly on the dialogue topic, and the system instead pulls from an unrelated epistemology paper, the retrieval layer is fundamentally broken. The fix is not cosmetic — it requires restructuring the query logic so that semantic relevance to the dialogue question is the primary retrieval criterion.

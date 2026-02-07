@@ -80,4 +80,13 @@ async function initCoherenceTables() {
   }
 }
 
-initCoherenceTables();
+initCoherenceTables().then(async () => {
+  await new Promise(resolve => setTimeout(resolve, 5000));
+  try {
+    const { initFullTextSearch, populateTopicsFromPositionText } = await import("./services/searchService");
+    await initFullTextSearch();
+    await populateTopicsFromPositionText();
+  } catch (error) {
+    console.error("Failed to initialize search infrastructure:", error);
+  }
+});
