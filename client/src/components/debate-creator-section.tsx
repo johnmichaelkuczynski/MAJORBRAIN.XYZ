@@ -183,11 +183,15 @@ export function DebateCreatorSection() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-4">
-          <div>
-            <Label className="mb-2 block">General Document (Optional, shared by all debaters)</Label>
+          <div className="border border-dashed border-primary/40 rounded-md p-4 bg-primary/5">
+            <Label className="mb-1 block text-base font-semibold">Common Document for Debate</Label>
+            <p className="text-xs text-muted-foreground mb-3">
+              Upload the document, article, or text that all debaters will discuss and argue about.
+              Every participant will reference this shared material.
+            </p>
             <FileUpload onFileContent={handleFileContent} disabled={isStreaming} />
             {documentContent && (
-              <p className="text-xs text-muted-foreground mt-1">General document loaded: {documentContent.split(/\s+/).length.toLocaleString()} words</p>
+              <p className="text-sm text-primary mt-2 font-medium">Document loaded: {documentContent.split(/\s+/).length.toLocaleString()} words</p>
             )}
           </div>
 
@@ -227,10 +231,10 @@ export function DebateCreatorSection() {
 
           {debaters.length > 0 && (
             <div className="space-y-3">
-              <Label className="block text-sm font-medium">Per-Debater Material (Optional, up to {MAX_DEBATER_WORDS.toLocaleString()} words each)</Label>
+              <Label className="block text-sm font-medium">Individual Debater Material (Optional, up to {MAX_DEBATER_WORDS.toLocaleString()} words each)</Label>
               <p className="text-xs text-muted-foreground">
-                Upload, paste, or type material that only this specific debater will draw from.
-                Each debater also draws from the database as usual.
+                Upload material specific to one debater only (e.g., that thinker's own writings).
+                This is separate from the common document above, which all debaters share.
               </p>
               {debaters.map(id => (
                 <DebaterFileUpload
