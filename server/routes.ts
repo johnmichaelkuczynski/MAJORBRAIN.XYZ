@@ -917,16 +917,29 @@ Every substantive claim must cite a specific database item. NO FREELANCING.`;
 
   // Debate Generator (streaming) - USES DATABASE AS SKELETON
   app.post("/api/debate/generate", async (req: Request, res: Response) => {
-    const { topic, debaters, wordCount = 2000, quoteCount = 20, enhanced = false, model = "gpt-4o", debaterDocuments = {} } = req.body;
+    const { topic: rawTopic, debaters, wordCount = 2000, quoteCount = 20, enhanced = false, model = "gpt-4o", debaterDocuments = {} } = req.body;
 
-    if (!topic || !debaters || debaters.length < 2) {
+    if (!rawTopic || !debaters || debaters.length < 2) {
       return res.status(400).json({ error: "Topic and at least 2 debaters are required" });
     }
 
     setupSSE(res);
 
+    let topic = rawTopic;
+    let commonDocument = "";
+    if (rawTopic.includes("--- DOCUMENT TO DISCUSS ---")) {
+      const parts = rawTopic.split("--- DOCUMENT TO DISCUSS ---");
+      topic = parts[0].trim();
+      commonDocument = parts[1].trim();
+      console.log(`[DEBATE] Extracted common document: ${commonDocument.length} chars, ${commonDocument.split(/\s+/).length} words`);
+    }
+
+    const searchTopic = commonDocument 
+      ? `${topic} ${commonDocument.substring(0, 500)}`
+      : topic;
+
     const contexts = await Promise.all(
-      debaters.map((d: string) => getThinkerContext(d, topic, Math.floor(quoteCount / debaters.length)))
+      debaters.map((d: string) => getThinkerContext(d, searchTopic, Math.floor(quoteCount / debaters.length)))
     );
 
     const debaterNames = debaters.map((d: string) => normalizeThinkerName(d));
@@ -997,7 +1010,8 @@ Every substantive claim must cite a specific database item. NO FREELANCING.`;
         secondSpeaker: debaterNames[1] || debaterNames[0],
         allSpeakers: debaterNames,
         perSpeakerContent,
-        userPrompt: `Create a DEBATE on "${topic}" between ${debaterNames.join(", ")}.`,
+        userPrompt: `Create a DEBATE on "${topic}" between ${debaterNames.join(", ")}.${commonDocument ? " The debaters must discuss the COMMON DOCUMENT provided." : ""}`,
+        commonDocument: commonDocument || undefined,
         targetWords: wordCount,
         model: model as any,
         enhanced: true,
@@ -1082,9 +1096,17 @@ MATERIAL USAGE RULES:
 - If all material has been deployed, conclude the debate rather than padding with repetition
 
 ${allSkeletons}
+${commonDocument ? `
+=== COMMON DOCUMENT TO DISCUSS (ALL SPEAKERS MUST REFERENCE THIS) ===
+The debaters have been given this document to discuss. They MUST quote from it, refer to specific passages, and argue about its content directly.
 
+${commonDocument.substring(0, 6000)}
+${commonDocument.length > 6000 ? "\n[Document continues - focus on key passages above]" : ""}
+
+=== END COMMON DOCUMENT ===
+` : ""}
 Write a ${wordCount}-word debate on "${topic}" with ALL ${debaterNames.length} speakers (${speakerList}) taking turns.
-Every substantive claim must cite a specific database item or uploaded material. NO FREELANCING.`;
+Every substantive claim must cite a specific database item or uploaded material.${commonDocument ? " Speakers MUST directly discuss and quote from the COMMON DOCUMENT above." : ""} NO FREELANCING.`;
 
     try {
       if (isOpenAIModel(model)) {

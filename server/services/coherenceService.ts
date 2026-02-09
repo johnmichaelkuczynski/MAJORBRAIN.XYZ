@@ -10,6 +10,7 @@ export interface GlobalSkeleton {
   keyTerms: Record<string, string>;
   commitments: string[];
   entities: string[];
+  commonDocument?: string;
   databaseContent: {
     positions: string[];
     quotes: string[];
@@ -353,6 +354,7 @@ export interface CoherenceOptions {
     works: any[];
   }>;
   userPrompt: string;
+  commonDocument?: string;
   targetWords: number;
   model: ModelId;
   enhanced: boolean;
@@ -592,7 +594,8 @@ function buildChunkPrompt(
   sessionType: "chat" | "debate" | "interview" | "dialogue" | "document" = "document",
   secondSpeaker: string = "Interviewer",
   allSpeakers?: string[],
-  dialogueState?: DialogueStateTracker
+  dialogueState?: DialogueStateTracker,
+  commonDocument?: string
 ): { system: string; user: string } {
   const priorClaimsStr = priorDeltas.flatMap(d => d.claimsAdded || []).join("; ");
   const minWords = Math.ceil(targetWordsPerChunk * 1.2);
@@ -716,8 +719,6 @@ ANTI-REPETITION RULES:
 - NEVER cite a database item already cited (check the DIALOGUE STATE below)
 - NEVER use the same phrasing or argument structure twice
 - If you cannot advance the argument, END the dialogue with a synthesis/conclusion
-- Each speaker gets at most 6 turns total
-
 RULES:
 - All ${allSpeakers.length} speakers rotate through turns
 - Each turn DIRECTLY responds to what was just said
@@ -750,8 +751,6 @@ ANTI-REPETITION RULES:
 - NEVER cite a database item already cited (check the DIALOGUE STATE below)
 - NEVER use the same phrasing or argument structure twice
 - If you cannot advance the argument, END the dialogue with a synthesis/conclusion
-- Each speaker gets at most 6 turns total
-
 RULES:
 - Natural back-and-forth with intellectual PROGRESSION
 - Each turn DIRECTLY responds to what was just said
@@ -837,7 +836,15 @@ ${coreRules}
 ${perSpeakerSection}
 
 TOPIC: ${skeleton.thesis}
+${commonDocument || skeleton.commonDocument ? `
+=== COMMON DOCUMENT TO DISCUSS (ALL SPEAKERS MUST REFERENCE THIS) ===
+The debaters have been given this document to discuss. They MUST quote from it, refer to specific passages, and argue about its content directly.
 
+${(commonDocument || skeleton.commonDocument || "").substring(0, 6000)}
+${(commonDocument || skeleton.commonDocument || "").length > 6000 ? "\n[Document continues - focus on key passages above]" : ""}
+
+=== END COMMON DOCUMENT ===
+` : ""}
 ${dialogueStateStr}
 
 ${priorClaimsStr ? `PRIOR CLAIMS MADE: ${priorClaimsStr}` : ""}
@@ -902,7 +909,15 @@ ${coreRules}
 ${contentSection}
 
 TOPIC: ${skeleton.thesis}
+${commonDocument || skeleton.commonDocument ? `
+=== COMMON DOCUMENT TO DISCUSS (ALL SPEAKERS MUST REFERENCE THIS) ===
+The debaters have been given this document to discuss. They MUST quote from it, refer to specific passages, and argue about its content directly.
 
+${(commonDocument || skeleton.commonDocument || "").substring(0, 6000)}
+${(commonDocument || skeleton.commonDocument || "").length > 6000 ? "\n[Document continues - focus on key passages above]" : ""}
+
+=== END COMMON DOCUMENT ===
+` : ""}
 ${dialogueStateStr}
 
 ${priorClaimsStr ? `PRIOR CLAIMS MADE: ${priorClaimsStr}` : ""}
@@ -986,17 +1001,14 @@ ${priorClaimsStr ? `PRIOR CLAIMS MADE: ${priorClaimsStr}` : ""}
     const isDialogue = sessionType === "dialogue";
     const turnInfo = dialogueState ? Object.entries(dialogueState.turnCount).map(([s, c]) => `${s}: ${c} turns`).join(", ") : "";
     const isDebate = sessionType === "debate";
+    const docRef = (commonDocument || skeleton.commonDocument) ? `\nIMPORTANT: Speakers must DIRECTLY DISCUSS the COMMON DOCUMENT provided above. Quote specific passages, argue about its claims, and apply your database positions TO the document's content.` : "";
     user = `Continue the ${allSpeakers!.length}-speaker ${sessionType} on: "${outlineSection}"
 
 Write ${minWords}+ words as alternating speaker turns.
 ALL ${allSpeakers!.length} speakers (${allSpeakers!.join(", ")}) MUST appear in this section.
 Format: "SPEAKER_NAME: [what they say with [P#], [Q#], [A#], [UD#] citations]"
-${turnInfo ? `\nTurn counts so far: ${turnInfo}\nEach speaker has a MAXIMUM of 6 turns total.` : ""}
-${isDialogue || isDebate ? `\nCRITICAL REQUIREMENTS FOR EACH TURN:
-1. Check the MATERIAL USAGE STATUS - use UNUSED items FIRST
-2. Check the RUNNING CLAIM LOG - do NOT repeat any claim already logged
-3. Every turn must either (a) cite NEW uncited evidence, (b) make a GENUINE CONCESSION, or (c) produce NOVEL SYNTHESIS
-4. If all evidence is exhausted and no new moves remain, write a CONCLUDING synthesis and END` : ""}
+${docRef}
+${turnInfo ? `\nTurn counts so far: ${turnInfo}` : ""}
 
 Start with ${allSpeakers![chunkIndex % allSpeakers!.length]}:
 
@@ -1004,17 +1016,13 @@ BEGIN NOW with speaker turns only. Every speaker must cite their UNCITED databas
   } else if (isConversation) {
     const isDialogue = sessionType === "dialogue";
     const turnInfo = dialogueState ? Object.entries(dialogueState.turnCount).map(([s, c]) => `${s}: ${c} turns`).join(", ") : "";
-    const isDebate2 = sessionType === "debate";
+    const docRef2 = (commonDocument || skeleton.commonDocument) ? `\nIMPORTANT: Speakers must DIRECTLY DISCUSS the COMMON DOCUMENT provided above. Quote specific passages, argue about its claims, and apply your database positions TO the document's content.` : "";
     user = `Continue the ${sessionType} on: "${outlineSection}"
 
 Write ${minWords}+ words as alternating speaker turns.
 Format: "SPEAKER_NAME: [what they say]"
-${turnInfo ? `\nTurn counts so far: ${turnInfo}\nEach speaker has a MAXIMUM of 6 turns total.` : ""}
-${isDialogue || isDebate2 ? `\nCRITICAL REQUIREMENTS FOR EACH TURN:
-1. Check the MATERIAL USAGE STATUS - use UNUSED items FIRST
-2. Check the RUNNING CLAIM LOG - do NOT repeat any claim already logged
-3. Every turn must either (a) cite NEW uncited evidence, (b) make a GENUINE CONCESSION, or (c) produce NOVEL SYNTHESIS
-4. If all evidence is exhausted and no new moves remain, write a CONCLUDING synthesis and END` : ""}
+${docRef2}
+${turnInfo ? `\nTurn counts so far: ${turnInfo}` : ""}
 
 Start with ${chunkIndex % 2 === 0 ? (sessionType === "interview" ? secondSpeaker : thinkerName) : (sessionType === "interview" ? thinkerName : secondSpeaker)}:
 
@@ -1078,7 +1086,16 @@ function sendContentSSE(res: Response, data: string) {
 }
 
 export async function processWithCoherence(options: CoherenceOptions): Promise<void> {
-  const { sessionType, thinkerId, thinkerName, secondSpeaker = "Interviewer", allSpeakers, perSpeakerContent, userPrompt, targetWords, model, enhanced, databaseContent, res } = options;
+  const { sessionType, thinkerId, thinkerName, secondSpeaker = "Interviewer", allSpeakers, perSpeakerContent, userPrompt, commonDocument: rawCommonDoc, targetWords, model, enhanced, databaseContent, res } = options;
+
+  let commonDocument = rawCommonDoc || "";
+  if (!commonDocument && userPrompt.includes("--- DOCUMENT TO DISCUSS ---")) {
+    const docMatch = userPrompt.split("--- DOCUMENT TO DISCUSS ---");
+    if (docMatch[1]) {
+      commonDocument = docMatch[1].trim();
+      console.log(`[COHERENCE] Extracted common document from topic: ${commonDocument.length} chars`);
+    }
+  }
 
   const WORDS_PER_CHUNK = 1000;
   const totalChunks = Math.max(1, Math.ceil(targetWords / WORDS_PER_CHUNK));
@@ -1104,6 +1121,9 @@ export async function processWithCoherence(options: CoherenceOptions): Promise<v
       ? userPrompt.substring(0, 8000) + "\n[Document truncated for skeleton extraction]"
       : userPrompt;
     skeleton = await extractGlobalSkeleton(truncatedPrompt, thinkerName, databaseContent, model, perSpeakerContent, allSpeakers);
+    if (commonDocument) {
+      skeleton.commonDocument = commonDocument;
+    }
     await updateSessionSkeleton(sessionId, skeleton, totalChunks);
   } catch (err: any) {
     console.error("[COHERENCE] Skeleton extraction failed:", err);
@@ -1114,6 +1134,7 @@ export async function processWithCoherence(options: CoherenceOptions): Promise<v
       keyTerms: {},
       commitments: [],
       entities: [],
+      commonDocument: commonDocument || undefined,
       databaseContent: {
         positions: databaseContent.positions.slice(0, 20).map((p: any, i: number) => `[P${i + 1}] ${p.positionText || p.position_text}`),
         quotes: databaseContent.quotes.slice(0, 20).map((q: any, i: number) => `[Q${i + 1}] "${q.quoteText || q.quote_text}"`),
@@ -1182,7 +1203,7 @@ export async function processWithCoherence(options: CoherenceOptions): Promise<v
   const isDialogueType = sessionType === "dialogue" || sessionType === "debate";
   const speakers = allSpeakers || [thinkerName, secondSpeaker];
   const dialogueState = isDialogueType ? createDialogueStateTracker(speakers) : undefined;
-  const MAX_TURNS_PER_SPEAKER = 6;
+  const MAX_TURNS_PER_SPEAKER = Math.max(12, Math.ceil(targetWords / 300));
 
   if (dialogueState && skeleton.perSpeakerContent) {
     for (const speaker of speakers) {
@@ -1208,14 +1229,11 @@ export async function processWithCoherence(options: CoherenceOptions): Promise<v
     }
 
     if (dialogueState) {
-      const maxTurnsSpeaker = Object.entries(dialogueState.turnCount).find(([_, count]) => count >= MAX_TURNS_PER_SPEAKER * speakers.length);
-      if (maxTurnsSpeaker) {
-        console.log(`[COHERENCE] Turn limit reached. Ending ${sessionType} early.`);
-        break;
-      }
+      const alreadyMetTarget = totalWordCount >= targetWords * 0.85;
 
       const globalExhaustion = getExhaustionRatio(dialogueState.materialTracker);
-      if (globalExhaustion >= 0.9 && i > 0) {
+      const hasEnoughTrackedItems = dialogueState.materialTracker.items.length >= 6;
+      if (globalExhaustion >= 0.9 && i > 0 && hasEnoughTrackedItems && alreadyMetTarget) {
         console.log(`[COHERENCE] Material exhaustion at ${(globalExhaustion * 100).toFixed(0)}%. Generating final conclusion.`);
         sendContentSSE(res, `\n\n[Source material ${(globalExhaustion * 100).toFixed(0)}% exhausted. Concluding debate.]\n\n`);
 
@@ -1227,7 +1245,7 @@ Format: "SPEAKER_NAME: text". Do NOT introduce new arguments. Do NOT repeat prio
 
         let conclusionOutput = "";
         try {
-          for await (const text of streamText({ model, systemPrompt: dbSkeleton ? buildChunkPrompt(dbSkeleton, i, totalChunks, 500, thinkerName, [], enhanced, sessionType, secondSpeaker, allSpeakers, dialogueState).system : "", userPrompt: conclusionPrompt, maxTokens: 2000 })) {
+          for await (const text of streamText({ model, systemPrompt: dbSkeleton ? buildChunkPrompt(dbSkeleton, i, totalChunks, 500, thinkerName, [], enhanced, sessionType, secondSpeaker, allSpeakers, dialogueState, commonDocument).system : "", userPrompt: conclusionPrompt, maxTokens: 2000 })) {
             conclusionOutput += text;
             sendContentSSE(res, text);
           }
@@ -1247,90 +1265,26 @@ Format: "SPEAKER_NAME: text". Do NOT introduce new arguments. Do NOT repeat prio
     }
 
     const priorDeltas = await getPriorDeltas(sessionId);
-    const { system, user } = buildChunkPrompt(dbSkeleton, i, totalChunks, wordsPerChunk, thinkerName, priorDeltas, enhanced, sessionType, secondSpeaker, allSpeakers, dialogueState);
+    const { system, user } = buildChunkPrompt(dbSkeleton, i, totalChunks, wordsPerChunk, thinkerName, priorDeltas, enhanced, sessionType, secondSpeaker, allSpeakers, dialogueState, commonDocument);
 
     let chunkOutput = "";
     
     try {
-      if (dialogueState && i > 0) {
-        let bufferOutput = "";
-        for await (const text of streamText({ model, systemPrompt: system, userPrompt: user, maxTokens: 4096 })) {
-          bufferOutput += text;
-        }
-
-        const newClaims = extractClaimsFromOutput(bufferOutput, speakers);
-        const repetitiveClaims = newClaims.filter(c => isClaimRepetitive(dialogueState.materialTracker, c.claim));
-        const repetitionRatio = newClaims.length > 0 ? repetitiveClaims.length / newClaims.length : 0;
-
-        const repetitionCheck = checkChunkRepetition(dialogueState, bufferOutput, speakers);
-        const isRepetitive = repetitionCheck.isRepetitive || repetitionRatio > 0.5;
-        
-        if (isRepetitive) {
-          console.log(`[COHERENCE] Repetition detected (overlap: ${(repetitionCheck.overlapScore * 100).toFixed(0)}%, claim repeat: ${(repetitionRatio * 100).toFixed(0)}%). Regenerating...`);
-          
-          const unusedSummary = speakers.map(s => {
-            const unused = getUnusedMaterial(dialogueState.materialTracker, s);
-            return `${s}: ${unused.length} unused items`;
-          }).join("; ");
-
-          const escalationUser = user + `\n\nCRITICAL ANTI-REPETITION DIRECTIVE:
-The previous attempt was REJECTED because it repeated prior claims.
-Repetitive claims detected: ${repetitiveClaims.map(c => `"${c.claim.substring(0, 80)}..."`).join("; ")}
-
-UNUSED MATERIAL REMAINING: ${unusedSummary}
-You MUST:
-1. Use ONLY UNUSED material from the MATERIAL USAGE STATUS section above
-2. Introduce COMPLETELY NEW arguments from unused positions/quotes
-3. If no unused material remains, write a CONCLUDING synthesis and END the debate
-4. A shorter non-repetitive output is ALWAYS better than a longer repetitive one`;
-
-          bufferOutput = "";
-          for await (const text of streamText({ model, systemPrompt: system, userPrompt: escalationUser, maxTokens: 4096 })) {
-            bufferOutput += text;
-          }
-
-          const secondCheck = checkChunkRepetition(dialogueState, bufferOutput, speakers);
-          const secondClaims = extractClaimsFromOutput(bufferOutput, speakers);
-          const secondRepRatio = secondClaims.length > 0 ? secondClaims.filter(c => isClaimRepetitive(dialogueState.materialTracker, c.claim)).length / secondClaims.length : 0;
-
-          if (secondCheck.isRepetitive || secondRepRatio > 0.5) {
-            console.log(`[COHERENCE] Still repetitive after retry. Ending ${sessionType} with conclusion.`);
-            const conclusionPrompt = `Write a brief concluding synthesis (200-300 words) where the speakers acknowledge their key disagreements and identify areas of potential convergence. Format: "SPEAKER_NAME: text". Include at least one genuine concession. Do NOT repeat any prior arguments.`;
-            
-            bufferOutput = "";
-            for await (const text of streamText({ model, systemPrompt: system, userPrompt: conclusionPrompt, maxTokens: 1500 })) {
-              bufferOutput += text;
-            }
-            
-            for (const char of bufferOutput) {
-              sendContentSSE(res, char);
-            }
-            
-            updateDialogueState(dialogueState, bufferOutput, speakers);
-            totalOutput += bufferOutput + "\n\n";
-            totalWordCount += countWords(bufferOutput);
-            
-            const delta = extractDeltaFromOutput(bufferOutput, dbSkeleton);
-            await saveChunk(sessionId, i, bufferOutput, delta, countWords(bufferOutput));
-            break;
-          }
-        }
-
-        chunkOutput = bufferOutput;
-        const words = bufferOutput.split(/(\s+)/);
-        for (const word of words) {
-          if (word) sendContentSSE(res, word);
-        }
-      } else {
-        for await (const text of streamText({ model, systemPrompt: system, userPrompt: user, maxTokens: 4096 })) {
-          chunkOutput += text;
-          sendContentSSE(res, text);
-        }
+      for await (const text of streamText({ model, systemPrompt: system, userPrompt: user, maxTokens: 4096 })) {
+        chunkOutput += text;
+        sendContentSSE(res, text);
       }
     } catch (err: any) {
       console.error(`[COHERENCE] Chunk ${i + 1} generation error:`, err);
-      sendContentSSE(res, `\n\n[Generation error in chunk ${i + 1}: ${err.message}. Attempting to continue...]\n\n`);
-      if (chunkOutput.length === 0) continue;
+      sendContentSSE(res, `\n\n[Generation error in section ${i + 1}: ${err.message}]\n\n`);
+      if (chunkOutput.length === 0) {
+        if (i === 0) {
+          sendContentSSE(res, `[Unable to generate content. Please try again.]\n`);
+          return;
+        }
+        sendContentSSE(res, `[Attempting to continue with available content...]\n\n`);
+        continue;
+      }
     }
 
     if (dialogueState) {
@@ -1361,7 +1315,7 @@ You MUST:
     
     const dbSkeleton = await getSessionSkeleton(sessionId);
     if (dbSkeleton) {
-      const supplementPrompt = buildChunkPrompt(dbSkeleton, totalChunks, totalChunks + 1, shortfall, thinkerName, await getPriorDeltas(sessionId), enhanced, sessionType, secondSpeaker, allSpeakers, dialogueState);
+      const supplementPrompt = buildChunkPrompt(dbSkeleton, totalChunks, totalChunks + 1, shortfall, thinkerName, await getPriorDeltas(sessionId), enhanced, sessionType, secondSpeaker, allSpeakers, dialogueState, commonDocument);
       let supplementOutput = "";
       
       sendContentSSE(res, "\n\n");
