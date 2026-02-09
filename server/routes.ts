@@ -1069,6 +1069,18 @@ CONTENT RULES:
 8. DO NOT FREELANCE - every substantive claim must cite a database item or uploaded material
 ${hasUploadedMaterial ? `9. Some debaters have UPLOADED MATERIAL marked with [UD#] codes - these are EXCLUSIVE to that debater and should be cited alongside database items` : ""}
 
+ANTI-REPETITION RULES (HARD CONSTRAINT):
+- NO repetition of argumentative content between turns
+- If a claim has been made by either debater, it must NOT be restated
+- Swapping names, analogies, or examples while making the identical argument COUNTS AS REPETITION
+- Each turn must introduce NEW evidence, make a GENUINE CONCESSION, or produce NOVEL SYNTHESIS
+- A shorter non-repetitive debate is ALWAYS preferable to a longer repetitive one
+
+MATERIAL USAGE RULES:
+- Each debater must EXHAUST their unique database and uploaded material before recycling
+- Cite DIFFERENT items in each turn - never re-cite the same [P#], [Q#], [A#], or [UD#]
+- If all material has been deployed, conclude the debate rather than padding with repetition
+
 ${allSkeletons}
 
 Write a ${wordCount}-word debate on "${topic}" with ALL ${debaterNames.length} speakers (${speakerList}) taking turns.

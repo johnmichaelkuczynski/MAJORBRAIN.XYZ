@@ -31,6 +31,152 @@ export interface ChunkDelta {
   continuityNotes: string;
 }
 
+export interface MaterialItem {
+  code: string;
+  text: string;
+  speaker: string;
+  used: boolean;
+  source: "database" | "uploaded";
+}
+
+export interface ClaimLogEntry {
+  speaker: string;
+  claim: string;
+  citationCodes: string[];
+  turnIndex: number;
+}
+
+export interface MaterialTracker {
+  items: MaterialItem[];
+  claimLog: ClaimLogEntry[];
+  totalTurns: number;
+}
+
+function createMaterialTracker(): MaterialTracker {
+  return { items: [], claimLog: [], totalTurns: 0 };
+}
+
+function addMaterialItems(tracker: MaterialTracker, formattedItems: string[], speaker: string, source: "database" | "uploaded"): void {
+  for (const item of formattedItems) {
+    const codeMatch = item.match(/^\[([^\]]+)\]/);
+    if (codeMatch) {
+      const textAfterCode = item.replace(/^\[[^\]]+\]\s*/, "");
+      tracker.items.push({
+        code: codeMatch[1],
+        text: textAfterCode,
+        speaker,
+        used: false,
+        source,
+      });
+    }
+  }
+}
+
+function markMaterialUsed(tracker: MaterialTracker, citationCodes: string[], speaker?: string): void {
+  for (const code of citationCodes) {
+    const cleanCode = code.replace(/[\[\]]/g, "");
+    const item = speaker
+      ? tracker.items.find(i => i.code === cleanCode && i.speaker === speaker && !i.used)
+      : tracker.items.find(i => i.code === cleanCode && !i.used);
+    if (item) item.used = true;
+  }
+}
+
+function getUnusedMaterial(tracker: MaterialTracker, speaker?: string): MaterialItem[] {
+  return tracker.items.filter(i => !i.used && (!speaker || i.speaker === speaker));
+}
+
+function getExhaustionRatio(tracker: MaterialTracker, speaker?: string): number {
+  const relevant = speaker ? tracker.items.filter(i => i.speaker === speaker) : tracker.items;
+  if (relevant.length === 0) return 0;
+  const used = relevant.filter(i => i.used).length;
+  return used / relevant.length;
+}
+
+function addClaimToLog(tracker: MaterialTracker, speaker: string, claim: string, citationCodes: string[]): void {
+  tracker.claimLog.push({ speaker, claim, citationCodes, turnIndex: tracker.totalTurns });
+}
+
+function isClaimRepetitive(tracker: MaterialTracker, candidateClaim: string): boolean {
+  const candidateWords = new Set(candidateClaim.toLowerCase().split(/\s+/).filter(w => w.length > 4));
+  if (candidateWords.size < 3) return false;
+
+  for (const entry of tracker.claimLog) {
+    const entryWords = new Set(entry.claim.toLowerCase().split(/\s+/).filter(w => w.length > 4));
+    let overlap = 0;
+    const candidateArr = Array.from(candidateWords);
+    for (let ci = 0; ci < candidateArr.length; ci++) {
+      if (entryWords.has(candidateArr[ci])) overlap++;
+    }
+    const similarity = overlap / Math.max(candidateWords.size, entryWords.size);
+    if (similarity > 0.6) return true;
+  }
+  return false;
+}
+
+function serializeMaterialStatusForPrompt(tracker: MaterialTracker, speakers: string[]): string {
+  let output = "\n=== MATERIAL USAGE STATUS ===\n";
+  for (const speaker of speakers) {
+    const speakerItems = tracker.items.filter(i => i.speaker === speaker);
+    const unused = speakerItems.filter(i => !i.used);
+    const used = speakerItems.filter(i => i.used);
+    const ratio = speakerItems.length > 0 ? (used.length / speakerItems.length * 100).toFixed(0) : "0";
+
+    output += `\n${speaker}: ${used.length}/${speakerItems.length} items used (${ratio}%)\n`;
+    if (unused.length > 0) {
+      output += `  UNUSED (MUST USE THESE NEXT):\n`;
+      unused.slice(0, 8).forEach(i => {
+        output += `    [${i.code}] ${i.text.substring(0, 120)}...\n`;
+      });
+    }
+    if (used.length > 0) {
+      output += `  ALREADY USED (DO NOT REPEAT): ${used.map(i => `[${i.code}]`).join(", ")}\n`;
+    }
+  }
+  output += "=== END MATERIAL STATUS ===\n";
+  return output;
+}
+
+function serializeClaimLogForPrompt(tracker: MaterialTracker): string {
+  if (tracker.claimLog.length === 0) return "";
+  let output = "\n=== RUNNING CLAIM LOG (EVERY claim made so far - DO NOT REPEAT ANY) ===\n";
+  for (const entry of tracker.claimLog.slice(-30)) {
+    output += `  ${entry.speaker} (turn ${entry.turnIndex}): ${entry.claim}`;
+    if (entry.citationCodes.length > 0) output += ` [cited: ${entry.citationCodes.join(", ")}]`;
+    output += "\n";
+  }
+  output += "=== END CLAIM LOG ===\n";
+  return output;
+}
+
+function extractClaimsFromOutput(text: string, speakers: string[]): { speaker: string; claim: string; citations: string[] }[] {
+  const claims: { speaker: string; claim: string; citations: string[] }[] = [];
+  const lines = text.split("\n").filter(l => l.trim().length > 0);
+
+  for (const line of lines) {
+    const speakerMatch = line.match(/^([^:]+):\s*(.*)/);
+    if (!speakerMatch) continue;
+
+    const speakerName = speakerMatch[1].trim();
+    const turnText = speakerMatch[2].trim();
+    const matched = speakers.find(s => s.toLowerCase() === speakerName.toLowerCase());
+    if (!matched) continue;
+
+    const citations = (turnText.match(/\[([A-Z]+\d+)\]/g) || []).map(c => c.replace(/[\[\]]/g, ""));
+
+    const sentences = turnText.split(/(?<=[.!?])\s+/).filter(s => s.length > 20);
+    for (const sentence of sentences) {
+      const sentenceCitations = (sentence.match(/\[([A-Z]+\d+)\]/g) || []).map(c => c.replace(/[\[\]]/g, ""));
+      claims.push({
+        speaker: matched,
+        claim: sentence.substring(0, 200),
+        citations: sentenceCitations.length > 0 ? sentenceCitations : citations.slice(0, 2),
+      });
+    }
+  }
+  return claims;
+}
+
 export interface DialogueStateTracker {
   citedPositions: Record<string, Set<string>>;
   claimsMade: Record<string, string[]>;
@@ -38,6 +184,7 @@ export interface DialogueStateTracker {
   synthesisAttempts: string[];
   turnCount: Record<string, number>;
   allTurnsText: Record<string, string[]>;
+  materialTracker: MaterialTracker;
 }
 
 function createDialogueStateTracker(speakers: string[]): DialogueStateTracker {
@@ -48,6 +195,7 @@ function createDialogueStateTracker(speakers: string[]): DialogueStateTracker {
     synthesisAttempts: [],
     turnCount: {},
     allTurnsText: {},
+    materialTracker: createMaterialTracker(),
   };
   for (const speaker of speakers) {
     tracker.citedPositions[speaker] = new Set();
@@ -61,6 +209,13 @@ function createDialogueStateTracker(speakers: string[]): DialogueStateTracker {
 
 function updateDialogueState(tracker: DialogueStateTracker, chunkOutput: string, speakers: string[]): void {
   const lines = chunkOutput.split("\n").filter(l => l.trim().length > 0);
+
+  const allNewClaims = extractClaimsFromOutput(chunkOutput, speakers);
+  for (const claim of allNewClaims) {
+    addClaimToLog(tracker.materialTracker, claim.speaker, claim.claim, claim.citations);
+    markMaterialUsed(tracker.materialTracker, claim.citations, claim.speaker);
+    tracker.materialTracker.totalTurns++;
+  }
 
   for (const line of lines) {
     const speakerMatch = line.match(/^([^:]+):\s*(.*)/);
@@ -80,7 +235,7 @@ function updateDialogueState(tracker: DialogueStateTracker, chunkOutput: string,
     if (!tracker.allTurnsText[matchedSpeaker]) tracker.allTurnsText[matchedSpeaker] = [];
     tracker.allTurnsText[matchedSpeaker].push(turnText);
 
-    const citationMatches = turnText.match(/\[([PQA]\d+)\]/g);
+    const citationMatches = turnText.match(/\[([A-Z]+\d+)\]/g);
     if (citationMatches) {
       if (!tracker.citedPositions[matchedSpeaker]) tracker.citedPositions[matchedSpeaker] = new Set<string>();
       for (let ci = 0; ci < citationMatches.length; ci++) {
@@ -164,7 +319,7 @@ function serializeTrackerForPrompt(tracker: DialogueStateTracker, speakers: stri
     }
     if (claims.length > 0) {
       output += `  CLAIMS ALREADY MADE (DO NOT RESTATE):\n`;
-      claims.slice(-6).forEach(c => { output += `    - ${c}\n`; });
+      claims.slice(-8).forEach(c => { output += `    - ${c}\n`; });
     }
     if (concessions.length > 0) {
       output += `  CONCESSIONS MADE:\n`;
@@ -178,6 +333,10 @@ function serializeTrackerForPrompt(tracker: DialogueStateTracker, speakers: stri
   }
 
   output += "\n=== END DIALOGUE STATE ===\n";
+
+  output += serializeMaterialStatusForPrompt(tracker.materialTracker, speakers);
+  output += serializeClaimLogForPrompt(tracker.materialTracker);
+
   return output;
 }
 
@@ -472,6 +631,21 @@ ${allSpeakers[1]}: [challenges or responds, citing their own database items]
 ${allSpeakers[2]}: [adds perspective or disagrees, citing their database items]
 ${allSpeakers.length > 3 ? `${allSpeakers[3]}: [contributes their view, citing their database items]\n` : ""}
 
+ANTI-REPETITION RULES (HARD CONSTRAINT):
+- Before generating any turn, check the RUNNING CLAIM LOG below
+- If the point about to be made matches ANY prior claim (same logical claim, same objection structure, same counterexample pattern), REJECT IT and generate a different turn
+- Swapping proper names, analogies, or examples while making the identical argument COUNTS AS REPETITION
+- The ONLY permissible re-invocation of a prior idea is as a premise in a GENUINELY NEW argument with a clearly stated NEW conclusion
+- If re-invoking, reference the idea briefly (do not re-argue) and immediately deploy toward the new conclusion
+
+MATERIAL EXHAUSTION RULES (HARD CONSTRAINT):
+- Check the MATERIAL USAGE STATUS below for each speaker's UNUSED items
+- Each turn MUST draw from UNUSED material FIRST
+- Select the strongest unused argument/position that is responsive to the opponent's most recent point
+- Only if NO unused material is responsive may you generate content not directly from uploads
+- Even then, you must NOT repeat previously used material
+- A shorter non-repetitive debate is ALWAYS preferable to a longer repetitive one
+
 RULES:
 - ALL ${allSpeakers.length} speakers MUST appear in EVERY chunk
 - Speakers DISAGREE, CHALLENGE, and DEBATE each other
@@ -493,6 +667,20 @@ ${secondSpeaker}: [challenges, disagrees, or counters]
 
 ${thinkerName}: [responds to challenge]
 ${secondSpeaker}: [further objection or rebuttal]
+
+ANTI-REPETITION RULES (HARD CONSTRAINT):
+- Before generating any turn, check the RUNNING CLAIM LOG below
+- If the point about to be made matches ANY prior claim (same logical claim, same objection structure, same counterexample pattern), REJECT IT and generate a different turn
+- Swapping proper names, analogies, or examples while making the identical argument COUNTS AS REPETITION
+- The ONLY permissible re-invocation of a prior idea is as a premise in a GENUINELY NEW argument with a clearly stated NEW conclusion
+
+MATERIAL EXHAUSTION RULES (HARD CONSTRAINT):
+- Check the MATERIAL USAGE STATUS below for each speaker's UNUSED items
+- Each turn MUST draw from UNUSED material FIRST
+- Select the strongest unused argument/position that is responsive to the opponent's most recent point
+- Only if NO unused material is responsive may you generate content not directly from uploads
+- Even then, you must NOT repeat previously used material
+- A shorter non-repetitive debate is ALWAYS preferable to a longer repetitive one
 
 RULES:
 - Speakers DISAGREE and CHALLENGE each other
@@ -797,26 +985,36 @@ ${priorClaimsStr ? `PRIOR CLAIMS MADE: ${priorClaimsStr}` : ""}
   if (isMultiSpeaker) {
     const isDialogue = sessionType === "dialogue";
     const turnInfo = dialogueState ? Object.entries(dialogueState.turnCount).map(([s, c]) => `${s}: ${c} turns`).join(", ") : "";
+    const isDebate = sessionType === "debate";
     user = `Continue the ${allSpeakers!.length}-speaker ${sessionType} on: "${outlineSection}"
 
 Write ${minWords}+ words as alternating speaker turns.
 ALL ${allSpeakers!.length} speakers (${allSpeakers!.join(", ")}) MUST appear in this section.
-Format: "SPEAKER_NAME: [what they say with [P#], [Q#], [A#] citations]"
+Format: "SPEAKER_NAME: [what they say with [P#], [Q#], [A#], [UD#] citations]"
 ${turnInfo ? `\nTurn counts so far: ${turnInfo}\nEach speaker has a MAXIMUM of 6 turns total.` : ""}
-${isDialogue ? `\nREMEMBER: Every turn must either (a) cite NEW uncited evidence, (b) make a GENUINE concession, or (c) produce NOVEL synthesis. If all evidence is exhausted, conclude the dialogue.` : ""}
+${isDialogue || isDebate ? `\nCRITICAL REQUIREMENTS FOR EACH TURN:
+1. Check the MATERIAL USAGE STATUS - use UNUSED items FIRST
+2. Check the RUNNING CLAIM LOG - do NOT repeat any claim already logged
+3. Every turn must either (a) cite NEW uncited evidence, (b) make a GENUINE CONCESSION, or (c) produce NOVEL SYNTHESIS
+4. If all evidence is exhausted and no new moves remain, write a CONCLUDING synthesis and END` : ""}
 
 Start with ${allSpeakers![chunkIndex % allSpeakers!.length]}:
 
-BEGIN NOW with speaker turns only. Every speaker must cite their UNCITED database items.`;
+BEGIN NOW with speaker turns only. Every speaker must cite their UNCITED database items and uploaded material.`;
   } else if (isConversation) {
     const isDialogue = sessionType === "dialogue";
     const turnInfo = dialogueState ? Object.entries(dialogueState.turnCount).map(([s, c]) => `${s}: ${c} turns`).join(", ") : "";
+    const isDebate2 = sessionType === "debate";
     user = `Continue the ${sessionType} on: "${outlineSection}"
 
 Write ${minWords}+ words as alternating speaker turns.
 Format: "SPEAKER_NAME: [what they say]"
 ${turnInfo ? `\nTurn counts so far: ${turnInfo}\nEach speaker has a MAXIMUM of 6 turns total.` : ""}
-${isDialogue ? `\nREMEMBER: Every turn must either (a) cite NEW uncited evidence, (b) make a GENUINE concession, or (c) produce NOVEL synthesis. If all evidence is exhausted, conclude the dialogue.` : ""}
+${isDialogue || isDebate2 ? `\nCRITICAL REQUIREMENTS FOR EACH TURN:
+1. Check the MATERIAL USAGE STATUS - use UNUSED items FIRST
+2. Check the RUNNING CLAIM LOG - do NOT repeat any claim already logged
+3. Every turn must either (a) cite NEW uncited evidence, (b) make a GENUINE CONCESSION, or (c) produce NOVEL SYNTHESIS
+4. If all evidence is exhausted and no new moves remain, write a CONCLUDING synthesis and END` : ""}
 
 Start with ${chunkIndex % 2 === 0 ? (sessionType === "interview" ? secondSpeaker : thinkerName) : (sessionType === "interview" ? thinkerName : secondSpeaker)}:
 
@@ -891,10 +1089,54 @@ export async function processWithCoherence(options: CoherenceOptions): Promise<v
 
   sendContentSSE(res, `[Searching database and building structure...]\n\n`);
 
-  const sessionId = await createSession(options);
+  let sessionId: string;
+  try {
+    sessionId = await createSession(options);
+  } catch (err: any) {
+    console.error("[COHERENCE] Session creation failed:", err);
+    sendContentSSE(res, `Error creating session: ${err.message}\n`);
+    return;
+  }
 
-  const skeleton = await extractGlobalSkeleton(userPrompt, thinkerName, databaseContent, model, perSpeakerContent, allSpeakers);
-  await updateSessionSkeleton(sessionId, skeleton, totalChunks);
+  let skeleton: GlobalSkeleton;
+  try {
+    const truncatedPrompt = userPrompt.length > 8000
+      ? userPrompt.substring(0, 8000) + "\n[Document truncated for skeleton extraction]"
+      : userPrompt;
+    skeleton = await extractGlobalSkeleton(truncatedPrompt, thinkerName, databaseContent, model, perSpeakerContent, allSpeakers);
+    await updateSessionSkeleton(sessionId, skeleton, totalChunks);
+  } catch (err: any) {
+    console.error("[COHERENCE] Skeleton extraction failed:", err);
+    sendContentSSE(res, `[Skeleton extraction error - generating directly...]\n\n`);
+    skeleton = {
+      thesis: userPrompt.substring(0, 200),
+      outline: Array.from({ length: totalChunks }, (_, i) => `Part ${i + 1}`),
+      keyTerms: {},
+      commitments: [],
+      entities: [],
+      databaseContent: {
+        positions: databaseContent.positions.slice(0, 20).map((p: any, i: number) => `[P${i + 1}] ${p.positionText || p.position_text}`),
+        quotes: databaseContent.quotes.slice(0, 20).map((q: any, i: number) => `[Q${i + 1}] "${q.quoteText || q.quote_text}"`),
+        arguments: databaseContent.arguments.slice(0, 10).map((a: any, i: number) => `[A${i + 1}] ${a.argumentText || a.argument_text}`),
+        works: databaseContent.works.slice(0, 5).map((w: any, i: number) => `[W${i + 1}] ${(w.workText || w.work_text || '').substring(0, 500)}`),
+      },
+    };
+    if (perSpeakerContent && allSpeakers) {
+      skeleton.perSpeakerContent = {};
+      for (const speaker of allSpeakers) {
+        const sc = perSpeakerContent[speaker];
+        if (sc) {
+          skeleton.perSpeakerContent[speaker] = {
+            positions: formatDbContent(sc.positions, "P", speaker, 15),
+            quotes: formatDbContent(sc.quotes, "Q", speaker, 15),
+            arguments: formatDbContent(sc.arguments, "A", speaker, 8),
+            works: formatDbContent(sc.works, "W", speaker, 3),
+          };
+        }
+      }
+    }
+    try { await updateSessionSkeleton(sessionId, skeleton, totalChunks); } catch {}
+  }
 
   sendSkeletonSSE(res, `THESIS\n${skeleton.thesis}\n\n`);
   
@@ -942,10 +1184,26 @@ export async function processWithCoherence(options: CoherenceOptions): Promise<v
   const dialogueState = isDialogueType ? createDialogueStateTracker(speakers) : undefined;
   const MAX_TURNS_PER_SPEAKER = 6;
 
+  if (dialogueState && skeleton.perSpeakerContent) {
+    for (const speaker of speakers) {
+      const sc = skeleton.perSpeakerContent[speaker];
+      if (sc) {
+        const dbPositions = sc.positions.filter(p => !p.startsWith("[UD"));
+        const udPositions = sc.positions.filter(p => p.startsWith("[UD"));
+        addMaterialItems(dialogueState.materialTracker, dbPositions, speaker, "database");
+        addMaterialItems(dialogueState.materialTracker, udPositions, speaker, "uploaded");
+        addMaterialItems(dialogueState.materialTracker, sc.quotes, speaker, "database");
+        addMaterialItems(dialogueState.materialTracker, sc.arguments, speaker, "database");
+      }
+    }
+    console.log(`[COHERENCE] Material tracker initialized: ${dialogueState.materialTracker.items.length} total items across ${speakers.length} speakers`);
+  }
+
   for (let i = 0; i < totalChunks; i++) {
     const dbSkeleton = await getSessionSkeleton(sessionId);
     if (!dbSkeleton) {
       console.error("Could not retrieve skeleton from database");
+      sendContentSSE(res, "\n\nError: Could not retrieve skeleton from database.\n");
       return;
     }
 
@@ -955,6 +1213,37 @@ export async function processWithCoherence(options: CoherenceOptions): Promise<v
         console.log(`[COHERENCE] Turn limit reached. Ending ${sessionType} early.`);
         break;
       }
+
+      const globalExhaustion = getExhaustionRatio(dialogueState.materialTracker);
+      if (globalExhaustion >= 0.9 && i > 0) {
+        console.log(`[COHERENCE] Material exhaustion at ${(globalExhaustion * 100).toFixed(0)}%. Generating final conclusion.`);
+        sendContentSSE(res, `\n\n[Source material ${(globalExhaustion * 100).toFixed(0)}% exhausted. Concluding debate.]\n\n`);
+
+        const conclusionPrompt = `All uploaded and database material has been substantially deployed (${(globalExhaustion * 100).toFixed(0)}% used). Write a FINAL CONCLUDING exchange (300-500 words) where:
+1. Each speaker summarizes their strongest argument from the material already cited
+2. Each speaker acknowledges one point where their opponent was strongest
+3. End with each speaker's final position
+Format: "SPEAKER_NAME: text". Do NOT introduce new arguments. Do NOT repeat prior arguments. Summarize and conclude.`;
+
+        let conclusionOutput = "";
+        try {
+          for await (const text of streamText({ model, systemPrompt: dbSkeleton ? buildChunkPrompt(dbSkeleton, i, totalChunks, 500, thinkerName, [], enhanced, sessionType, secondSpeaker, allSpeakers, dialogueState).system : "", userPrompt: conclusionPrompt, maxTokens: 2000 })) {
+            conclusionOutput += text;
+            sendContentSSE(res, text);
+          }
+        } catch (err: any) {
+          console.error("[COHERENCE] Conclusion generation error:", err);
+        }
+
+        if (conclusionOutput) {
+          updateDialogueState(dialogueState, conclusionOutput, speakers);
+          totalOutput += conclusionOutput + "\n\n";
+          totalWordCount += countWords(conclusionOutput);
+          const delta = extractDeltaFromOutput(conclusionOutput, dbSkeleton);
+          await saveChunk(sessionId, i, conclusionOutput, delta, countWords(conclusionOutput));
+        }
+        break;
+      }
     }
 
     const priorDeltas = await getPriorDeltas(sessionId);
@@ -962,68 +1251,93 @@ export async function processWithCoherence(options: CoherenceOptions): Promise<v
 
     let chunkOutput = "";
     
-    if (dialogueState && i > 0) {
-      let bufferOutput = "";
-      for await (const text of streamText({ model, systemPrompt: system, userPrompt: user, maxTokens: 4096 })) {
-        bufferOutput += text;
-      }
-
-      const repetitionCheck = checkChunkRepetition(dialogueState, bufferOutput, speakers);
-      
-      if (repetitionCheck.isRepetitive) {
-        console.log(`[COHERENCE] Repetition detected (${(repetitionCheck.overlapScore * 100).toFixed(0)}% overlap by ${repetitionCheck.worstSpeaker}). Regenerating with escalation...`);
-        
-        const escalationUser = user + `\n\nCRITICAL: The previous attempt was REJECTED because ${repetitionCheck.worstSpeaker} repeated prior positions (${(repetitionCheck.overlapScore * 100).toFixed(0)}% overlap). You MUST:
-1. Introduce COMPLETELY NEW arguments not yet made
-2. Have at least one speaker make a GENUINE CONCESSION
-3. Move toward SYNTHESIS rather than restating opening positions
-4. If no new evidence exists, write a CONCLUDING synthesis and end the dialogue`;
-
-        bufferOutput = "";
-        for await (const text of streamText({ model, systemPrompt: system, userPrompt: escalationUser, maxTokens: 4096 })) {
+    try {
+      if (dialogueState && i > 0) {
+        let bufferOutput = "";
+        for await (const text of streamText({ model, systemPrompt: system, userPrompt: user, maxTokens: 4096 })) {
           bufferOutput += text;
         }
 
-        const secondCheck = checkChunkRepetition(dialogueState, bufferOutput, speakers);
-        if (secondCheck.isRepetitive) {
-          console.log(`[COHERENCE] Still repetitive after retry. Ending ${sessionType} with conclusion.`);
-          const conclusionPrompt = `Write a brief concluding synthesis (200-300 words) where the speakers acknowledge their key disagreements and identify areas of potential convergence. Format: "SPEAKER_NAME: text". Include at least one genuine concession.`;
+        const newClaims = extractClaimsFromOutput(bufferOutput, speakers);
+        const repetitiveClaims = newClaims.filter(c => isClaimRepetitive(dialogueState.materialTracker, c.claim));
+        const repetitionRatio = newClaims.length > 0 ? repetitiveClaims.length / newClaims.length : 0;
+
+        const repetitionCheck = checkChunkRepetition(dialogueState, bufferOutput, speakers);
+        const isRepetitive = repetitionCheck.isRepetitive || repetitionRatio > 0.5;
+        
+        if (isRepetitive) {
+          console.log(`[COHERENCE] Repetition detected (overlap: ${(repetitionCheck.overlapScore * 100).toFixed(0)}%, claim repeat: ${(repetitionRatio * 100).toFixed(0)}%). Regenerating...`);
           
+          const unusedSummary = speakers.map(s => {
+            const unused = getUnusedMaterial(dialogueState.materialTracker, s);
+            return `${s}: ${unused.length} unused items`;
+          }).join("; ");
+
+          const escalationUser = user + `\n\nCRITICAL ANTI-REPETITION DIRECTIVE:
+The previous attempt was REJECTED because it repeated prior claims.
+Repetitive claims detected: ${repetitiveClaims.map(c => `"${c.claim.substring(0, 80)}..."`).join("; ")}
+
+UNUSED MATERIAL REMAINING: ${unusedSummary}
+You MUST:
+1. Use ONLY UNUSED material from the MATERIAL USAGE STATUS section above
+2. Introduce COMPLETELY NEW arguments from unused positions/quotes
+3. If no unused material remains, write a CONCLUDING synthesis and END the debate
+4. A shorter non-repetitive output is ALWAYS better than a longer repetitive one`;
+
           bufferOutput = "";
-          for await (const text of streamText({ model, systemPrompt: system, userPrompt: conclusionPrompt, maxTokens: 1500 })) {
+          for await (const text of streamText({ model, systemPrompt: system, userPrompt: escalationUser, maxTokens: 4096 })) {
             bufferOutput += text;
           }
-          
-          for (const char of bufferOutput) {
-            sendContentSSE(res, char);
+
+          const secondCheck = checkChunkRepetition(dialogueState, bufferOutput, speakers);
+          const secondClaims = extractClaimsFromOutput(bufferOutput, speakers);
+          const secondRepRatio = secondClaims.length > 0 ? secondClaims.filter(c => isClaimRepetitive(dialogueState.materialTracker, c.claim)).length / secondClaims.length : 0;
+
+          if (secondCheck.isRepetitive || secondRepRatio > 0.5) {
+            console.log(`[COHERENCE] Still repetitive after retry. Ending ${sessionType} with conclusion.`);
+            const conclusionPrompt = `Write a brief concluding synthesis (200-300 words) where the speakers acknowledge their key disagreements and identify areas of potential convergence. Format: "SPEAKER_NAME: text". Include at least one genuine concession. Do NOT repeat any prior arguments.`;
+            
+            bufferOutput = "";
+            for await (const text of streamText({ model, systemPrompt: system, userPrompt: conclusionPrompt, maxTokens: 1500 })) {
+              bufferOutput += text;
+            }
+            
+            for (const char of bufferOutput) {
+              sendContentSSE(res, char);
+            }
+            
+            updateDialogueState(dialogueState, bufferOutput, speakers);
+            totalOutput += bufferOutput + "\n\n";
+            totalWordCount += countWords(bufferOutput);
+            
+            const delta = extractDeltaFromOutput(bufferOutput, dbSkeleton);
+            await saveChunk(sessionId, i, bufferOutput, delta, countWords(bufferOutput));
+            break;
           }
-          
-          updateDialogueState(dialogueState, bufferOutput, speakers);
-          totalOutput += bufferOutput + "\n\n";
-          totalWordCount += countWords(bufferOutput);
-          
-          const delta = extractDeltaFromOutput(bufferOutput, dbSkeleton);
-          await saveChunk(sessionId, i, bufferOutput, delta, countWords(bufferOutput));
-          break;
+        }
+
+        chunkOutput = bufferOutput;
+        const words = bufferOutput.split(/(\s+)/);
+        for (const word of words) {
+          if (word) sendContentSSE(res, word);
+        }
+      } else {
+        for await (const text of streamText({ model, systemPrompt: system, userPrompt: user, maxTokens: 4096 })) {
+          chunkOutput += text;
+          sendContentSSE(res, text);
         }
       }
-
-      chunkOutput = bufferOutput;
-      const words = bufferOutput.split(/(\s+)/);
-      for (const word of words) {
-        if (word) sendContentSSE(res, word);
-      }
-    } else {
-      for await (const text of streamText({ model, systemPrompt: system, userPrompt: user, maxTokens: 4096 })) {
-        chunkOutput += text;
-        sendContentSSE(res, text);
-      }
+    } catch (err: any) {
+      console.error(`[COHERENCE] Chunk ${i + 1} generation error:`, err);
+      sendContentSSE(res, `\n\n[Generation error in chunk ${i + 1}: ${err.message}. Attempting to continue...]\n\n`);
+      if (chunkOutput.length === 0) continue;
     }
 
     if (dialogueState) {
       updateDialogueState(dialogueState, chunkOutput, speakers);
       const totalTurns = Object.values(dialogueState.turnCount).reduce((a, b) => a + b, 0);
-      console.log(`[COHERENCE] Dialogue state: ${totalTurns} total turns, ${Object.entries(dialogueState.citedPositions).map(([s, c]) => `${s}: ${c.size} cited`).join(", ")}`);
+      const exhaustionRatio = getExhaustionRatio(dialogueState.materialTracker);
+      console.log(`[COHERENCE] Dialogue state: ${totalTurns} turns, material ${(exhaustionRatio * 100).toFixed(0)}% used, ${dialogueState.materialTracker.claimLog.length} claims logged`);
     }
 
     const chunkWords = countWords(chunkOutput);
@@ -1051,15 +1365,20 @@ export async function processWithCoherence(options: CoherenceOptions): Promise<v
       let supplementOutput = "";
       
       sendContentSSE(res, "\n\n");
-      for await (const text of streamText({ model, systemPrompt: supplementPrompt.system, userPrompt: supplementPrompt.user, maxTokens: 4096 })) {
-        supplementOutput += text;
-        sendContentSSE(res, text);
+      try {
+        for await (const text of streamText({ model, systemPrompt: supplementPrompt.system, userPrompt: supplementPrompt.user, maxTokens: 4096 })) {
+          supplementOutput += text;
+          sendContentSSE(res, text);
+        }
+      } catch (err: any) {
+        console.error("[COHERENCE] Supplement generation error:", err);
       }
-      totalOutput += supplementOutput;
-      totalWordCount = countWords(totalOutput);
-      
-      const delta = extractDeltaFromOutput(supplementOutput, dbSkeleton);
-      await saveChunk(sessionId, totalChunks, supplementOutput, delta, countWords(supplementOutput));
+      if (supplementOutput) {
+        totalOutput += supplementOutput;
+        totalWordCount = countWords(totalOutput);
+        const delta = extractDeltaFromOutput(supplementOutput, dbSkeleton);
+        await saveChunk(sessionId, totalChunks, supplementOutput, delta, countWords(supplementOutput));
+      }
     }
   }
 
@@ -1067,7 +1386,12 @@ export async function processWithCoherence(options: CoherenceOptions): Promise<v
   const allConflicts = allDeltas.flatMap(d => d.conflictsDetected || []);
   await saveStitchResult(sessionId, totalWordCount, allConflicts);
 
-  sendContentSSE(res, `\n\n[Word Count: ${totalWordCount.toLocaleString()}]`);
+  if (dialogueState) {
+    const finalExhaustion = getExhaustionRatio(dialogueState.materialTracker);
+    sendContentSSE(res, `\n\n[Word Count: ${totalWordCount.toLocaleString()} | Material Used: ${(finalExhaustion * 100).toFixed(0)}% | Claims Logged: ${dialogueState.materialTracker.claimLog.length}]`);
+  } else {
+    sendContentSSE(res, `\n\n[Word Count: ${totalWordCount.toLocaleString()}]`);
+  }
 
   console.log(`[COHERENCE] Complete: ${totalWordCount} words | Session: ${sessionId} | Conflicts: ${allConflicts.length}`);
 }
