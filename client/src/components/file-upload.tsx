@@ -33,7 +33,7 @@ export function FileUpload({ onFileContent, accept = ".txt,.doc,.docx,.pdf,.md,.
         onFileContent(text, file.name);
       } else {
         const data = await response.json();
-        onFileContent(data.content || "", file.name);
+        onFileContent(data.text || data.content || "", file.name);
       }
     } catch (error) {
       const text = await file.text();
