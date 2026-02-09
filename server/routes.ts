@@ -923,7 +923,7 @@ Every substantive claim must cite a specific database item. NO FREELANCING.`;
 
   // Debate Generator (streaming) - USES DATABASE AS SKELETON
   app.post("/api/debate/generate", async (req: Request, res: Response) => {
-    const { topic: rawTopic, debaters, wordCount = 2000, quoteCount = 20, enhanced = false, model = "gpt-4o", debaterDocuments = {} } = req.body;
+    const { topic: rawTopic, debaters, wordCount = 2000, quoteCount = 20, enhanced = false, model = "gpt-4o", debaterDocuments = {}, commonDocument: rawCommonDoc = "" } = req.body;
 
     if (!rawTopic || !debaters || debaters.length < 2) {
       return res.status(400).json({ error: "Topic and at least 2 debaters are required" });
@@ -932,12 +932,16 @@ Every substantive claim must cite a specific database item. NO FREELANCING.`;
     setupSSE(res);
 
     let topic = rawTopic;
-    let commonDocument = "";
-    if (rawTopic.includes("--- DOCUMENT TO DISCUSS ---")) {
+    let commonDocument = rawCommonDoc || "";
+    
+    if (!commonDocument && rawTopic.includes("--- DOCUMENT TO DISCUSS ---")) {
       const parts = rawTopic.split("--- DOCUMENT TO DISCUSS ---");
       topic = parts[0].trim();
       commonDocument = parts[1].trim();
-      console.log(`[DEBATE] Extracted common document: ${commonDocument.length} chars, ${commonDocument.split(/\s+/).length} words`);
+    }
+    
+    if (commonDocument) {
+      console.log(`[DEBATE] Common document received: ${commonDocument.length} chars, ${commonDocument.split(/\s+/).length} words`);
     }
 
     const searchTopic = commonDocument 
@@ -1153,8 +1157,18 @@ Every substantive claim must cite a specific database item. NO FREELANCING.`;
 
     const speakerList = debaterNames.join(", ");
     const hasUploadedMaterial = Object.keys(debaterUploadedContent).length > 0;
-    const citationTypes = hasUploadedMaterial ? "[P#], [Q#], [A#], [W#], [UD#]" : "[P#], [Q#], [A#], [W#]";
+    const hasCommonDoc = !!commonDocument;
+    const citationTypes = hasCommonDoc 
+      ? (hasUploadedMaterial ? "[P#], [Q#], [A#], [W#], [UD#], [CD#]" : "[P#], [Q#], [A#], [W#], [CD#]")
+      : (hasUploadedMaterial ? "[P#], [Q#], [A#], [W#], [UD#]" : "[P#], [Q#], [A#], [W#]");
     const speakerExample = debaterNames.map((n: string) => `${n}: [Their argument citing ${citationTypes}...]`).join("\n\n");
+    
+    let shortDocCitations: string[] = [];
+    if (hasCommonDoc) {
+      const { extractDocumentCitations } = await import("./services/coherenceService");
+      shortDocCitations = extractDocumentCitations(commonDocument, 30);
+      console.log(`[DEBATE-SHORT] Extracted ${shortDocCitations.length} [CD#] citations for short-path debate`);
+    }
 
     const systemPrompt = `You are creating a formal philosophical DEBATE between ${debaterNames.length} speakers: ${speakerList}.
 
@@ -1178,6 +1192,28 @@ DEBATE STRUCTURE:
 
 WORD COUNT: At least ${wordCount} words total.
 
+${hasCommonDoc ? `
+=== SOURCE DOCUMENT: QUOTABLE PASSAGES (CITE AS [CD1], [CD2], etc.) ===
+THIS IS THE UPLOADED DOCUMENT THAT ALL SPEAKERS MUST QUOTE FROM DIRECTLY.
+Every debater MUST use [CD#] codes to quote specific passages from this document.
+These are EXACT QUOTES from the source text - use them VERBATIM in quotation marks.
+
+${shortDocCitations.join("\n")}
+
+=== END SOURCE DOCUMENT CITATIONS ===
+
+FULL DOCUMENT TEXT (for context):
+${commonDocument.substring(0, 8000)}
+${commonDocument.length > 8000 ? "\n[Document continues...]" : ""}
+
+=== DOCUMENT CITATION RULES (MANDATORY - ZERO TOLERANCE) ===
+- EVERY speaker turn MUST include at least one [CD#] citation quoting the source document
+- Use the EXACT text from the [CD#] items above in quotation marks
+- Speakers should AGREE WITH, CHALLENGE, INTERPRET, or BUILD UPON these specific passages
+- [CD#] citations are IN ADDITION TO [P#], [Q#], [A#] database citations
+- A turn without any [CD#] citation is a FAILED turn - the uploaded document is the ENTIRE POINT of this debate
+` : ""}
+
 CONTENT RULES:
 1. Build from database content below - EACH speaker has their own database items
 2. Include at least ${quoteCount} database citations ${citationTypes}
@@ -1188,31 +1224,22 @@ CONTENT RULES:
 7. ALL ${debaterNames.length} speakers MUST appear throughout - do NOT skip anyone
 8. DO NOT FREELANCE - every substantive claim must cite a database item or uploaded material
 ${hasUploadedMaterial ? `9. Some debaters have UPLOADED MATERIAL marked with [UD#] codes - these are EXCLUSIVE to that debater and should be cited alongside database items` : ""}
+${hasCommonDoc ? `${hasUploadedMaterial ? "10" : "9"}. EVERY turn MUST cite at least one [CD#] passage from the SOURCE DOCUMENT above - this is the whole purpose of this debate` : ""}
 
 ANTI-REPETITION RULES (HARD CONSTRAINT):
 - NO repetition of argumentative content between turns
 - If a claim has been made by either debater, it must NOT be restated
-- Swapping names, analogies, or examples while making the identical argument COUNTS AS REPETITION
 - Each turn must introduce NEW evidence, make a GENUINE CONCESSION, or produce NOVEL SYNTHESIS
-- A shorter non-repetitive debate is ALWAYS preferable to a longer repetitive one
 
 MATERIAL USAGE RULES:
 - Each debater must EXHAUST their unique database and uploaded material before recycling
 - Cite DIFFERENT items in each turn - never re-cite the same [P#], [Q#], [A#], or [UD#]
-- If all material has been deployed, conclude the debate rather than padding with repetition
+${hasCommonDoc ? `- Each turn must cite a DIFFERENT [CD#] passage - distribute citations across all available [CD#] items` : ""}
 
 ${allSkeletons}
-${commonDocument ? `
-=== COMMON DOCUMENT TO DISCUSS (ALL SPEAKERS MUST REFERENCE THIS) ===
-The debaters have been given this document to discuss. They MUST quote from it, refer to specific passages, and argue about its content directly.
 
-${commonDocument.substring(0, 6000)}
-${commonDocument.length > 6000 ? "\n[Document continues - focus on key passages above]" : ""}
-
-=== END COMMON DOCUMENT ===
-` : ""}
 Write a ${wordCount}-word debate on "${topic}" with ALL ${debaterNames.length} speakers (${speakerList}) taking turns.
-Every substantive claim must cite a specific database item or uploaded material.${commonDocument ? " Speakers MUST directly discuss and quote from the COMMON DOCUMENT above." : ""} NO FREELANCING.`;
+Every substantive claim must cite a specific database item.${hasCommonDoc ? " CRITICAL: Every speaker turn MUST quote from the SOURCE DOCUMENT using [CD#] codes. The document is the ENTIRE PURPOSE of this debate." : ""} NO FREELANCING.`;
 
     try {
       if (isOpenAIModel(model)) {

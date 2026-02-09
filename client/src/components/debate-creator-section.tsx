@@ -196,15 +196,10 @@ export function DebateCreatorSection() {
     setArtifacts({ outline: "", skeleton: "", documentCitations: "", debaterContent: "", debate: "" });
 
     try {
-      const fullTopic = documentContent ? `${topic}\n\n--- DOCUMENT TO DISCUSS ---\n${documentContent}` : topic;
-
-      const hasDebaterDocs = Object.values(debaterDocuments).some(d => d.trim().length > 0);
       const debaterDocsPayload: Record<string, string> = {};
-      if (hasDebaterDocs) {
-        for (const [id, doc] of Object.entries(debaterDocuments)) {
-          if (doc.trim()) {
-            debaterDocsPayload[id] = doc.trim();
-          }
+      for (const [id, doc] of Object.entries(debaterDocuments)) {
+        if (doc.trim()) {
+          debaterDocsPayload[id] = doc.trim();
         }
       }
 
@@ -212,12 +207,13 @@ export function DebateCreatorSection() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          topic: fullTopic.trim(),
+          topic: topic.trim(),
           debaters,
           wordCount,
           quoteCount,
           enhanced,
           model: selectedModel,
+          ...(documentContent.trim() && { commonDocument: documentContent.trim() }),
           ...(Object.keys(debaterDocsPayload).length > 0 && { debaterDocuments: debaterDocsPayload }),
         }),
       });

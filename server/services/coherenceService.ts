@@ -880,21 +880,25 @@ ${(() => {
   const docCitations = skeleton.commonDocCitations || (docText ? extractDocumentCitations(docText) : []);
   if (!docText || docCitations.length === 0) return "";
   return `
-=== SOURCE DOCUMENT: VERBATIM QUOTABLE PASSAGES (CITE AS [CD1], [CD2], etc.) ===
+=== SOURCE DOCUMENT: QUOTABLE PASSAGES (CITE AS [CD1], [CD2], etc.) ===
 THIS IS THE UPLOADED DOCUMENT THAT ALL SPEAKERS MUST QUOTE FROM DIRECTLY.
-Every debater MUST use [CD#] codes to quote specific passages from this document.
+The uploaded document is the ENTIRE PURPOSE of this debate. Every debater MUST use [CD#] codes to quote specific passages.
 These are EXACT QUOTES from the source text - use them VERBATIM in quotation marks.
 
 ${docCitations.join("\n")}
 
-=== END SOURCE DOCUMENT CITATIONS ===
+=== FULL DOCUMENT TEXT (for additional context) ===
+${docText.substring(0, 10000)}
+${docText.length > 10000 ? "\n[Document continues...]" : ""}
+
+=== END SOURCE DOCUMENT ===
 
 DOCUMENT CITATION RULES (MANDATORY - ZERO TOLERANCE):
 - EVERY speaker turn MUST include at least one [CD#] citation quoting the source document
 - Use the EXACT text from the [CD#] items above in quotation marks
 - Speakers should AGREE WITH, CHALLENGE, INTERPRET, or BUILD UPON these specific passages
 - [CD#] citations are IN ADDITION TO [P#], [Q#], [A#] database citations
-- A turn without any [CD#] citation is a FAILED turn
+- A turn without any [CD#] citation is a FAILED turn - the uploaded document is the ENTIRE POINT of this debate
 `;
 })()}
 ${dialogueStateStr}
@@ -970,21 +974,25 @@ ${(() => {
   const docCitations = skeleton.commonDocCitations || (docText ? extractDocumentCitations(docText) : []);
   if (!docText || docCitations.length === 0) return "";
   return `
-=== SOURCE DOCUMENT: VERBATIM QUOTABLE PASSAGES (CITE AS [CD1], [CD2], etc.) ===
+=== SOURCE DOCUMENT: QUOTABLE PASSAGES (CITE AS [CD1], [CD2], etc.) ===
 THIS IS THE UPLOADED DOCUMENT THAT ALL SPEAKERS MUST QUOTE FROM DIRECTLY.
-Every speaker MUST use [CD#] codes to quote specific passages from this document.
+The uploaded document is the ENTIRE PURPOSE of this debate. Every speaker MUST use [CD#] codes to quote specific passages.
 These are EXACT QUOTES from the source text - use them VERBATIM in quotation marks.
 
 ${docCitations.join("\n")}
 
-=== END SOURCE DOCUMENT CITATIONS ===
+=== FULL DOCUMENT TEXT (for additional context) ===
+${docText.substring(0, 10000)}
+${docText.length > 10000 ? "\n[Document continues...]" : ""}
+
+=== END SOURCE DOCUMENT ===
 
 DOCUMENT CITATION RULES (MANDATORY - ZERO TOLERANCE):
 - EVERY speaker turn MUST include at least one [CD#] citation quoting the source document
 - Use the EXACT text from the [CD#] items above in quotation marks
 - Speakers should AGREE WITH, CHALLENGE, INTERPRET, or BUILD UPON these specific passages
 - [CD#] citations are IN ADDITION TO [P#], [Q#], [A#] database citations
-- A turn without any [CD#] citation is a FAILED turn
+- A turn without any [CD#] citation is a FAILED turn - the uploaded document is the ENTIRE POINT of this debate
 `;
 })()}
 ${dialogueStateStr}
