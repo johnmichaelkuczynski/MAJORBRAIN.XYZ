@@ -5,7 +5,7 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 export type AIProvider = "openai" | "anthropic";
-export type ModelId = "gpt-4o" | "gpt-4o-mini" | "claude-3-5-sonnet-20241022" | "claude-3-opus-20240229";
+export type ModelId = "gpt-4o" | "gpt-4o-mini" | "claude-sonnet-4" | "claude-haiku-4-5";
 
 export interface StreamCallbacks {
   onChunk: (text: string) => void;

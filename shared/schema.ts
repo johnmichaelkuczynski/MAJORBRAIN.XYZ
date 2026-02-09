@@ -139,7 +139,7 @@ export type ArgumentStatement = typeof argumentStatements.$inferSelect;
 export const chatRequestSchema = z.object({
   message: z.string().min(1),
   conversationId: z.string().optional(),
-  model: z.enum(["gpt-4o", "gpt-4o-mini", "claude-3-5-sonnet-20241022", "claude-3-opus-20240229"]).optional(),
+  model: z.enum(["gpt-4o", "gpt-4o-mini", "claude-sonnet-4", "claude-haiku-4-5"]).optional(),
   wordCount: z.number().min(100).max(50000).optional(),
   quoteCount: z.number().min(1).max(100).optional(),
   enhanced: z.boolean().optional(),
@@ -150,7 +150,7 @@ export type ChatRequest = z.infer<typeof chatRequestSchema>;
 export const modelBuilderRequestSchema = z.object({
   inputText: z.string().min(1),
   mode: z.enum(["formal", "informal"]),
-  model: z.enum(["gpt-4o", "gpt-4o-mini", "claude-3-5-sonnet-20241022", "claude-3-opus-20240229"]).optional(),
+  model: z.enum(["gpt-4o", "gpt-4o-mini", "claude-sonnet-4", "claude-haiku-4-5"]).optional(),
 });
 
 export type ModelBuilderRequest = z.infer<typeof modelBuilderRequestSchema>;
@@ -159,7 +159,7 @@ export const dialogueRequestSchema = z.object({
   topic: z.string().min(1),
   thinkers: z.array(z.string()).min(2),
   wordCount: z.number().min(100).max(50000),
-  model: z.enum(["gpt-4o", "gpt-4o-mini", "claude-3-5-sonnet-20241022", "claude-3-opus-20240229"]).optional(),
+  model: z.enum(["gpt-4o", "gpt-4o-mini", "claude-sonnet-4", "claude-haiku-4-5"]).optional(),
 });
 
 export type DialogueRequest = z.infer<typeof dialogueRequestSchema>;
@@ -169,7 +169,7 @@ export const interviewRequestSchema = z.object({
   interviewee: z.string().min(1),
   interviewer: z.string().optional(),
   wordCount: z.number().min(500).max(50000),
-  model: z.enum(["gpt-4o", "gpt-4o-mini", "claude-3-5-sonnet-20241022", "claude-3-opus-20240229"]).optional(),
+  model: z.enum(["gpt-4o", "gpt-4o-mini", "claude-sonnet-4", "claude-haiku-4-5"]).optional(),
 });
 
 export type InterviewRequest = z.infer<typeof interviewRequestSchema>;
@@ -178,7 +178,7 @@ export const debateRequestSchema = z.object({
   topic: z.string().min(1),
   debaters: z.array(z.string()).min(2).max(4),
   wordCount: z.number().min(1500).max(2500).optional(),
-  model: z.enum(["gpt-4o", "gpt-4o-mini", "claude-3-5-sonnet-20241022", "claude-3-opus-20240229"]).optional(),
+  model: z.enum(["gpt-4o", "gpt-4o-mini", "claude-sonnet-4", "claude-haiku-4-5"]).optional(),
 });
 
 export type DebateRequest = z.infer<typeof debateRequestSchema>;
@@ -194,7 +194,7 @@ export const paperWriterRequestSchema = z.object({
   topic: z.string().min(1),
   figureId: z.string().min(1),
   wordCount: z.number().min(100).max(50000),
-  model: z.enum(["gpt-4o", "gpt-4o-mini", "claude-3-5-sonnet-20241022", "claude-3-opus-20240229"]).optional(),
+  model: z.enum(["gpt-4o", "gpt-4o-mini", "claude-sonnet-4", "claude-haiku-4-5"]).optional(),
 });
 
 export type PaperWriterRequest = z.infer<typeof paperWriterRequestSchema>;
@@ -232,7 +232,7 @@ export const fullDocumentRequestSchema = z.object({
   topic: z.string().min(1),
   thinker: z.string().min(1),
   wordCount: z.number().min(100).max(50000),
-  model: z.enum(["gpt-4o", "gpt-4o-mini", "claude-3-5-sonnet-20241022", "claude-3-opus-20240229"]).optional(),
+  model: z.enum(["gpt-4o", "gpt-4o-mini", "claude-sonnet-4", "claude-haiku-4-5"]).optional(),
 });
 
 export type FullDocumentRequest = z.infer<typeof fullDocumentRequestSchema>;

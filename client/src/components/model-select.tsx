@@ -9,8 +9,8 @@ import {
 const MODELS = [
   { id: "gpt-4o", name: "GPT-4o", provider: "OpenAI" },
   { id: "gpt-4o-mini", name: "GPT-4o Mini", provider: "OpenAI" },
-  { id: "claude-3-5-sonnet-20241022", name: "Claude 3.5 Sonnet", provider: "Anthropic" },
-  { id: "claude-3-opus-20240229", name: "Claude 3 Opus", provider: "Anthropic" },
+  { id: "claude-sonnet-4", name: "Claude Sonnet 4", provider: "Anthropic" },
+  { id: "claude-haiku-4-5", name: "Claude Haiku 4.5", provider: "Anthropic" },
 ] as const;
 
 interface ModelSelectProps {

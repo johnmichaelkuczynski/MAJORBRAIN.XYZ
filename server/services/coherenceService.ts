@@ -11,6 +11,7 @@ export interface GlobalSkeleton {
   commitments: string[];
   entities: string[];
   commonDocument?: string;
+  commonDocCitations?: string[];
   databaseContent: {
     positions: string[];
     quotes: string[];
@@ -23,6 +24,44 @@ export interface GlobalSkeleton {
     arguments: string[];
     works: string[];
   }>;
+}
+
+function extractDocumentCitations(documentText: string, maxCitations: number = 20): string[] {
+  const citations: string[] = [];
+  const sentences = documentText
+    .replace(/\r\n/g, "\n")
+    .split(/(?<=[.!?])\s+/)
+    .map(s => s.trim())
+    .filter(s => s.length > 30 && s.length < 500);
+  
+  const keyIndicators = [
+    /\b(argues?|claims?|contends?|maintains?|asserts?|holds?|believes?)\b/i,
+    /\b(therefore|thus|hence|consequently|because|since)\b/i,
+    /\b(must|should|cannot|ought|fundamental|essential|critical)\b/i,
+    /\b(problem|question|challenge|objection|critique|failure|limit)\b/i,
+    /\b(truth|knowledge|reason|rational|moral|justice|freedom|reality)\b/i,
+    /\b(religion|god|faith|divine|sacred|secular|spiritual)\b/i,
+    /["']/,
+  ];
+  
+  const scored = sentences.map(s => {
+    let score = 0;
+    for (const pattern of keyIndicators) {
+      if (pattern.test(s)) score++;
+    }
+    if (s.length > 60 && s.length < 300) score++;
+    return { text: s, score };
+  });
+  
+  scored.sort((a, b) => b.score - a.score);
+  
+  const selected = scored.slice(0, maxCitations);
+  
+  for (let i = 0; i < selected.length; i++) {
+    citations.push(`[CD${i + 1}] "${selected[i].text}"`);
+  }
+  
+  return citations;
 }
 
 export interface ChunkDelta {
@@ -836,15 +875,28 @@ ${coreRules}
 ${perSpeakerSection}
 
 TOPIC: ${skeleton.thesis}
-${commonDocument || skeleton.commonDocument ? `
-=== COMMON DOCUMENT TO DISCUSS (ALL SPEAKERS MUST REFERENCE THIS) ===
-The debaters have been given this document to discuss. They MUST quote from it, refer to specific passages, and argue about its content directly.
+${(() => {
+  const docText = commonDocument || skeleton.commonDocument;
+  const docCitations = skeleton.commonDocCitations || (docText ? extractDocumentCitations(docText) : []);
+  if (!docText || docCitations.length === 0) return "";
+  return `
+=== SOURCE DOCUMENT: VERBATIM QUOTABLE PASSAGES (CITE AS [CD1], [CD2], etc.) ===
+THIS IS THE UPLOADED DOCUMENT THAT ALL SPEAKERS MUST QUOTE FROM DIRECTLY.
+Every debater MUST use [CD#] codes to quote specific passages from this document.
+These are EXACT QUOTES from the source text - use them VERBATIM in quotation marks.
 
-${(commonDocument || skeleton.commonDocument || "").substring(0, 6000)}
-${(commonDocument || skeleton.commonDocument || "").length > 6000 ? "\n[Document continues - focus on key passages above]" : ""}
+${docCitations.join("\n")}
 
-=== END COMMON DOCUMENT ===
-` : ""}
+=== END SOURCE DOCUMENT CITATIONS ===
+
+DOCUMENT CITATION RULES (MANDATORY - ZERO TOLERANCE):
+- EVERY speaker turn MUST include at least one [CD#] citation quoting the source document
+- Use the EXACT text from the [CD#] items above in quotation marks
+- Speakers should AGREE WITH, CHALLENGE, INTERPRET, or BUILD UPON these specific passages
+- [CD#] citations are IN ADDITION TO [P#], [Q#], [A#] database citations
+- A turn without any [CD#] citation is a FAILED turn
+`;
+})()}
 ${dialogueStateStr}
 
 ${priorClaimsStr ? `PRIOR CLAIMS MADE: ${priorClaimsStr}` : ""}
@@ -858,10 +910,14 @@ EVERY speaker's response MUST:
 5. Reference specific [P#] positions when explaining views
 6. EVERY turn by EVERY speaker must include at least 2 citation codes
 7. ONLY cite items from the UNCITED lists above - never re-cite already-used items
+${(commonDocument || skeleton.commonDocument) ? `8. EVERY turn MUST ALSO cite at least one [CD#] passage from the SOURCE DOCUMENT above
+9. [CD#] citations use the VERBATIM text from the uploaded document in quotation marks` : ""}
 
 THE LLM MUST NOT FREELANCE:
 - WRONG (generic cliche): "${allSpeakers![0]}: I believe psychological explanations are complex and involve many factors..."
-- RIGHT (database-grounded): "${allSpeakers![0]}: The DN model fails in psychological explanation [P1]. As I wrote, 'the cause of many a psychological event is known' [Q2]. This argument [A1] shows..."
+${(commonDocument || skeleton.commonDocument) ? `- WRONG (ignoring source document): "${allSpeakers![0]}: Religion serves as a psychological projection [P1]..." (no [CD#] citation!)
+- RIGHT (document-grounded): "${allSpeakers![0]}: The source text states that 'religion cannot be reduced to mere psychological projection' [CD3]. I disagree - as my database positions show, religion IS projection [P1]. As I wrote, 'religious beliefs are wish fulfillments' [Q2]."` 
+: `- RIGHT (database-grounded): "${allSpeakers![0]}: The DN model fails in psychological explanation [P1]. As I wrote, 'the cause of many a psychological event is known' [Q2]. This argument [A1] shows..."`}
 - If a thinker has no database positions on a sub-topic, they acknowledge this honestly.
 
 CRITICAL: ALL ${allSpeakers!.length} speakers must appear. Output ONLY speaker turns. Format: "NAME: text"`;
@@ -909,15 +965,28 @@ ${coreRules}
 ${contentSection}
 
 TOPIC: ${skeleton.thesis}
-${commonDocument || skeleton.commonDocument ? `
-=== COMMON DOCUMENT TO DISCUSS (ALL SPEAKERS MUST REFERENCE THIS) ===
-The debaters have been given this document to discuss. They MUST quote from it, refer to specific passages, and argue about its content directly.
+${(() => {
+  const docText = commonDocument || skeleton.commonDocument;
+  const docCitations = skeleton.commonDocCitations || (docText ? extractDocumentCitations(docText) : []);
+  if (!docText || docCitations.length === 0) return "";
+  return `
+=== SOURCE DOCUMENT: VERBATIM QUOTABLE PASSAGES (CITE AS [CD1], [CD2], etc.) ===
+THIS IS THE UPLOADED DOCUMENT THAT ALL SPEAKERS MUST QUOTE FROM DIRECTLY.
+Every speaker MUST use [CD#] codes to quote specific passages from this document.
+These are EXACT QUOTES from the source text - use them VERBATIM in quotation marks.
 
-${(commonDocument || skeleton.commonDocument || "").substring(0, 6000)}
-${(commonDocument || skeleton.commonDocument || "").length > 6000 ? "\n[Document continues - focus on key passages above]" : ""}
+${docCitations.join("\n")}
 
-=== END COMMON DOCUMENT ===
-` : ""}
+=== END SOURCE DOCUMENT CITATIONS ===
+
+DOCUMENT CITATION RULES (MANDATORY - ZERO TOLERANCE):
+- EVERY speaker turn MUST include at least one [CD#] citation quoting the source document
+- Use the EXACT text from the [CD#] items above in quotation marks
+- Speakers should AGREE WITH, CHALLENGE, INTERPRET, or BUILD UPON these specific passages
+- [CD#] citations are IN ADDITION TO [P#], [Q#], [A#] database citations
+- A turn without any [CD#] citation is a FAILED turn
+`;
+})()}
 ${dialogueStateStr}
 
 ${priorClaimsStr ? `PRIOR CLAIMS MADE: ${priorClaimsStr}` : ""}
@@ -930,14 +999,17 @@ ALL speakers' responses MUST:
 4. Quote directly from [Q#] items when making claims
 5. Reference specific [P#] positions when explaining views
 6. ONLY cite items from the UNCITED lists - never re-cite already-used items
+${(commonDocument || skeleton.commonDocument) ? `7. EVERY turn MUST ALSO cite at least one [CD#] passage from the SOURCE DOCUMENT
+8. [CD#] citations use the VERBATIM text from the uploaded document in quotation marks` : ""}
 
 THE LLM MUST NOT FREELANCE:
 - If a thinker has no database positions on a sub-topic, they acknowledge this honestly.
 - DO NOT substitute generic LLM knowledge about these thinkers.
+${(commonDocument || skeleton.commonDocument) ? `- DO NOT ignore the source document. Every turn MUST quote from it using [CD#] codes.` : ""}
 
 CRITICAL: Output ONLY speaker turns. Format: "NAME: text"
 NO essays. NO paragraphs. ONLY alternating speaker turns.
-EVERY speaker response MUST include at least 2 citation codes [P#], [Q#], or [A#].`;
+EVERY speaker response MUST include at least 2 citation codes [P#], [Q#], or [A#]${(commonDocument || skeleton.commonDocument) ? " AND at least 1 [CD#] source document citation" : ""}.`;
   } else if (enhanced) {
     system = `You ARE ${thinkerName}. Speak in FIRST PERSON.
 
@@ -1001,18 +1073,22 @@ ${priorClaimsStr ? `PRIOR CLAIMS MADE: ${priorClaimsStr}` : ""}
     const isDialogue = sessionType === "dialogue";
     const turnInfo = dialogueState ? Object.entries(dialogueState.turnCount).map(([s, c]) => `${s}: ${c} turns`).join(", ") : "";
     const isDebate = sessionType === "debate";
-    const docRef = (commonDocument || skeleton.commonDocument) ? `\nIMPORTANT: Speakers must DIRECTLY DISCUSS the COMMON DOCUMENT provided above. Quote specific passages, argue about its claims, and apply your database positions TO the document's content.` : "";
+    const hasDoc = !!(commonDocument || skeleton.commonDocument);
+    const docRef = hasDoc ? `
+MANDATORY: Every speaker turn MUST include at least one [CD#] citation from the SOURCE DOCUMENT.
+Quote the exact text from the [CD#] items. Argue about it. Challenge it. Interpret it. Apply database positions TO it.
+A turn without [CD#] is FAILED.` : "";
     user = `Continue the ${allSpeakers!.length}-speaker ${sessionType} on: "${outlineSection}"
 
 Write ${minWords}+ words as alternating speaker turns.
 ALL ${allSpeakers!.length} speakers (${allSpeakers!.join(", ")}) MUST appear in this section.
-Format: "SPEAKER_NAME: [what they say with [P#], [Q#], [A#], [UD#] citations]"
+Format: "SPEAKER_NAME: [what they say with [P#], [Q#], [A#]${hasDoc ? ", [CD#]" : ""} citations]"
 ${docRef}
 ${turnInfo ? `\nTurn counts so far: ${turnInfo}` : ""}
 
 Start with ${allSpeakers![chunkIndex % allSpeakers!.length]}:
 
-BEGIN NOW with speaker turns only. Every speaker must cite their UNCITED database items and uploaded material.`;
+BEGIN NOW with speaker turns only. Every speaker must cite their UNCITED database items${hasDoc ? " AND quote the source document with [CD#] codes" : ""}.`;
   } else if (isConversation) {
     const isDialogue = sessionType === "dialogue";
     const turnInfo = dialogueState ? Object.entries(dialogueState.turnCount).map(([s, c]) => `${s}: ${c} turns`).join(", ") : "";
@@ -1123,6 +1199,8 @@ export async function processWithCoherence(options: CoherenceOptions): Promise<v
     skeleton = await extractGlobalSkeleton(truncatedPrompt, thinkerName, databaseContent, model, perSpeakerContent, allSpeakers);
     if (commonDocument) {
       skeleton.commonDocument = commonDocument;
+      skeleton.commonDocCitations = extractDocumentCitations(commonDocument);
+      console.log(`[COHERENCE] Extracted ${skeleton.commonDocCitations.length} document citations for debate`);
     }
     await updateSessionSkeleton(sessionId, skeleton, totalChunks);
   } catch (err: any) {
@@ -1135,6 +1213,7 @@ export async function processWithCoherence(options: CoherenceOptions): Promise<v
       commitments: [],
       entities: [],
       commonDocument: commonDocument || undefined,
+      commonDocCitations: commonDocument ? extractDocumentCitations(commonDocument) : undefined,
       databaseContent: {
         positions: databaseContent.positions.slice(0, 20).map((p: any, i: number) => `[P${i + 1}] ${p.positionText || p.position_text}`),
         quotes: databaseContent.quotes.slice(0, 20).map((q: any, i: number) => `[Q${i + 1}] "${q.quoteText || q.quote_text}"`),

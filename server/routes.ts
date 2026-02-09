@@ -56,7 +56,7 @@ async function* streamOpenAI(
 async function* streamAnthropic(
   systemPrompt: string,
   messages: Array<{ role: "user" | "assistant"; content: string }>,
-  model: string = "claude-3-5-sonnet-20241022"
+  model: string = "claude-sonnet-4"
 ): AsyncGenerator<string> {
   const stream = await anthropic.messages.stream({
     model,
