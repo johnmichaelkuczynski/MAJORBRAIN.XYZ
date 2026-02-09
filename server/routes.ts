@@ -85,7 +85,13 @@ function setupSSE(res: Response) {
 // Helper to send SSE response with immediate flush
 function sendSSE(res: Response, data: string) {
   res.write(`data: ${JSON.stringify({ content: data })}\n\n`);
-  // Force flush for real-time streaming
+  if (typeof (res as any).flush === 'function') {
+    (res as any).flush();
+  }
+}
+
+function sendArtifactSSE(res: Response, artifactType: string, content: string) {
+  res.write(`data: ${JSON.stringify({ artifact: artifactType, content })}\n\n`);
   if (typeof (res as any).flush === 'function') {
     (res as any).flush();
   }
@@ -944,15 +950,12 @@ Every substantive claim must cite a specific database item. NO FREELANCING.`;
 
     const debaterNames = debaters.map((d: string) => normalizeThinkerName(d));
 
-    // Process per-debater uploaded documents into positions-like items
-    // These get merged into each debater's context so they can cite them as [UD1], [UD2], etc.
     const MAX_DEBATER_DOC_WORDS = 50000;
     const debaterUploadedContent: Record<string, string[]> = {};
     for (let idx = 0; idx < debaters.length; idx++) {
       const debaterId = debaters[idx];
       const docContent = debaterDocuments[debaterId];
       if (docContent && typeof docContent === "string" && docContent.trim().length > 0) {
-        // Enforce server-side word limit
         const words = docContent.trim().split(/\s+/).filter(Boolean);
         const limitedText = words.length > MAX_DEBATER_DOC_WORDS
           ? words.slice(0, MAX_DEBATER_DOC_WORDS).join(" ")
@@ -962,11 +965,116 @@ Every substantive claim must cite a specific database item. NO FREELANCING.`;
       }
     }
 
+    // === ARTIFACT 1: OUTLINE ===
+    const outlineLines: string[] = [];
+    outlineLines.push(`DEBATE OUTLINE: "${topic}"`);
+    outlineLines.push(`Participants: ${debaterNames.join(" vs. ")}`);
+    outlineLines.push(`Target: ${wordCount} words`);
+    outlineLines.push(``);
+    outlineLines.push(`I. OPENING STATEMENTS`);
+    debaterNames.forEach((n: string) => outlineLines.push(`   - ${n} presents their position on the topic`));
+    outlineLines.push(`II. FIRST EXCHANGE - Initial Arguments`);
+    debaterNames.forEach((n: string) => outlineLines.push(`   - ${n} develops their thesis with evidence`));
+    outlineLines.push(`III. REBUTTALS - Direct Responses`);
+    debaterNames.forEach((n: string) => outlineLines.push(`   - ${n} responds to opponents' arguments`));
+    outlineLines.push(`IV. CROSS-EXAMINATION - Probing Questions`);
+    debaterNames.forEach((n: string) => outlineLines.push(`   - ${n} challenges opponents with direct questions`));
+    outlineLines.push(`V. DEEP ENGAGEMENT - Extended Analysis`);
+    debaterNames.forEach((n: string) => outlineLines.push(`   - ${n} provides detailed textual analysis`));
+    outlineLines.push(`VI. CLOSING ARGUMENTS - Final Positions`);
+    debaterNames.forEach((n: string) => outlineLines.push(`   - ${n} summarizes and delivers final assessment`));
+    if (commonDocument) {
+      outlineLines.push(``);
+      outlineLines.push(`DOCUMENT UNDER DISCUSSION: All speakers must quote directly from the uploaded document using [CD#] citation codes.`);
+    }
+    sendArtifactSSE(res, "outline", outlineLines.join("\n"));
+
+    // === ARTIFACT 3: COMMON DOCUMENT QUOTATIONS [CD#] ===
+    let documentCitations: string[] = [];
+    if (commonDocument) {
+      const { extractDocumentCitations } = await import("./services/coherenceService");
+      documentCitations = extractDocumentCitations(commonDocument, 30);
+      const cdArtifact = [`SOURCE DOCUMENT QUOTATIONS`, `Extracted from: "${topic}"`, `Total passages: ${documentCitations.length}`, ``];
+      documentCitations.forEach(cd => cdArtifact.push(cd));
+      sendArtifactSSE(res, "documentCitations", cdArtifact.join("\n"));
+      console.log(`[DEBATE] Extracted ${documentCitations.length} [CD#] citations from common document`);
+    }
+
+    // === ARTIFACT 4: PER-DEBATER DATABASE CONTENT ===
+    const perDebaterArtifact: string[] = [];
+    debaterNames.forEach((name: string, idx: number) => {
+      const ctx = contexts[idx];
+      perDebaterArtifact.push(`=== ${name.toUpperCase()}'S DATABASE CONTENT ===`);
+      perDebaterArtifact.push(``);
+      
+      const positions = ctx.positions || [];
+      const quotes = ctx.quotes || [];
+      const args = ctx.arguments || [];
+      
+      perDebaterArtifact.push(`POSITIONS (${positions.length} total):`);
+      positions.slice(0, 20).forEach((p: any, i: number) => {
+        perDebaterArtifact.push(`[P${i + 1}] ${p.positionText || p.position_text || ''}`);
+      });
+      perDebaterArtifact.push(``);
+      
+      perDebaterArtifact.push(`QUOTES (${quotes.length} total):`);
+      quotes.slice(0, 20).forEach((q: any, i: number) => {
+        perDebaterArtifact.push(`[Q${i + 1}] "${q.quoteText || q.quote_text || ''}"`);
+      });
+      perDebaterArtifact.push(``);
+      
+      perDebaterArtifact.push(`ARGUMENTS (${args.length} total):`);
+      args.slice(0, 10).forEach((a: any, i: number) => {
+        perDebaterArtifact.push(`[A${i + 1}] ${a.argumentText || a.argument_text || ''}`);
+      });
+      
+      const uploadedChunks = debaterUploadedContent[name];
+      if (uploadedChunks && uploadedChunks.length > 0) {
+        perDebaterArtifact.push(``);
+        perDebaterArtifact.push(`UPLOADED MATERIAL (${uploadedChunks.length} items):`);
+        uploadedChunks.forEach((chunk, j) => {
+          perDebaterArtifact.push(`[UD${j + 1}] ${chunk}`);
+        });
+      }
+      
+      perDebaterArtifact.push(``);
+      perDebaterArtifact.push(`---`);
+      perDebaterArtifact.push(``);
+    });
+    sendArtifactSSE(res, "debaterContent", perDebaterArtifact.join("\n"));
+
+    // === ARTIFACT 2: SKELETON (built after context retrieval) ===
+    const skeletonLines: string[] = [];
+    skeletonLines.push(`DEBATE SKELETON`);
+    skeletonLines.push(`Topic: ${topic}`);
+    skeletonLines.push(`Mode: ${enhanced ? "Enhanced (database + elaboration)" : "Strict (database only)"}`);
+    skeletonLines.push(``);
+    debaterNames.forEach((name: string, idx: number) => {
+      const ctx = contexts[idx];
+      const posCount = (ctx.positions || []).length;
+      const quoteCountActual = (ctx.quotes || []).length;
+      const argCount = (ctx.arguments || []).length;
+      skeletonLines.push(`${name}: ${posCount} positions, ${quoteCountActual} quotes, ${argCount} arguments from database`);
+    });
+    if (commonDocument) {
+      skeletonLines.push(``);
+      skeletonLines.push(`Common Document: ${commonDocument.split(/\s+/).length} words, ${documentCitations.length} quotable passages extracted as [CD1]-[CD${documentCitations.length}]`);
+    }
+    skeletonLines.push(``);
+    skeletonLines.push(`STRUCTURE:`);
+    skeletonLines.push(`- Each debater must cite their [P#], [Q#], [A#] database items`);
+    if (commonDocument) {
+      skeletonLines.push(`- Each debater must ALSO cite [CD#] passages from the common document`);
+    }
+    skeletonLines.push(`- No freelancing: every claim must trace to a database item or document passage`);
+    skeletonLines.push(`- Anti-repetition: each turn introduces new evidence`);
+    sendArtifactSSE(res, "skeleton", skeletonLines.join("\n"));
+
+    // === ARTIFACT 5: ACTUAL DEBATE (streamed) ===
     // For outputs > 500 words, use Cross-Chunk Coherence system
     if (wordCount > 500) {
       const { processWithCoherence } = await import("./services/coherenceService");
       
-      // Combine all debaters' content
       const combinedContent = {
         positions: contexts.flatMap(c => c.positions || []),
         quotes: contexts.flatMap(c => c.quotes || []),
@@ -974,7 +1082,6 @@ Every substantive claim must cite a specific database item. NO FREELANCING.`;
         works: contexts.flatMap(c => c.works || []),
       };
 
-      // Build per-speaker content map so each debater gets their own citations
       const perSpeakerContent: Record<string, { positions: any[]; quotes: any[]; arguments: any[]; works: any[] }> = {};
       debaterNames.forEach((name: string, idx: number) => {
         const uploadedItems = debaterUploadedContent[name] || [];
@@ -994,7 +1101,6 @@ Every substantive claim must cite a specific database item. NO FREELANCING.`;
         };
       });
 
-      // Add uploaded content to combined content
       const allUploadedPositions = Object.values(debaterUploadedContent).flat().map((text, i) => ({
         positionText: text,
         position_text: text,
@@ -1010,7 +1116,7 @@ Every substantive claim must cite a specific database item. NO FREELANCING.`;
         secondSpeaker: debaterNames[1] || debaterNames[0],
         allSpeakers: debaterNames,
         perSpeakerContent,
-        userPrompt: `Create a DEBATE on "${topic}" between ${debaterNames.join(", ")}.${commonDocument ? " The debaters must discuss the COMMON DOCUMENT provided." : ""}`,
+        userPrompt: `Create a DEBATE on "${topic}" between ${debaterNames.join(", ")}.${commonDocument ? " The debaters must discuss the COMMON DOCUMENT provided and quote from it using [CD#] codes." : ""}`,
         commonDocument: commonDocument || undefined,
         targetWords: wordCount,
         model: model as any,
@@ -1273,10 +1379,22 @@ Now write a ${wordCount}-word interview with ${intervieweeName} on "${topic}". R
       const fileName = req.file.originalname.toLowerCase();
 
       if (mimeType === "text/plain" || fileName.endsWith(".txt") || fileName.endsWith(".md")) {
-        text = buffer.toString("utf-8");
+        try {
+          text = buffer.toString("utf-8");
+          if (text.includes('\ufffd')) {
+            text = buffer.toString("latin1");
+          }
+        } catch {
+          text = buffer.toString("latin1");
+        }
+        text = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").trim();
       } else if (mimeType === "application/pdf" || fileName.endsWith(".pdf")) {
-        // For PDF, we'd need pdf-parse but keeping it simple for now
-        text = buffer.toString("utf-8");
+        try {
+          text = buffer.toString("utf-8");
+          if (text.includes('\ufffd')) text = buffer.toString("latin1");
+        } catch {
+          text = buffer.toString("latin1");
+        }
       } else if (fileName.endsWith(".doc") || fileName.endsWith(".docx")) {
         // For Word docs, using mammoth
         const mammoth = await import("mammoth");

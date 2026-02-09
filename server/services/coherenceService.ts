@@ -26,7 +26,7 @@ export interface GlobalSkeleton {
   }>;
 }
 
-function extractDocumentCitations(documentText: string, maxCitations: number = 20): string[] {
+export function extractDocumentCitations(documentText: string, maxCitations: number = 20): string[] {
   const citations: string[] = [];
   const sentences = documentText
     .replace(/\r\n/g, "\n")
@@ -1092,17 +1092,21 @@ BEGIN NOW with speaker turns only. Every speaker must cite their UNCITED databas
   } else if (isConversation) {
     const isDialogue = sessionType === "dialogue";
     const turnInfo = dialogueState ? Object.entries(dialogueState.turnCount).map(([s, c]) => `${s}: ${c} turns`).join(", ") : "";
-    const docRef2 = (commonDocument || skeleton.commonDocument) ? `\nIMPORTANT: Speakers must DIRECTLY DISCUSS the COMMON DOCUMENT provided above. Quote specific passages, argue about its claims, and apply your database positions TO the document's content.` : "";
+    const hasDoc2 = !!(commonDocument || skeleton.commonDocument);
+    const docRef2 = hasDoc2 ? `
+MANDATORY: Every speaker turn MUST include at least one [CD#] citation from the SOURCE DOCUMENT.
+Quote the exact text from the [CD#] items. Argue about it. Challenge it. Interpret it. Apply database positions TO it.
+A turn without [CD#] is FAILED.` : "";
     user = `Continue the ${sessionType} on: "${outlineSection}"
 
 Write ${minWords}+ words as alternating speaker turns.
-Format: "SPEAKER_NAME: [what they say]"
+Format: "SPEAKER_NAME: [what they say with [P#], [Q#], [A#]${hasDoc2 ? ", [CD#]" : ""} citations]"
 ${docRef2}
 ${turnInfo ? `\nTurn counts so far: ${turnInfo}` : ""}
 
 Start with ${chunkIndex % 2 === 0 ? (sessionType === "interview" ? secondSpeaker : thinkerName) : (sessionType === "interview" ? thinkerName : secondSpeaker)}:
 
-BEGIN NOW with speaker turns only.`;
+BEGIN NOW with speaker turns only. Every speaker must cite database items${hasDoc2 ? " AND quote the source document with [CD#] codes" : ""}.`;
   } else {
     user = `Section: "${outlineSection}"
 

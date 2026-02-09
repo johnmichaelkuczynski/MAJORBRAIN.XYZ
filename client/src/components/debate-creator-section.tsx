@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Play, Loader2, Plus, X } from "lucide-react";
+import { Play, Loader2, Plus, X, Download, Copy, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
@@ -11,10 +11,18 @@ import { ModelSelect } from "./model-select";
 import { GenerationControls } from "./generation-controls";
 import { StreamingOutput } from "./streaming-output";
 import { FileUpload } from "./file-upload";
-import { streamResponseSimple, downloadText, copyToClipboard } from "@/lib/streaming";
+import { downloadText, copyToClipboard } from "@/lib/streaming";
 import { THINKERS } from "@shared/schema";
 
 const MAX_DEBATER_WORDS = 50000;
+
+interface DebateArtifacts {
+  outline: string;
+  skeleton: string;
+  documentCitations: string;
+  debaterContent: string;
+  debate: string;
+}
 
 function DebaterFileUpload({ debaterId, onContent, content, disabled }: {
   debaterId: string;
@@ -77,18 +85,79 @@ function DebaterFileUpload({ debaterId, onContent, content, disabled }: {
   );
 }
 
+function ArtifactPanel({ title, content, artifactKey, isStreaming }: {
+  title: string;
+  content: string;
+  artifactKey: string;
+  isStreaming?: boolean;
+}) {
+  if (!content && !isStreaming) return null;
+
+  const wordCount = content ? content.split(/\s+/).filter(Boolean).length : 0;
+
+  return (
+    <div className="border rounded-md" data-testid={`artifact-${artifactKey}`}>
+      <div className="flex items-center justify-between gap-2 p-3 border-b bg-muted/30">
+        <div className="flex items-center gap-2">
+          <FileText className="h-4 w-4 text-primary" />
+          <span className="text-sm font-semibold">{title}</span>
+          {content && (
+            <Badge variant="outline" className="text-xs">{wordCount.toLocaleString()} words</Badge>
+          )}
+        </div>
+        {content && (
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => copyToClipboard(content)}
+              data-testid={`button-copy-${artifactKey}`}
+            >
+              <Copy className="h-3 w-3" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => downloadText(content, `debate-${artifactKey}-${Date.now()}.txt`)}
+              data-testid={`button-download-${artifactKey}`}
+            >
+              <Download className="h-3 w-3" />
+            </Button>
+          </div>
+        )}
+      </div>
+      <div className="p-3 max-h-[300px] overflow-y-auto">
+        {content ? (
+          <pre className="text-sm whitespace-pre-wrap font-sans" data-testid={`text-${artifactKey}`}>{content}</pre>
+        ) : isStreaming ? (
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span className="text-sm">Generating...</span>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 export function DebateCreatorSection() {
   const [topic, setTopic] = useState("");
   const [documentContent, setDocumentContent] = useState("");
   const [debaters, setDebaters] = useState<string[]>([]);
   const [currentDebater, setCurrentDebater] = useState("");
   const [selectedModel, setSelectedModel] = useState("gpt-4o");
-  const [output, setOutput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [wordCount, setWordCount] = useState(2000);
   const [quoteCount, setQuoteCount] = useState(10);
   const [enhanced, setEnhanced] = useState(true);
   const [debaterDocuments, setDebaterDocuments] = useState<Record<string, string>>({});
+  const [artifacts, setArtifacts] = useState<DebateArtifacts>({
+    outline: "",
+    skeleton: "",
+    documentCitations: "",
+    debaterContent: "",
+    debate: "",
+  });
 
   const addDebater = () => {
     if (currentDebater && !debaters.includes(currentDebater) && debaters.length < 4) {
@@ -124,7 +193,7 @@ export function DebateCreatorSection() {
     if (!topic.trim() || debaters.length < 2 || isStreaming) return;
 
     setIsStreaming(true);
-    setOutput("");
+    setArtifacts({ outline: "", skeleton: "", documentCitations: "", debaterContent: "", debate: "" });
 
     try {
       const fullTopic = documentContent ? `${topic}\n\n--- DOCUMENT TO DISCUSS ---\n${documentContent}` : topic;
@@ -155,30 +224,79 @@ export function DebateCreatorSection() {
 
       if (!response.ok) throw new Error("Failed to generate debate");
 
-      for await (const chunk of streamResponseSimple(response)) {
-        setOutput(prev => prev + chunk);
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error("No response body");
+
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          const dataStr = line.slice(6).trim();
+          if (dataStr === "[DONE]") continue;
+
+          try {
+            const parsed = JSON.parse(dataStr);
+
+            if (parsed.artifact) {
+              const key = parsed.artifact as keyof DebateArtifacts;
+              if (key in artifacts || ["outline", "skeleton", "documentCitations", "debaterContent"].includes(key)) {
+                setArtifacts(prev => ({ ...prev, [key]: parsed.content }));
+              }
+            } else if (parsed.content) {
+              setArtifacts(prev => ({ ...prev, debate: prev.debate + parsed.content }));
+            }
+          } catch {
+            // skip unparseable lines
+          }
+        }
       }
     } catch (error) {
       console.error("Debate error:", error);
-      setOutput("Error generating debate. Please try again.");
+      setArtifacts(prev => ({ ...prev, debate: prev.debate + "\n\nError generating debate. Please try again." }));
     } finally {
       setIsStreaming(false);
     }
   };
 
-  const handleClear = () => { setTopic(""); setDocumentContent(""); setDebaters([]); setDebaterDocuments({}); setOutput(""); };
-  const handleCopy = () => { copyToClipboard(output); };
-  const handleDownload = () => { downloadText(output, `philosophical-debate-${Date.now()}.txt`); };
+  const handleClear = () => {
+    setTopic("");
+    setDocumentContent("");
+    setDebaters([]);
+    setDebaterDocuments({});
+    setArtifacts({ outline: "", skeleton: "", documentCitations: "", debaterContent: "", debate: "" });
+  };
+
+  const hasAnyContent = Object.values(artifacts).some(v => v.length > 0);
+
+  const handleDownloadAll = () => {
+    const allContent = [
+      artifacts.outline ? `=== ARTIFACT 1: OUTLINE ===\n\n${artifacts.outline}` : "",
+      artifacts.skeleton ? `\n\n=== ARTIFACT 2: SKELETON ===\n\n${artifacts.skeleton}` : "",
+      artifacts.documentCitations ? `\n\n=== ARTIFACT 3: SOURCE DOCUMENT QUOTATIONS ===\n\n${artifacts.documentCitations}` : "",
+      artifacts.debaterContent ? `\n\n=== ARTIFACT 4: PER-DEBATER DATABASE CONTENT ===\n\n${artifacts.debaterContent}` : "",
+      artifacts.debate ? `\n\n=== ARTIFACT 5: THE DEBATE ===\n\n${artifacts.debate}` : "",
+    ].filter(Boolean).join("");
+    downloadText(allContent, `complete-debate-${Date.now()}.txt`);
+  };
 
   return (
     <Card className="p-6">
       <SectionHeader
         title="Debate Creator"
-        subtitle="Generate structured debates between philosophers (up to 100,000 words)"
+        subtitle="Generate structured debates between philosophers (up to 100,000 words) with 5 downloadable artifacts"
         onClear={handleClear}
-        onCopy={handleCopy}
-        onDownload={handleDownload}
-        hasContent={!!output}
+        onCopy={() => copyToClipboard(artifacts.debate)}
+        onDownload={handleDownloadAll}
+        hasContent={hasAnyContent}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -187,7 +305,7 @@ export function DebateCreatorSection() {
             <Label className="mb-1 block text-base font-semibold">Common Document for Debate</Label>
             <p className="text-xs text-muted-foreground mb-3">
               Upload the document, article, or text that all debaters will discuss and argue about.
-              Every participant will reference this shared material.
+              Every participant will quote directly from this shared material using [CD#] citation codes.
             </p>
             <FileUpload onFileContent={handleFileContent} disabled={isStreaming} />
             {documentContent && (
@@ -257,9 +375,49 @@ export function DebateCreatorSection() {
           </Button>
         </div>
 
-        <div>
-          <Label className="mb-2 block">Output</Label>
-          <StreamingOutput content={output} isStreaming={isStreaming} placeholder="Debate will appear here..." />
+        <div className="space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <Label className="block">Debate Artifacts (5 outputs)</Label>
+            {hasAnyContent && (
+              <Button variant="outline" size="sm" onClick={handleDownloadAll} data-testid="button-download-all">
+                <Download className="h-3 w-3 mr-1" /> Download All
+              </Button>
+            )}
+          </div>
+
+          <ArtifactPanel title="1. Outline" content={artifacts.outline} artifactKey="outline" isStreaming={isStreaming && !artifacts.outline} />
+          <ArtifactPanel title="2. Skeleton" content={artifacts.skeleton} artifactKey="skeleton" isStreaming={isStreaming && !artifacts.skeleton && !!artifacts.outline} />
+          <ArtifactPanel title="3. Source Document Quotations [CD#]" content={artifacts.documentCitations} artifactKey="documentCitations" isStreaming={isStreaming && !artifacts.documentCitations && !!artifacts.skeleton && !!documentContent} />
+          <ArtifactPanel title="4. Per-Debater Database Content" content={artifacts.debaterContent} artifactKey="debaterContent" isStreaming={isStreaming && !artifacts.debaterContent && !!artifacts.outline} />
+          
+          <div className="border rounded-md" data-testid="artifact-debate">
+            <div className="flex items-center justify-between gap-2 p-3 border-b bg-muted/30">
+              <div className="flex items-center gap-2">
+                <FileText className="h-4 w-4 text-primary" />
+                <span className="text-sm font-semibold">5. The Debate</span>
+                {artifacts.debate && (
+                  <Badge variant="outline" className="text-xs">
+                    {artifacts.debate.split(/\s+/).filter(Boolean).length.toLocaleString()} words
+                  </Badge>
+                )}
+              </div>
+              {artifacts.debate && (
+                <div className="flex items-center gap-1">
+                  <Button variant="ghost" size="icon" onClick={() => copyToClipboard(artifacts.debate)} data-testid="button-copy-debate">
+                    <Copy className="h-3 w-3" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => downloadText(artifacts.debate, `debate-text-${Date.now()}.txt`)} data-testid="button-download-debate">
+                    <Download className="h-3 w-3" />
+                  </Button>
+                </div>
+              )}
+            </div>
+            <StreamingOutput 
+              content={artifacts.debate} 
+              isStreaming={isStreaming && !!artifacts.debaterContent} 
+              placeholder="The debate will stream here after artifacts are prepared..." 
+            />
+          </div>
         </div>
       </div>
     </Card>
