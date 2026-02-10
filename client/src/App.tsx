@@ -9,7 +9,6 @@ import { GlobalControls } from "@/components/global-controls";
 import { ContentTransferProvider } from "@/lib/content-transfer";
 import { MainChatSection } from "@/components/main-chat-section";
 import { ModelBuilderSection } from "@/components/model-builder-section";
-import { DialogueCreatorSection } from "@/components/dialogue-creator-section";
 import { DebateCreatorSection } from "@/components/debate-creator-section";
 import { InterviewCreatorSection } from "@/components/interview-creator-section";
 import { QuoteGeneratorSection } from "@/components/quote-generator-section";
@@ -61,8 +60,6 @@ function App() {
                   <div id="model-builder-section">
                     <ModelBuilderSection />
                   </div>
-                  
-                  <DialogueCreatorSection />
                   
                   <DebateCreatorSection />
                   

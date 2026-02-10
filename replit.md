@@ -1,7 +1,7 @@
 # ASK THEM - Philosophical AI Platform
 
 ## Overview
-ASK THEM is a comprehensive philosophical AI platform that allows users to interact with 50+ philosophers through AI-powered chat, generate dialogues, debates, interviews, and academic papers grounded in actual philosophical writings.
+ASK THEM is a comprehensive philosophical AI platform that allows users to interact with 50+ philosophers through AI-powered chat, generate debates, interviews, and academic papers grounded in actual philosophical writings.
 
 ## Architecture
 
@@ -27,16 +27,15 @@ ASK THEM is a comprehensive philosophical AI platform that allows users to inter
 ## Key Features (in order on page)
 1. **Main Chat (Kuczynski default)** - Chat with philosophers grounded in their writings
 2. **Model Builder** - Build formal/informal logical models
-3. **Dialogue Creator** - Generate philosophical dialogues (100-50,000 words)
-4. **Debate Creator** - Generate structured debates (1500-2500 words)
-5. **Interview Creator** - Generate interview-format discussions (500-50,000 words)
-6. **Quote Generator** - Extract quotes from uploaded documents
-7. **Position Generator** - Retrieve philosophical positions from database
-8. **Argument Generator** - Retrieve and format arguments from database
-9. **Outline Generator** - Generate structured outlines
-10. **Full Document Generator** - Generate comprehensive documents (100-50,000 words)
-11. **Document Analyzer** - Analyze uploaded documents to extract CORE content for priority database ingestion
-12. **AI Chat** - General purpose AI assistant
+3. **Debate Creator** - Generate structured debates (1500-2500 words)
+4. **Interview Creator** - Generate interview-format discussions (500-50,000 words)
+5. **Quote Generator** - Extract quotes from uploaded documents
+6. **Position Generator** - Retrieve philosophical positions from database
+7. **Argument Generator** - Retrieve and format arguments from database
+8. **Outline Generator** - Generate structured outlines
+9. **Full Document Generator** - Generate comprehensive documents (100-50,000 words)
+10. **Document Analyzer** - Analyze uploaded documents to extract CORE content for priority database ingestion
+11. **AI Chat** - General purpose AI assistant
 
 ## Ingest Folder
 
@@ -94,7 +93,6 @@ Examples:
 
 ### Generation (all streaming)
 - `POST /api/model-builder` - Build logical models
-- `POST /api/dialogue/generate` - Generate dialogues
 - `POST /api/debate/generate` - Generate debates
 - `POST /api/interview/generate` - Generate interviews
 - `POST /api/outline/generate` - Generate outlines

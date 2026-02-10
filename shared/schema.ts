@@ -118,7 +118,6 @@ export const personaSettings = pgTable("persona_settings", {
   quoteFrequency: text("quote_frequency").default("moderate"),
   selectedModel: text("selected_model").default("gpt-4o"),
   enhancedMode: boolean("enhanced_mode").default(false),
-  dialogueMode: boolean("dialogue_mode").default(false),
 });
 
 export type PersonaSettings = typeof personaSettings.$inferSelect;
@@ -154,15 +153,6 @@ export const modelBuilderRequestSchema = z.object({
 });
 
 export type ModelBuilderRequest = z.infer<typeof modelBuilderRequestSchema>;
-
-export const dialogueRequestSchema = z.object({
-  topic: z.string().min(1),
-  thinkers: z.array(z.string()).min(2),
-  wordCount: z.number().min(100).max(50000),
-  model: z.enum(["gpt-4o", "gpt-4o-mini", "claude-sonnet-4", "claude-haiku-4-5"]).optional(),
-});
-
-export type DialogueRequest = z.infer<typeof dialogueRequestSchema>;
 
 export const interviewRequestSchema = z.object({
   topic: z.string().min(1),
