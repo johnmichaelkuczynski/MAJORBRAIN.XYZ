@@ -29,7 +29,7 @@ interface SkeletonData {
 }
 
 export function MainChatSection() {
-  const [selectedThinker, setSelectedThinker] = useState("kuczynski");
+  const [selectedThinker, setSelectedThinker] = useState("russell");
   const [selectedModel, setSelectedModel] = useState("gpt-4o");
   const [input, setInput] = useState("");
   const [documentContent, setDocumentContent] = useState("");
