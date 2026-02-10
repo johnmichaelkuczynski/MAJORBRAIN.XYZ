@@ -154,16 +154,6 @@ export const modelBuilderRequestSchema = z.object({
 
 export type ModelBuilderRequest = z.infer<typeof modelBuilderRequestSchema>;
 
-export const interviewRequestSchema = z.object({
-  topic: z.string().min(1),
-  interviewee: z.string().min(1),
-  interviewer: z.string().optional(),
-  wordCount: z.number().min(500).max(50000),
-  model: z.enum(["gpt-4o", "gpt-4o-mini", "claude-sonnet-4", "claude-haiku-4-5"]).optional(),
-});
-
-export type InterviewRequest = z.infer<typeof interviewRequestSchema>;
-
 export const debateRequestSchema = z.object({
   topic: z.string().min(1),
   debaters: z.array(z.string()).min(2).max(4),

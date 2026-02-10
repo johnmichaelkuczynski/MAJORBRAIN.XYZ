@@ -5,7 +5,7 @@ import { db } from "./db";
 import { 
   positions, quotes, textChunks, arguments_, works, THINKERS,
   chatRequestSchema, modelBuilderRequestSchema,
-  debateRequestSchema, interviewRequestSchema, outlineGeneratorRequestSchema,
+  debateRequestSchema, outlineGeneratorRequestSchema,
   fullDocumentRequestSchema
 } from "@shared/schema";
 import { eq, ilike, or, sql } from "drizzle-orm";
@@ -776,10 +776,13 @@ CRITICAL: DO NOT USE ANY MARKDOWN FORMATTING. No # headers, no * bullets, no - l
 
   // Debate Generator (streaming) - USES DATABASE AS SKELETON
   app.post("/api/debate/generate", async (req: Request, res: Response) => {
-    const { topic: rawTopic, debaters, wordCount = 2000, quoteCount = 20, enhanced = false, model = "gpt-4o", debaterDocuments = {}, commonDocument: rawCommonDoc = "", responseLengths = {} } = req.body;
+    const { topic: rawTopic, debaters, wordCount = 2000, quoteCount = 20, enhanced = false, model = "gpt-4o", debaterDocuments = {}, commonDocument: rawCommonDoc = "", responseLengths = {}, exchangeMode = "debate", interviewer: interviewerParam } = req.body;
 
-    if (!rawTopic || !debaters || debaters.length < 2) {
-      return res.status(400).json({ error: "Topic and at least 2 debaters are required" });
+    const isInterview = exchangeMode === "interview";
+    const minParticipants = isInterview ? 1 : 2;
+
+    if (!rawTopic || !debaters || debaters.length < minParticipants) {
+      return res.status(400).json({ error: `Topic and at least ${minParticipants} participant(s) are required` });
     }
 
     setupSSE(res);
@@ -830,24 +833,71 @@ CRITICAL: DO NOT USE ANY MARKDOWN FORMATTING. No # headers, no * bullets, no - l
       }
     }
 
+    // For interview mode, build the proper participant list
+    let interviewerName = "";
+    let intervieweeName = "";
+    if (isInterview) {
+      intervieweeName = debaterNames[0];
+      if (interviewerParam && interviewerParam !== "user") {
+        interviewerName = normalizeThinkerName(interviewerParam);
+        if (!debaterNames.includes(interviewerName)) {
+          debaterNames.unshift(interviewerName);
+          const interviewerCtx = await getThinkerContext(interviewerParam, searchTopic, Math.floor(quoteCount / 2));
+          contexts.unshift(interviewerCtx);
+        }
+      } else {
+        interviewerName = "Interviewer";
+        if (!debaterNames.includes("Interviewer")) {
+          debaterNames.unshift("Interviewer");
+          contexts.unshift({ positions: [], quotes: [], arguments: [], works: [] });
+        }
+      }
+    }
+
+    const modeLabel = exchangeMode === "dialogue" ? "DIALOGUE" : exchangeMode === "interview" ? "INTERVIEW" : "DEBATE";
+    const participantSep = exchangeMode === "debate" ? " vs. " : exchangeMode === "dialogue" ? " & " : " interviews ";
+
     // === ARTIFACT 1: OUTLINE ===
     const outlineLines: string[] = [];
-    outlineLines.push(`DEBATE OUTLINE: "${topic}"`);
-    outlineLines.push(`Participants: ${debaterNames.join(" vs. ")}`);
+    outlineLines.push(`${modeLabel} OUTLINE: "${topic}"`);
+    outlineLines.push(`Participants: ${isInterview ? `${interviewerName} interviews ${intervieweeName}` : debaterNames.join(participantSep)}`);
     outlineLines.push(`Target: ${wordCount} words`);
     outlineLines.push(``);
-    outlineLines.push(`I. OPENING STATEMENTS`);
-    debaterNames.forEach((n: string) => outlineLines.push(`   - ${n} presents their position on the topic`));
-    outlineLines.push(`II. FIRST EXCHANGE - Initial Arguments`);
-    debaterNames.forEach((n: string) => outlineLines.push(`   - ${n} develops their thesis with evidence`));
-    outlineLines.push(`III. REBUTTALS - Direct Responses`);
-    debaterNames.forEach((n: string) => outlineLines.push(`   - ${n} responds to opponents' arguments`));
-    outlineLines.push(`IV. CROSS-EXAMINATION - Probing Questions`);
-    debaterNames.forEach((n: string) => outlineLines.push(`   - ${n} challenges opponents with direct questions`));
-    outlineLines.push(`V. DEEP ENGAGEMENT - Extended Analysis`);
-    debaterNames.forEach((n: string) => outlineLines.push(`   - ${n} provides detailed textual analysis`));
-    outlineLines.push(`VI. CLOSING ARGUMENTS - Final Positions`);
-    debaterNames.forEach((n: string) => outlineLines.push(`   - ${n} summarizes and delivers final assessment`));
+
+    if (exchangeMode === "interview") {
+      outlineLines.push(`I. INTRODUCTION - ${interviewerName} introduces the topic`);
+      outlineLines.push(`II. OPENING QUESTIONS - Broad questions about the interviewee's views`);
+      outlineLines.push(`III. DEEP DIVE - Probing follow-up questions based on responses`);
+      outlineLines.push(`IV. CHALLENGES - ${interviewerName} pushes back on key claims`);
+      outlineLines.push(`V. SYNTHESIS - Drawing connections between ideas discussed`);
+      outlineLines.push(`VI. CLOSING - Final thoughts and summary`);
+    } else if (exchangeMode === "dialogue") {
+      outlineLines.push(`I. OPENING REFLECTIONS`);
+      debaterNames.forEach((n: string) => outlineLines.push(`   - ${n} shares their initial perspective`));
+      outlineLines.push(`II. EXPLORATION - Building on Each Other's Ideas`);
+      debaterNames.forEach((n: string) => outlineLines.push(`   - ${n} develops shared themes with evidence`));
+      outlineLines.push(`III. DEEPENING - Finding Common Ground & Distinctions`);
+      debaterNames.forEach((n: string) => outlineLines.push(`   - ${n} identifies agreements and nuanced differences`));
+      outlineLines.push(`IV. SYNTHESIS - Cooperative Construction`);
+      debaterNames.forEach((n: string) => outlineLines.push(`   - ${n} contributes to a shared understanding`));
+      outlineLines.push(`V. EXTENDED ANALYSIS - Drawing Implications`);
+      debaterNames.forEach((n: string) => outlineLines.push(`   - ${n} explores consequences and applications`));
+      outlineLines.push(`VI. CLOSING REFLECTIONS - What We've Learned Together`);
+      debaterNames.forEach((n: string) => outlineLines.push(`   - ${n} summarizes insights gained from the exchange`));
+    } else {
+      outlineLines.push(`I. OPENING STATEMENTS`);
+      debaterNames.forEach((n: string) => outlineLines.push(`   - ${n} presents their position on the topic`));
+      outlineLines.push(`II. FIRST EXCHANGE - Initial Arguments`);
+      debaterNames.forEach((n: string) => outlineLines.push(`   - ${n} develops their thesis with evidence`));
+      outlineLines.push(`III. REBUTTALS - Direct Responses`);
+      debaterNames.forEach((n: string) => outlineLines.push(`   - ${n} responds to opponents' arguments`));
+      outlineLines.push(`IV. CROSS-EXAMINATION - Probing Questions`);
+      debaterNames.forEach((n: string) => outlineLines.push(`   - ${n} challenges opponents with direct questions`));
+      outlineLines.push(`V. DEEP ENGAGEMENT - Extended Analysis`);
+      debaterNames.forEach((n: string) => outlineLines.push(`   - ${n} provides detailed textual analysis`));
+      outlineLines.push(`VI. CLOSING ARGUMENTS - Final Positions`);
+      debaterNames.forEach((n: string) => outlineLines.push(`   - ${n} summarizes and delivers final assessment`));
+    }
     if (commonDocument) {
       outlineLines.push(``);
       outlineLines.push(`DOCUMENT UNDER DISCUSSION: All speakers must quote directly from the uploaded document using [CD#] citation codes.`);
@@ -910,7 +960,7 @@ CRITICAL: DO NOT USE ANY MARKDOWN FORMATTING. No # headers, no * bullets, no - l
 
     // === ARTIFACT 2: SKELETON (built after context retrieval) ===
     const skeletonLines: string[] = [];
-    skeletonLines.push(`DEBATE SKELETON`);
+    skeletonLines.push(`${modeLabel} SKELETON`);
     skeletonLines.push(`Topic: ${topic}`);
     skeletonLines.push(`Mode: ${enhanced ? "Enhanced (database + elaboration)" : "Strict (database only)"}`);
     skeletonLines.push(``);
@@ -927,9 +977,9 @@ CRITICAL: DO NOT USE ANY MARKDOWN FORMATTING. No # headers, no * bullets, no - l
     }
     skeletonLines.push(``);
     skeletonLines.push(`STRUCTURE:`);
-    skeletonLines.push(`- Each debater must cite their [P#], [Q#], [A#] database items`);
+    skeletonLines.push(`- Each participant must cite their [P#], [Q#], [A#] database items`);
     if (commonDocument) {
-      skeletonLines.push(`- Each debater must ALSO cite [CD#] passages from the common document`);
+      skeletonLines.push(`- Each participant must ALSO cite [CD#] passages from the common document`);
     }
     skeletonLines.push(`- No freelancing: every claim must trace to a database item or document passage`);
     skeletonLines.push(`- Anti-repetition: each turn introduces new evidence`);
@@ -974,15 +1024,19 @@ CRITICAL: DO NOT USE ANY MARKDOWN FORMATTING. No # headers, no * bullets, no - l
       }));
       combinedContent.positions = [...combinedContent.positions, ...allUploadedPositions];
 
+      const modeWord = exchangeMode === "dialogue" ? "DIALOGUE" : exchangeMode === "interview" ? "INTERVIEW" : "DEBATE";
+      const modeJoiner = exchangeMode === "debate" ? " and " : exchangeMode === "dialogue" ? " and " : " interviewing ";
+      const participantDesc = isInterview ? `${interviewerName}${modeJoiner}${intervieweeName}` : debaterNames.join(modeJoiner);
+
       const debateUserPrompt = commonDocument
         ? `USER'S EXACT INSTRUCTIONS (FOLLOW TO THE LETTER): "${topic}"
 
-DEBATE between ${debaterNames.join(" and ")}. 
+${modeWord} between ${participantDesc}. 
 MINIMUM WORD COUNT: ${wordCount} words. This is a MINIMUM, not an approximation. The output MUST be at least ${wordCount} words.
-The debaters MUST debate the uploaded document PARAGRAPH BY PARAGRAPH. Each major claim from the document must be QUOTED VERBATIM and then debated fiercely. Do NOT generate a generic debate - the document IS the debate.`
+The participants MUST discuss the uploaded document PARAGRAPH BY PARAGRAPH. Each major claim from the document must be QUOTED VERBATIM and then discussed. Do NOT generate a generic ${modeWord.toLowerCase()} - the document IS the ${modeWord.toLowerCase()}.`
         : `USER'S EXACT INSTRUCTIONS (FOLLOW TO THE LETTER): "${topic}"
 
-DEBATE between ${debaterNames.join(" and ")}.
+${modeWord} between ${participantDesc}.
 MINIMUM WORD COUNT: ${wordCount} words. This is a MINIMUM, not an approximation. The output MUST be at least ${wordCount} words.`;
 
       const responseLengthsByName: Record<string, number> = {};
@@ -996,7 +1050,7 @@ MINIMUM WORD COUNT: ${wordCount} words. This is a MINIMUM, not an approximation.
       }
 
       await processWithCoherence({
-        sessionType: "debate",
+        sessionType: exchangeMode === "interview" ? "interview" : exchangeMode === "dialogue" ? "dialogue" : "debate",
         thinkerId: debaters.join("-vs-"),
         thinkerName: debaterNames[0],
         secondSpeaker: debaterNames[1] || debaterNames[0],
@@ -1009,6 +1063,7 @@ MINIMUM WORD COUNT: ${wordCount} words. This is a MINIMUM, not an approximation.
         enhanced,
         databaseContent: combinedContent,
         responseLengths: Object.keys(responseLengthsByName).length > 0 ? responseLengthsByName : undefined,
+        exchangeMode: exchangeMode as string,
         res,
       });
 
@@ -1074,23 +1129,80 @@ Be FIERCE - praise what deserves praise, attack what deserves attack.
 `;
     }
 
-    const systemPrompt = `You are creating a formal philosophical DEBATE between ${debaterNames.length} speakers: ${speakerList}.
+    const shortModeWord = exchangeMode === "dialogue" ? "DIALOGUE" : exchangeMode === "interview" ? "INTERVIEW" : "DEBATE";
+    const shortModeDesc = exchangeMode === "dialogue" 
+      ? "cooperative philosophical DIALOGUE" 
+      : exchangeMode === "interview" 
+      ? "in-depth philosophical INTERVIEW" 
+      : "formal philosophical DEBATE";
 
-=== YOUR ROLE ===
-You are the VOICE, not the BRAIN. The database content below IS the brain.
-Every substantive claim must trace to a specific database item or uploaded material.
-You DO NOT fabricate what thinkers "probably" think. You DO NOT substitute generic LLM knowledge.
+    let modeSpecificFormat = "";
+    let modeSpecificStructure = "";
+    let modeSpecificRules = "";
 
-FORMAT REQUIREMENT - THIS IS A DEBATE, NOT AN ESSAY:
+    if (exchangeMode === "interview") {
+      modeSpecificFormat = `FORMAT REQUIREMENT - THIS IS AN INTERVIEW, NOT AN ESSAY:
+${interviewerName} asks questions and ${intervieweeName} answers. Format EXACTLY like this:
+
+${interviewerName}: [Question or follow-up based on the interviewee's previous answer]
+
+${intervieweeName}: [In-depth response citing database items and exploring the topic]
+
+[Continue alternating - interviewer asks, interviewee responds]`;
+
+      modeSpecificStructure = hasCommonDoc ? `INTERVIEW STRUCTURE (DOCUMENT-BASED):
+Go through the uploaded document. The interviewer asks about specific passages:
+1. Quote the passage
+2. Ask the interviewee to respond to its claims
+3. Follow up with probing questions
+` : `INTERVIEW STRUCTURE:
+1. INTRODUCTION - ${interviewerName} introduces the topic and opens with a broad question
+2. EXPLORATION - Probing questions that dig deeper into the interviewee's views
+3. CHALLENGES - ${interviewerName} pushes back on key claims with counterarguments
+4. SYNTHESIS - Drawing connections and asking about implications
+5. CLOSING - Final reflections from the interviewee
+`;
+
+      modeSpecificRules = `5. ${interviewerName} should ask penetrating, challenging questions - not softball ones
+6. ${intervieweeName} responds substantively, always citing database content
+7. The interview should feel like a real probing conversation, not a lecture`;
+    } else if (exchangeMode === "dialogue") {
+      modeSpecificFormat = `FORMAT REQUIREMENT - THIS IS A DIALOGUE, NOT A DEBATE:
+ALL ${debaterNames.length} speakers take turns cooperatively. Format EXACTLY like this:
+
+${debaterNames[0]}: [Their perspective, building on the shared exploration]
+
+${debaterNames[1]}: [Their contribution, connecting to what came before]
+
+[Continue rotating through ALL speakers]`;
+
+      modeSpecificStructure = hasCommonDoc ? `DIALOGUE STRUCTURE (DOCUMENT-BASED):
+Go through the uploaded document cooperatively. For each passage:
+1. Quote the passage
+2. Each speaker offers their perspective, building on others' insights
+3. Move to the next passage
+` : `DIALOGUE STRUCTURE:
+1. OPENING REFLECTIONS - Each speaker shares their initial perspective
+2. EXPLORATION - Building on each other's ideas, finding connections
+3. DEEPENING - Identifying common ground and nuanced differences
+4. SYNTHESIS - Constructing shared understanding together
+5. CLOSING REFLECTIONS - What was learned from the exchange
+`;
+
+      modeSpecificRules = `5. Speakers should BUILD ON each other's ideas, not attack them
+6. Look for common ground and complementary perspectives
+7. ALL ${debaterNames.length} speakers MUST appear throughout - do NOT skip anyone`;
+    } else {
+      modeSpecificFormat = `FORMAT REQUIREMENT - THIS IS A DEBATE, NOT AN ESSAY:
 ALL ${debaterNames.length} speakers take turns. Format EXACTLY like this:
 
 ${debaterNames[0]}: [Their argument quoting from the document and citing database items]
 
 ${debaterNames[1]}: [Their response quoting from the document and citing database items]
 
-[Continue rotating through ALL speakers]
+[Continue rotating through ALL speakers]`;
 
-${hasCommonDoc ? `DEBATE STRUCTURE (DOCUMENT-BASED):
+      modeSpecificStructure = hasCommonDoc ? `DEBATE STRUCTURE (DOCUMENT-BASED):
 Go through the uploaded document paragraph by paragraph. For each paragraph:
 1. Quote the paragraph
 2. Each speaker reacts to its claims using their own philosophical framework
@@ -1100,7 +1212,22 @@ Go through the uploaded document paragraph by paragraph. For each paragraph:
 2. REBUTTALS - Each debater responds to the others' points
 3. CROSS-EXAMINATION - Direct questions and answers between debaters
 4. CLOSING ARGUMENTS - Each debater summarizes their position
-`}
+`;
+
+      modeSpecificRules = `5. Speakers should DISAGREE and CHALLENGE each other
+6. ALL ${debaterNames.length} speakers MUST appear throughout - do NOT skip anyone`;
+    }
+
+    const systemPrompt = `You are creating a ${shortModeDesc} between ${debaterNames.length} speakers: ${speakerList}.
+
+=== YOUR ROLE ===
+You are the VOICE, not the BRAIN. The database content below IS the brain.
+Every substantive claim must trace to a specific database item or uploaded material.
+You DO NOT fabricate what thinkers "probably" think. You DO NOT substitute generic LLM knowledge.
+
+${modeSpecificFormat}
+
+${modeSpecificStructure}
 WORD COUNT REQUIREMENT (ABSOLUTE MINIMUM - NON-NEGOTIABLE):
 The output MUST be AT LEAST ${wordCount} words. This is a MINIMUM floor, not an approximation.
 ${wordCount} words is the LEAST acceptable length. More is acceptable. Less is a FAILURE.
@@ -1115,8 +1242,7 @@ CONTENT RULES:
 2. ${modeInstruction}
 3. Each speaker argues FROM THEIR OWN PERSPECTIVE in first person
 4. NO MARKDOWN - plain text only
-5. Speakers should DISAGREE and CHALLENGE each other
-6. ALL ${debaterNames.length} speakers MUST appear throughout - do NOT skip anyone
+${modeSpecificRules}
 7. DO NOT FREELANCE - every substantive claim must cite a database item or uploaded material
 8. You MUST include citation codes [P1], [Q1], [A1] in your output to show which database items you are using
 9. Every claim must trace to a specific [P#], [Q#], or [A#] from the database content below
@@ -1127,13 +1253,13 @@ ANTI-REPETITION RULES:
 
 ${allSkeletons}
 
-Write AT LEAST ${wordCount} words. The user's instructions are: "${topic}". ALL ${debaterNames.length} speakers (${speakerList}) take turns.${hasCommonDoc ? " CRITICAL: The debate must go through the uploaded document paragraph by paragraph, quoting each paragraph before debating it. The document is the ENTIRE PURPOSE of this debate. Do NOT generate a generic debate." : ""}`;
+Write AT LEAST ${wordCount} words. The user's instructions are: "${topic}". ALL ${debaterNames.length} speakers (${speakerList}) take turns.${hasCommonDoc ? ` CRITICAL: The ${shortModeWord.toLowerCase()} must go through the uploaded document paragraph by paragraph, quoting each paragraph before discussing it. The document is the ENTIRE PURPOSE of this ${shortModeWord.toLowerCase()}. Do NOT generate a generic ${shortModeWord.toLowerCase()}.` : ""}`;
 
     try {
       if (isOpenAIModel(model)) {
         const messages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [
           { role: "system", content: systemPrompt },
-          { role: "user", content: `Create the ${wordCount}-word debate.` }
+          { role: "user", content: `Create the ${wordCount}-word ${shortModeWord.toLowerCase()}.` }
         ];
 
         for await (const chunk of streamOpenAI(messages, model)) {
@@ -1141,7 +1267,7 @@ Write AT LEAST ${wordCount} words. The user's instructions are: "${topic}". ALL 
         }
       } else {
         const messages: Array<{ role: "user" | "assistant"; content: string }> = [
-          { role: "user", content: `Create the ${wordCount}-word debate.` }
+          { role: "user", content: `Create the ${wordCount}-word ${shortModeWord.toLowerCase()}.` }
         ];
 
         for await (const chunk of streamAnthropic(systemPrompt, messages, model)) {
@@ -1153,108 +1279,6 @@ Write AT LEAST ${wordCount} words. The user's instructions are: "${topic}". ALL 
       res.end();
     } catch (error: any) {
       console.error("Debate error:", error);
-      sendSSE(res, `Error: ${error.message}`);
-      res.write("data: [DONE]\n\n");
-      res.end();
-    }
-  });
-
-  // Interview Generator (streaming) - USES DATABASE AS SKELETON
-  app.post("/api/interview/generate", async (req: Request, res: Response) => {
-    const { topic, interviewee, interviewer, wordCount = 2000, quoteCount = 20, enhanced = false, model = "gpt-4o" } = req.body;
-
-    if (!topic || !interviewee) {
-      return res.status(400).json({ error: "Topic and interviewee are required" });
-    }
-
-    setupSSE(res);
-
-    const context = await getThinkerContext(interviewee, topic, quoteCount);
-    const intervieweeName = normalizeThinkerName(interviewee);
-    const interviewerName = interviewer ? normalizeThinkerName(interviewer) : "Interviewer";
-
-    // For outputs > 500 words, use Cross-Chunk Coherence system
-    if (wordCount > 500) {
-      const { processWithCoherence } = await import("./services/coherenceService");
-      
-      await processWithCoherence({
-        sessionType: "interview",
-        thinkerId: interviewee,
-        thinkerName: intervieweeName,
-        secondSpeaker: interviewerName,
-        userPrompt: `Create an in-depth INTERVIEW with ${intervieweeName} on "${topic}".`,
-        targetWords: wordCount,
-        model: model as any,
-        enhanced: true,
-        databaseContent: {
-          positions: context.positions || [],
-          quotes: context.quotes || [],
-          arguments: context.arguments || [],
-          works: context.works || [],
-        },
-        res,
-      });
-
-      res.write("data: [DONE]\n\n");
-      res.end();
-      return;
-    }
-
-    // Short output path
-    const skeleton = buildDatabaseSkeleton(context, intervieweeName, quoteCount);
-    
-    const systemPrompt = `You are creating an in-depth INTERVIEW with clear Q&A format.
-
-ABSOLUTE WORD COUNT REQUIREMENT - NO EXCEPTIONS:
-The interview MUST be AT LEAST ${wordCount} words. This is a MINIMUM, not a target. NEVER write less. NO EXCEPTIONS.
-
-MANDATORY INTERVIEW FORMAT:
-- This is a Q&A interview with clear turns between interviewer and interviewee
-- Each turn MUST start with the speaker's name followed by a colon
-- Format: "${interviewerName}: [question]" then "${intervieweeName}: [answer]"
-- The interviewer asks probing questions; the interviewee gives substantive answers
-- NOT an essay - it must look like a real interview transcript
-
-EXAMPLE:
-${interviewerName}: What is your view on...?
-${intervieweeName}: That's an excellent question. I believe...
-${interviewerName}: Could you elaborate on...?
-${intervieweeName}: Certainly. In my work, I argue...
-
-CRITICAL INSTRUCTIONS:
-1. The interview MUST be built from the database content provided below as the SKELETON
-2. ${intervieweeName} should quote and reference their actual positions [P#], quotes [Q#], arguments [A#] and works [W#]
-3. The interviewer should ask follow-up questions based on the interviewee's answers
-4. DO NOT USE ANY MARKDOWN - plain text only
-
-${skeleton}
-
-Now write a ${wordCount}-word interview with ${intervieweeName} on "${topic}". Remember: Q&A format with names and colons!`;
-
-    try {
-      if (isOpenAIModel(model)) {
-        const messages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: `Create the ${wordCount}-word interview.` }
-        ];
-
-        for await (const chunk of streamOpenAI(messages, model)) {
-          sendSSE(res, chunk);
-        }
-      } else {
-        const messages: Array<{ role: "user" | "assistant"; content: string }> = [
-          { role: "user", content: `Create the ${wordCount}-word interview.` }
-        ];
-
-        for await (const chunk of streamAnthropic(systemPrompt, messages, model)) {
-          sendSSE(res, chunk);
-        }
-      }
-
-      res.write("data: [DONE]\n\n");
-      res.end();
-    } catch (error: any) {
-      console.error("Interview error:", error);
       sendSSE(res, `Error: ${error.message}`);
       res.write("data: [DONE]\n\n");
       res.end();

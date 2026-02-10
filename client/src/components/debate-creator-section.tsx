@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Play, Loader2, Plus, X, Download, Copy, FileText, Volume2, Square, Pause } from "lucide-react";
+import { Play, Loader2, Plus, X, Download, Copy, FileText, Volume2, Square, Pause, Swords, Handshake, Mic } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
@@ -15,6 +15,41 @@ import { StreamingOutput } from "./streaming-output";
 import { FileUpload } from "./file-upload";
 import { downloadText, copyToClipboard } from "@/lib/streaming";
 import { THINKERS } from "@shared/schema";
+
+type ExchangeMode = "debate" | "dialogue" | "interview";
+
+const MODE_CONFIG = {
+  debate: {
+    label: "Debate",
+    icon: Swords,
+    description: "Antagonistic exchange where thinkers challenge and critique each other's positions",
+    participants: "Debaters",
+    minParticipants: 2,
+    maxParticipants: 4,
+    artifactLabel: "The Debate",
+    buttonLabel: "Generate Debate",
+  },
+  dialogue: {
+    label: "Dialogue",
+    icon: Handshake,
+    description: "Cooperative exchange where thinkers explore ideas together and build on each other's insights",
+    participants: "Speakers",
+    minParticipants: 2,
+    maxParticipants: 4,
+    artifactLabel: "The Dialogue",
+    buttonLabel: "Generate Dialogue",
+  },
+  interview: {
+    label: "Interview",
+    icon: Mic,
+    description: "One thinker (or the user) interviews another thinker with probing questions",
+    participants: "Participants",
+    minParticipants: 2,
+    maxParticipants: 2,
+    artifactLabel: "The Interview",
+    buttonLabel: "Generate Interview",
+  },
+};
 
 const MAX_DEBATER_WORDS = 50000;
 
@@ -143,10 +178,12 @@ function ArtifactPanel({ title, content, artifactKey, isStreaming }: {
 }
 
 export function DebateCreatorSection() {
+  const [exchangeMode, setExchangeMode] = useState<ExchangeMode>("debate");
   const [topic, setTopic] = useState("");
   const [documentContent, setDocumentContent] = useState("");
   const [debaters, setDebaters] = useState<string[]>([]);
   const [currentDebater, setCurrentDebater] = useState("");
+  const [interviewer, setInterviewer] = useState<"user" | string>("user");
   const [selectedModel, setSelectedModel] = useState("gpt-4o");
   const [isStreaming, setIsStreaming] = useState(false);
   const [wordCount, setWordCount] = useState(2000);
@@ -155,6 +192,8 @@ export function DebateCreatorSection() {
   const [responseLengthMode, setResponseLengthMode] = useState<"default" | "custom">("default");
   const [responseLengths, setResponseLengths] = useState<Record<string, number>>({});
   const [debaterDocuments, setDebaterDocuments] = useState<Record<string, string>>({});
+  
+  const modeConfig = MODE_CONFIG[exchangeMode];
   const [artifacts, setArtifacts] = useState<DebateArtifacts>({
     outline: "",
     skeleton: "",
@@ -170,7 +209,7 @@ export function DebateCreatorSection() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const addDebater = () => {
-    if (currentDebater && !debaters.includes(currentDebater) && debaters.length < 4) {
+    if (currentDebater && !debaters.includes(currentDebater) && debaters.length < modeConfig.maxParticipants) {
       setDebaters(prev => [...prev, currentDebater]);
       setCurrentDebater("");
     }
@@ -205,7 +244,7 @@ export function DebateCreatorSection() {
   };
 
   const handleGenerate = async () => {
-    if (!topic.trim() || debaters.length < 2 || isStreaming) return;
+    if (!topic.trim() || debaters.length < modeConfig.minParticipants || isStreaming) return;
 
     setIsStreaming(true);
     setArtifacts({ outline: "", skeleton: "", documentCitations: "", debaterContent: "", debate: "" });
@@ -233,6 +272,8 @@ export function DebateCreatorSection() {
           quoteCount,
           enhanced,
           model: selectedModel,
+          exchangeMode,
+          ...(exchangeMode === "interview" && { interviewer }),
           ...(documentContent.trim() && { commonDocument: documentContent.trim() }),
           ...(Object.keys(debaterDocsPayload).length > 0 && { debaterDocuments: debaterDocsPayload }),
           ...(responseLengthsPayload && { responseLengths: responseLengthsPayload }),
@@ -406,6 +447,7 @@ export function DebateCreatorSection() {
     setTopic("");
     setDocumentContent("");
     setDebaters([]);
+    setInterviewer("user");
     setDebaterDocuments({});
     setResponseLengths({});
     setResponseLengthMode("default");
@@ -432,23 +474,53 @@ export function DebateCreatorSection() {
     downloadText(allContent, `complete-debate-${Date.now()}.txt`);
   };
 
+  const handleModeChange = (mode: ExchangeMode) => {
+    setExchangeMode(mode);
+    if (mode === "interview" && debaters.length > 2) {
+      setDebaters(prev => prev.slice(0, 2));
+    }
+    setInterviewer("user");
+  };
+
   return (
     <Card className="p-6">
       <SectionHeader
-        title="Debate Creator"
-        subtitle="Generate structured debates between philosophers (up to 100,000 words) with 5 downloadable artifacts"
+        title="Exchange Creator"
+        subtitle="Generate debates, dialogues, or interviews between thinkers with 5 downloadable artifacts"
         onClear={handleClear}
         onCopy={() => copyToClipboard(artifacts.debate)}
         onDownload={handleDownloadAll}
         hasContent={hasAnyContent}
       />
 
+      <div className="flex gap-2 mb-6" data-testid="exchange-mode-selector">
+        {(Object.keys(MODE_CONFIG) as ExchangeMode[]).map(mode => {
+          const config = MODE_CONFIG[mode];
+          const Icon = config.icon;
+          const isActive = exchangeMode === mode;
+          return (
+            <Button
+              key={mode}
+              variant={isActive ? "default" : "outline"}
+              onClick={() => handleModeChange(mode)}
+              className={`flex-1 ${isActive ? "" : ""}`}
+              disabled={isStreaming}
+              data-testid={`button-mode-${mode}`}
+            >
+              <Icon className="h-4 w-4 mr-2" />
+              {config.label}
+            </Button>
+          );
+        })}
+      </div>
+      <p className="text-sm text-muted-foreground mb-4">{modeConfig.description}</p>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-4">
           <div className="border border-dashed border-primary/40 rounded-md p-4 bg-primary/5">
-            <Label className="mb-1 block text-base font-semibold">Common Document for Debate</Label>
+            <Label className="mb-1 block text-base font-semibold">Common Document</Label>
             <p className="text-xs text-muted-foreground mb-3">
-              Upload the document, article, or text that all debaters will discuss and argue about.
+              Upload a document, article, or text that all participants will discuss.
               Every participant will quote directly from this shared material using [CD#] citation codes.
             </p>
             <FileUpload onFileContent={handleFileContent} disabled={isStreaming} />
@@ -458,42 +530,91 @@ export function DebateCreatorSection() {
           </div>
 
           <div>
-            <Label className="mb-2 block">Debate Topic / Instructions</Label>
+            <Label className="mb-2 block">Topic / Instructions</Label>
             <Textarea 
               value={topic} 
               onChange={(e) => setTopic(e.target.value)} 
-              placeholder="Enter the debate topic, thesis to argue, or instructions for how to discuss the uploaded document..."
+              placeholder={exchangeMode === "interview" 
+                ? "Enter the interview topic or questions you want explored..." 
+                : exchangeMode === "dialogue"
+                ? "Enter the topic for cooperative exploration..."
+                : "Enter the debate topic, thesis to argue, or instructions..."}
               className="min-h-[200px] text-base"
               data-testid="input-debate-topic" 
             />
           </div>
 
-          <div>
-            <Label className="mb-2 block">Debaters (2-4 participants)</Label>
-            <div className="flex gap-2 mb-2">
-              <ThinkerSelect value={currentDebater} onChange={setCurrentDebater} className="flex-1" placeholder="Add a debater..." excludeIds={debaters} />
-              <Button onClick={addDebater} disabled={!currentDebater || debaters.length >= 4} size="icon" variant="outline" data-testid="button-add-debater">
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {debaters.map(id => {
-                const thinker = THINKERS.find(t => t.id === id);
-                return (
-                  <Badge key={id} variant="secondary" className="flex items-center gap-1">
-                    {thinker?.name}
-                    <button onClick={() => removeDebater(id)} className="ml-1 hover:text-destructive" data-testid={`button-remove-debater-${id}`}>
-                      <X className="h-3 w-3" />
-                    </button>
-                  </Badge>
-                );
-              })}
-            </div>
-          </div>
-
-          {debaters.length >= 2 && (
+          {exchangeMode === "interview" ? (
             <div className="space-y-3">
-              <Label className="block text-sm font-medium">Response Length per Debater</Label>
+              <Label className="mb-2 block">Interview Setup</Label>
+              <div>
+                <Label className="text-sm text-muted-foreground mb-1 block">Interviewer</Label>
+                <Select value={interviewer} onValueChange={setInterviewer} disabled={isStreaming}>
+                  <SelectTrigger data-testid="select-interviewer">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="user">User (You ask the questions)</SelectItem>
+                    {THINKERS.filter(t => !debaters.includes(t.id) || debaters[0] === t.id).map(t => (
+                      <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-sm text-muted-foreground mb-1 block">Interviewee</Label>
+                <ThinkerSelect 
+                  value={debaters[0] || ""} 
+                  onChange={(val) => {
+                    setDebaters(val ? [val] : []);
+                  }} 
+                  className="w-full" 
+                  placeholder="Choose who to interview..."
+                  excludeIds={interviewer !== "user" ? [interviewer] : []}
+                />
+                {debaters[0] && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    <Badge variant="secondary" className="flex items-center gap-1">
+                      {interviewer === "user" ? "User" : THINKERS.find(t => t.id === interviewer)?.name || interviewer} (Interviewer)
+                    </Badge>
+                    <Badge variant="secondary" className="flex items-center gap-1">
+                      {THINKERS.find(t => t.id === debaters[0])?.name} (Interviewee)
+                      <button onClick={() => setDebaters([])} className="ml-1 hover:text-destructive" data-testid="button-remove-interviewee">
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div>
+              <Label className="mb-2 block">{modeConfig.participants} ({modeConfig.minParticipants}-{modeConfig.maxParticipants} participants)</Label>
+              <div className="flex gap-2 mb-2">
+                <ThinkerSelect value={currentDebater} onChange={setCurrentDebater} className="flex-1" placeholder={`Add a ${modeConfig.participants.toLowerCase().slice(0, -1)}...`} excludeIds={debaters} />
+                <Button onClick={addDebater} disabled={!currentDebater || debaters.length >= modeConfig.maxParticipants} size="icon" variant="outline" data-testid="button-add-debater">
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {debaters.map(id => {
+                  const thinker = THINKERS.find(t => t.id === id);
+                  return (
+                    <Badge key={id} variant="secondary" className="flex items-center gap-1">
+                      {thinker?.name}
+                      <button onClick={() => removeDebater(id)} className="ml-1 hover:text-destructive" data-testid={`button-remove-debater-${id}`}>
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {debaters.length >= modeConfig.minParticipants && (
+            <div className="space-y-3">
+              <Label className="block text-sm font-medium">Response Length per Participant</Label>
               <Select value={responseLengthMode} onValueChange={(v) => setResponseLengthMode(v as "default" | "custom")}>
                 <SelectTrigger data-testid="select-response-length-mode">
                   <SelectValue />
@@ -546,10 +667,10 @@ export function DebateCreatorSection() {
 
           {debaters.length > 0 && (
             <div className="space-y-3">
-              <Label className="block text-sm font-medium">Individual Debater Material (Optional, up to {MAX_DEBATER_WORDS.toLocaleString()} words each)</Label>
+              <Label className="block text-sm font-medium">Individual Participant Material (Optional, up to {MAX_DEBATER_WORDS.toLocaleString()} words each)</Label>
               <p className="text-xs text-muted-foreground">
-                Upload material specific to one debater only (e.g., that thinker's own writings).
-                This is separate from the common document above, which all debaters share.
+                Upload material specific to one participant only (e.g., that thinker's own writings).
+                This is separate from the common document above, which all participants share.
               </p>
               {debaters.map(id => (
                 <DebaterFileUpload
@@ -567,14 +688,14 @@ export function DebateCreatorSection() {
 
           <ModelSelect value={selectedModel} onChange={setSelectedModel} className="w-full" />
 
-          <Button onClick={handleGenerate} disabled={!topic.trim() || debaters.length < 2 || isStreaming} className="w-full" data-testid="button-generate-debate">
-            {isStreaming ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Generating...</> : <><Play className="mr-2 h-4 w-4" />Generate Debate</>}
+          <Button onClick={handleGenerate} disabled={!topic.trim() || debaters.length < modeConfig.minParticipants || isStreaming} className="w-full" data-testid="button-generate-debate">
+            {isStreaming ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Generating...</> : <><Play className="mr-2 h-4 w-4" />{modeConfig.buttonLabel}</>}
           </Button>
         </div>
 
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-2">
-            <Label className="block">Debate Artifacts (5 outputs)</Label>
+            <Label className="block">{modeConfig.label} Artifacts (5 outputs)</Label>
             {hasAnyContent && (
               <Button variant="outline" size="sm" onClick={handleDownloadAll} data-testid="button-download-all">
                 <Download className="h-3 w-3 mr-1" /> Download All
@@ -585,13 +706,13 @@ export function DebateCreatorSection() {
           <ArtifactPanel title="1. Outline" content={artifacts.outline} artifactKey="outline" isStreaming={isStreaming && !artifacts.outline} />
           <ArtifactPanel title="2. Skeleton" content={artifacts.skeleton} artifactKey="skeleton" isStreaming={isStreaming && !artifacts.skeleton && !!artifacts.outline} />
           <ArtifactPanel title="3. Source Document Quotations [CD#]" content={artifacts.documentCitations} artifactKey="documentCitations" isStreaming={isStreaming && !artifacts.documentCitations && !!artifacts.skeleton && !!documentContent} />
-          <ArtifactPanel title="4. Per-Debater Database Content" content={artifacts.debaterContent} artifactKey="debaterContent" isStreaming={isStreaming && !artifacts.debaterContent && !!artifacts.outline} />
+          <ArtifactPanel title="4. Per-Participant Database Content" content={artifacts.debaterContent} artifactKey="debaterContent" isStreaming={isStreaming && !artifacts.debaterContent && !!artifacts.outline} />
           
           <div className="border rounded-md" data-testid="artifact-debate">
             <div className="flex items-center justify-between gap-2 p-3 border-b bg-muted/30">
               <div className="flex items-center gap-2">
                 <FileText className="h-4 w-4 text-primary" />
-                <span className="text-sm font-semibold">5. The Debate</span>
+                <span className="text-sm font-semibold">5. {modeConfig.artifactLabel}</span>
                 {artifacts.debate && (
                   <Badge variant="outline" className="text-xs">
                     {artifacts.debate.split(/\s+/).filter(Boolean).length.toLocaleString()} words

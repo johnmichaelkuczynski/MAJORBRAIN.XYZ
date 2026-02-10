@@ -417,6 +417,7 @@ export interface CoherenceOptions {
     works: any[];
   };
   responseLengths?: Record<string, number>;
+  exchangeMode?: string;
   res: Response;
 }
 

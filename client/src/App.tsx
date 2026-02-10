@@ -10,7 +10,6 @@ import { ContentTransferProvider } from "@/lib/content-transfer";
 import { MainChatSection } from "@/components/main-chat-section";
 import { ModelBuilderSection } from "@/components/model-builder-section";
 import { DebateCreatorSection } from "@/components/debate-creator-section";
-import { InterviewCreatorSection } from "@/components/interview-creator-section";
 import { QuoteGeneratorSection } from "@/components/quote-generator-section";
 import { PositionGeneratorSection } from "@/components/position-generator-section";
 import { ArgumentGeneratorSection } from "@/components/argument-generator-section";
@@ -61,8 +60,6 @@ function App() {
                   </div>
                   
                   <DebateCreatorSection />
-                  
-                  <InterviewCreatorSection />
                   
                   <QuoteGeneratorSection />
                   
