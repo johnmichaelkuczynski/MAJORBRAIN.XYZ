@@ -64,6 +64,19 @@ export function extractDocumentCitations(documentText: string, maxCitations: num
   return citations;
 }
 
+export function extractDocumentParagraphs(documentText: string): string[] {
+  const raw = documentText.replace(/\r\n/g, "\n");
+  const paragraphs = raw.split(/\n\s*\n/)
+    .map(p => p.trim())
+    .filter(p => p.length > 20);
+  
+  if (paragraphs.length === 0) {
+    const lines = raw.split("\n").map(l => l.trim()).filter(l => l.length > 20);
+    return lines;
+  }
+  return paragraphs;
+}
+
 export interface ChunkDelta {
   claimsAdded: string[];
   termsUsed: string[];
@@ -634,7 +647,8 @@ function buildChunkPrompt(
   secondSpeaker: string = "Interviewer",
   allSpeakers?: string[],
   dialogueState?: DialogueStateTracker,
-  commonDocument?: string
+  commonDocument?: string,
+  chunkParagraphs?: string[]
 ): { system: string; user: string } {
   const priorClaimsStr = priorDeltas.flatMap(d => d.claimsAdded || []).join("; ");
   const minWords = Math.ceil(targetWordsPerChunk * 1.2);
@@ -877,13 +891,40 @@ ${perSpeakerSection}
 TOPIC: ${skeleton.thesis}
 ${(() => {
   const docText = commonDocument || skeleton.commonDocument;
-  const docCitations = skeleton.commonDocCitations || (docText ? extractDocumentCitations(docText) : []);
-  if (!docText || docCitations.length === 0) return "";
+  if (!docText) return "";
+  if (chunkParagraphs && chunkParagraphs.length > 0) {
+    let paragraphSection = `
+=== PARAGRAPHS FROM THE UPLOADED DOCUMENT TO DEBATE IN THIS SECTION ===
+THE UPLOADED DOCUMENT IS THE ENTIRE PURPOSE OF THIS DEBATE.
+You MUST quote DIRECTLY and LIBERALLY from each paragraph below, then have the speakers debate its merits.
+
+STRUCTURE FOR EACH PARAGRAPH:
+1. First, QUOTE the paragraph (or its key sentences) verbatim
+2. Then each speaker reacts to, challenges, defends, or critiques the specific claims in that paragraph
+3. Speakers draw on their database positions to argue FOR or AGAINST what the paragraph says
+
+`;
+    chunkParagraphs.forEach((para, idx) => {
+      paragraphSection += `--- PARAGRAPH ${chunkIndex * chunkParagraphs.length + idx + 1} ---\n"${para}"\n\n`;
+    });
+    paragraphSection += `=== END PARAGRAPHS ===
+
+MANDATORY RULES FOR DOCUMENT-BASED DEBATE:
+- QUOTE each paragraph above verbatim (or near-verbatim) before debating it
+- Do NOT skip any paragraph - every one listed above must be quoted and discussed
+- Speakers must react to the SPECIFIC CLAIMS in each paragraph, not talk generically
+- Each speaker applies their own philosophical framework (from their database items) to the paragraph's claims
+- Be FIERCE - praise what deserves praise, attack what deserves attack
+- NO generic philosophical musings - every statement must be about the SPECIFIC TEXT quoted
+`;
+    return paragraphSection;
+  }
+  const docCitations = skeleton.commonDocCitations || extractDocumentCitations(docText);
+  if (docCitations.length === 0) return "";
   return `
-=== SOURCE DOCUMENT: QUOTABLE PASSAGES (CITE AS [CD1], [CD2], etc.) ===
+=== SOURCE DOCUMENT: QUOTABLE PASSAGES ===
 THIS IS THE UPLOADED DOCUMENT THAT ALL SPEAKERS MUST QUOTE FROM DIRECTLY.
-The uploaded document is the ENTIRE PURPOSE of this debate. Every debater MUST use [CD#] codes to quote specific passages.
-These are EXACT QUOTES from the source text - use them VERBATIM in quotation marks.
+The uploaded document is the ENTIRE PURPOSE of this debate.
 
 ${docCitations.join("\n")}
 
@@ -893,38 +934,33 @@ ${docText.length > 10000 ? "\n[Document continues...]" : ""}
 
 === END SOURCE DOCUMENT ===
 
-DOCUMENT CITATION RULES (MANDATORY - ZERO TOLERANCE):
-- EVERY speaker turn MUST include at least one [CD#] citation quoting the source document
-- Use the EXACT text from the [CD#] items above in quotation marks
+DOCUMENT RULES (MANDATORY):
+- EVERY speaker turn MUST quote from the source document above
 - Speakers should AGREE WITH, CHALLENGE, INTERPRET, or BUILD UPON these specific passages
-- [CD#] citations are IN ADDITION TO [P#], [Q#], [A#] database citations
-- A turn without any [CD#] citation is a FAILED turn - the uploaded document is the ENTIRE POINT of this debate
+- A turn without quoting the document is a FAILED turn
 `;
 })()}
 ${dialogueStateStr}
 
 ${priorClaimsStr ? `PRIOR CLAIMS MADE: ${priorClaimsStr}` : ""}
 
-=== GROUNDING REQUIREMENTS (ZERO TOLERANCE FOR VIOLATION) ===
+=== GROUNDING REQUIREMENTS ===
 EVERY speaker's response MUST:
-1. CITE their own database content with codes: [P1], [P2], [Q1], [Q2], [A1], etc.
+1. CITE their own database content with codes like [P1], [Q1], [A1] etc.
 2. USE the EXACT positions, quotes, and arguments listed under THEIR name above
 3. NOT fabricate or invent positions not in the database
-4. Quote directly from [Q#] items when making claims
-5. Reference specific [P#] positions when explaining views
-6. EVERY turn by EVERY speaker must include at least 2 citation codes
-7. ONLY cite items from the UNCITED lists above - never re-cite already-used items
-${(commonDocument || skeleton.commonDocument) ? `8. EVERY turn MUST ALSO cite at least one [CD#] passage from the SOURCE DOCUMENT above
-9. [CD#] citations use the VERBATIM text from the uploaded document in quotation marks` : ""}
+4. ONLY cite items from the UNCITED lists above - never re-cite already-used items
+${(commonDocument || skeleton.commonDocument) ? `5. EVERY turn MUST ALSO quote from the uploaded document paragraphs above` : ""}
 
 THE LLM MUST NOT FREELANCE:
-- WRONG (generic cliche): "${allSpeakers![0]}: I believe psychological explanations are complex and involve many factors..."
-${(commonDocument || skeleton.commonDocument) ? `- WRONG (ignoring source document): "${allSpeakers![0]}: Religion serves as a psychological projection [P1]..." (no [CD#] citation!)
-- RIGHT (document-grounded): "${allSpeakers![0]}: The source text states that 'religion cannot be reduced to mere psychological projection' [CD3]. I disagree - as my database positions show, religion IS projection [P1]. As I wrote, 'religious beliefs are wish fulfillments' [Q2]."` 
+- WRONG (generic): "${allSpeakers![0]}: I believe psychological explanations are complex..."
+${(commonDocument || skeleton.commonDocument) ? `- WRONG (ignoring document): "${allSpeakers![0]}: Religion serves as a psychological projection [P1]..." (doesn't quote the document!)
+- RIGHT (document-grounded): "${allSpeakers![0]}: The text states 'religion cannot be reduced to mere psychological projection.' I disagree. As my database shows, religion IS projection [P1]. As I wrote, 'religious beliefs are wish fulfillments' [Q2]."` 
 : `- RIGHT (database-grounded): "${allSpeakers![0]}: The DN model fails in psychological explanation [P1]. As I wrote, 'the cause of many a psychological event is known' [Q2]. This argument [A1] shows..."`}
 - If a thinker has no database positions on a sub-topic, they acknowledge this honestly.
 
-CRITICAL: ALL ${allSpeakers!.length} speakers must appear. Output ONLY speaker turns. Format: "NAME: text"`;
+CRITICAL: ALL ${allSpeakers!.length} speakers must appear. Output ONLY speaker turns. Format: "NAME: text"
+Do NOT include citation codes like [P1], [CD3] etc in your output text. Just quote naturally.`;
   } else if (isConversation) {
     const hasPerSpeaker = sessionType === "dialogue" && skeleton.perSpeakerContent && allSpeakers;
     let contentSection = "";
@@ -971,13 +1007,39 @@ ${contentSection}
 TOPIC: ${skeleton.thesis}
 ${(() => {
   const docText = commonDocument || skeleton.commonDocument;
-  const docCitations = skeleton.commonDocCitations || (docText ? extractDocumentCitations(docText) : []);
-  if (!docText || docCitations.length === 0) return "";
+  if (!docText) return "";
+  if (chunkParagraphs && chunkParagraphs.length > 0) {
+    let paragraphSection = `
+=== PARAGRAPHS FROM THE UPLOADED DOCUMENT TO DEBATE IN THIS SECTION ===
+THE UPLOADED DOCUMENT IS THE ENTIRE PURPOSE OF THIS DEBATE.
+You MUST quote DIRECTLY and LIBERALLY from each paragraph below, then have the speakers debate its merits.
+
+STRUCTURE FOR EACH PARAGRAPH:
+1. First, QUOTE the paragraph (or its key sentences) verbatim
+2. Then each speaker reacts to, challenges, defends, or critiques the specific claims in that paragraph
+3. Speakers draw on their database positions to argue FOR or AGAINST what the paragraph says
+
+`;
+    chunkParagraphs.forEach((para, idx) => {
+      paragraphSection += `--- PARAGRAPH ${chunkIndex * chunkParagraphs.length + idx + 1} ---\n"${para}"\n\n`;
+    });
+    paragraphSection += `=== END PARAGRAPHS ===
+
+MANDATORY RULES FOR DOCUMENT-BASED DEBATE:
+- QUOTE each paragraph above verbatim (or near-verbatim) before debating it
+- Do NOT skip any paragraph - every one listed above must be quoted and discussed
+- Speakers must react to the SPECIFIC CLAIMS in each paragraph, not talk generically
+- Each speaker applies their own philosophical framework (from their database items) to the paragraph's claims
+- Be FIERCE - praise what deserves praise, attack what deserves attack
+- NO generic philosophical musings - every statement must be about the SPECIFIC TEXT quoted
+`;
+    return paragraphSection;
+  }
+  const docCitations = skeleton.commonDocCitations || extractDocumentCitations(docText);
+  if (docCitations.length === 0) return "";
   return `
-=== SOURCE DOCUMENT: QUOTABLE PASSAGES (CITE AS [CD1], [CD2], etc.) ===
+=== SOURCE DOCUMENT: QUOTABLE PASSAGES ===
 THIS IS THE UPLOADED DOCUMENT THAT ALL SPEAKERS MUST QUOTE FROM DIRECTLY.
-The uploaded document is the ENTIRE PURPOSE of this debate. Every speaker MUST use [CD#] codes to quote specific passages.
-These are EXACT QUOTES from the source text - use them VERBATIM in quotation marks.
 
 ${docCitations.join("\n")}
 
@@ -987,37 +1049,31 @@ ${docText.length > 10000 ? "\n[Document continues...]" : ""}
 
 === END SOURCE DOCUMENT ===
 
-DOCUMENT CITATION RULES (MANDATORY - ZERO TOLERANCE):
-- EVERY speaker turn MUST include at least one [CD#] citation quoting the source document
-- Use the EXACT text from the [CD#] items above in quotation marks
-- Speakers should AGREE WITH, CHALLENGE, INTERPRET, or BUILD UPON these specific passages
-- [CD#] citations are IN ADDITION TO [P#], [Q#], [A#] database citations
-- A turn without any [CD#] citation is a FAILED turn - the uploaded document is the ENTIRE POINT of this debate
+DOCUMENT RULES (MANDATORY):
+- EVERY speaker turn MUST quote from the source document above
+- A turn without quoting the document is a FAILED turn
 `;
 })()}
 ${dialogueStateStr}
 
 ${priorClaimsStr ? `PRIOR CLAIMS MADE: ${priorClaimsStr}` : ""}
 
-=== GROUNDING REQUIREMENTS (ZERO TOLERANCE FOR VIOLATION) ===
+=== GROUNDING REQUIREMENTS ===
 ALL speakers' responses MUST:
-1. CITE database content with codes: [P1], [P2], [Q1], [Q2], [A1], etc.
+1. CITE database content with codes like [P1], [Q1], [A1] etc.
 2. USE the EXACT positions, quotes, and arguments from above
 3. NOT fabricate or invent positions not in the database
-4. Quote directly from [Q#] items when making claims
-5. Reference specific [P#] positions when explaining views
-6. ONLY cite items from the UNCITED lists - never re-cite already-used items
-${(commonDocument || skeleton.commonDocument) ? `7. EVERY turn MUST ALSO cite at least one [CD#] passage from the SOURCE DOCUMENT
-8. [CD#] citations use the VERBATIM text from the uploaded document in quotation marks` : ""}
+4. ONLY cite items from the UNCITED lists - never re-cite already-used items
+${(commonDocument || skeleton.commonDocument) ? `5. EVERY turn MUST ALSO quote from the uploaded document paragraphs above` : ""}
 
 THE LLM MUST NOT FREELANCE:
 - If a thinker has no database positions on a sub-topic, they acknowledge this honestly.
 - DO NOT substitute generic LLM knowledge about these thinkers.
-${(commonDocument || skeleton.commonDocument) ? `- DO NOT ignore the source document. Every turn MUST quote from it using [CD#] codes.` : ""}
+${(commonDocument || skeleton.commonDocument) ? `- DO NOT ignore the source document. Every turn MUST quote from it directly.` : ""}
 
 CRITICAL: Output ONLY speaker turns. Format: "NAME: text"
 NO essays. NO paragraphs. ONLY alternating speaker turns.
-EVERY speaker response MUST include at least 2 citation codes [P#], [Q#], or [A#]${(commonDocument || skeleton.commonDocument) ? " AND at least 1 [CD#] source document citation" : ""}.`;
+Do NOT include citation codes like [P1], [CD3] etc in your output text. Just quote naturally without bracketed codes.`;
   } else if (enhanced) {
     system = `You ARE ${thinkerName}. Speak in FIRST PERSON.
 
@@ -1078,43 +1134,42 @@ ${priorClaimsStr ? `PRIOR CLAIMS MADE: ${priorClaimsStr}` : ""}
   let user: string;
   
   if (isMultiSpeaker) {
-    const isDialogue = sessionType === "dialogue";
     const turnInfo = dialogueState ? Object.entries(dialogueState.turnCount).map(([s, c]) => `${s}: ${c} turns`).join(", ") : "";
-    const isDebate = sessionType === "debate";
     const hasDoc = !!(commonDocument || skeleton.commonDocument);
-    const docRef = hasDoc ? `
-MANDATORY: Every speaker turn MUST include at least one [CD#] citation from the SOURCE DOCUMENT.
-Quote the exact text from the [CD#] items. Argue about it. Challenge it. Interpret it. Apply database positions TO it.
-A turn without [CD#] is FAILED.` : "";
+    const hasParagraphs = chunkParagraphs && chunkParagraphs.length > 0;
+    const docRef = hasParagraphs
+      ? `MANDATORY: Quote and debate each paragraph from the uploaded document listed in the system prompt. Do NOT skip any.`
+      : (hasDoc ? `MANDATORY: Every speaker turn MUST quote from the uploaded document directly.` : "");
     user = `Continue the ${allSpeakers!.length}-speaker ${sessionType} on: "${outlineSection}"
 
 Write ${minWords}+ words as alternating speaker turns.
 ALL ${allSpeakers!.length} speakers (${allSpeakers!.join(", ")}) MUST appear in this section.
-Format: "SPEAKER_NAME: [what they say with [P#], [Q#], [A#]${hasDoc ? ", [CD#]" : ""} citations]"
+Format: "SPEAKER_NAME: [what they say]"
+Do NOT include citation codes like [P1] or [CD3] in the output text.
 ${docRef}
 ${turnInfo ? `\nTurn counts so far: ${turnInfo}` : ""}
 
 Start with ${allSpeakers![chunkIndex % allSpeakers!.length]}:
 
-BEGIN NOW with speaker turns only. Every speaker must cite their UNCITED database items${hasDoc ? " AND quote the source document with [CD#] codes" : ""}.`;
+BEGIN NOW with speaker turns only.`;
   } else if (isConversation) {
-    const isDialogue = sessionType === "dialogue";
     const turnInfo = dialogueState ? Object.entries(dialogueState.turnCount).map(([s, c]) => `${s}: ${c} turns`).join(", ") : "";
     const hasDoc2 = !!(commonDocument || skeleton.commonDocument);
-    const docRef2 = hasDoc2 ? `
-MANDATORY: Every speaker turn MUST include at least one [CD#] citation from the SOURCE DOCUMENT.
-Quote the exact text from the [CD#] items. Argue about it. Challenge it. Interpret it. Apply database positions TO it.
-A turn without [CD#] is FAILED.` : "";
+    const hasParagraphs2 = chunkParagraphs && chunkParagraphs.length > 0;
+    const docRef2 = hasParagraphs2
+      ? `MANDATORY: Quote and debate each paragraph from the uploaded document listed in the system prompt. Do NOT skip any.`
+      : (hasDoc2 ? `MANDATORY: Every speaker turn MUST quote from the uploaded document directly.` : "");
     user = `Continue the ${sessionType} on: "${outlineSection}"
 
 Write ${minWords}+ words as alternating speaker turns.
-Format: "SPEAKER_NAME: [what they say with [P#], [Q#], [A#]${hasDoc2 ? ", [CD#]" : ""} citations]"
+Format: "SPEAKER_NAME: [what they say]"
+Do NOT include citation codes like [P1] or [CD3] in the output text.
 ${docRef2}
 ${turnInfo ? `\nTurn counts so far: ${turnInfo}` : ""}
 
 Start with ${chunkIndex % 2 === 0 ? (sessionType === "interview" ? secondSpeaker : thinkerName) : (sessionType === "interview" ? thinkerName : secondSpeaker)}:
 
-BEGIN NOW with speaker turns only. Every speaker must cite database items${hasDoc2 ? " AND quote the source document with [CD#] codes" : ""}.`;
+BEGIN NOW with speaker turns only.`;
   } else {
     user = `Section: "${outlineSection}"
 
@@ -1166,8 +1221,20 @@ function sendSkeletonSSE(res: Response, data: string) {
   }
 }
 
+function stripMetadata(text: string): string {
+  return text
+    .replace(/\[CD\d+\]/g, "")
+    .replace(/\[P\d+\]/g, "")
+    .replace(/\[Q\d+\]/g, "")
+    .replace(/\[A\d+\]/g, "")
+    .replace(/\[W\d+\]/g, "")
+    .replace(/\[UD\d+\]/g, "");
+}
+
 function sendContentSSE(res: Response, data: string) {
-  res.write(`data: ${JSON.stringify({ type: "content", content: data })}\n\n`);
+  const cleaned = stripMetadata(data);
+  if (!cleaned && !data.includes("\n")) return;
+  res.write(`data: ${JSON.stringify({ type: "content", content: cleaned })}\n\n`);
   if (typeof (res as any).flush === "function") {
     (res as any).flush();
   }
@@ -1185,21 +1252,36 @@ export async function processWithCoherence(options: CoherenceOptions): Promise<v
     }
   }
 
+  let documentParagraphs: string[] = [];
+  if (commonDocument && (sessionType === "debate" || sessionType === "dialogue")) {
+    documentParagraphs = extractDocumentParagraphs(commonDocument);
+    console.log(`[COHERENCE] Extracted ${documentParagraphs.length} paragraphs from uploaded document`);
+  }
+
   const WORDS_PER_CHUNK = 1000;
-  const totalChunks = Math.max(1, Math.ceil(targetWords / WORDS_PER_CHUNK));
+  const PARAGRAPHS_PER_CHUNK = 3;
+  let totalChunks: number;
+  if (documentParagraphs.length > 0) {
+    totalChunks = Math.max(1, Math.ceil(documentParagraphs.length / PARAGRAPHS_PER_CHUNK));
+  } else {
+    totalChunks = Math.max(1, Math.ceil(targetWords / WORDS_PER_CHUNK));
+  }
   const wordsPerChunk = Math.ceil(targetWords / totalChunks);
 
   sendSkeletonSSE(res, `Building skeleton from database...\n`);
   sendSkeletonSSE(res, `Target: ${targetWords.toLocaleString()} words\n\n`);
+  if (documentParagraphs.length > 0) {
+    sendSkeletonSSE(res, `Document paragraphs: ${documentParagraphs.length} (${PARAGRAPHS_PER_CHUNK} per section)\n\n`);
+  }
 
-  sendContentSSE(res, `[Searching database and building structure...]\n\n`);
+  sendSkeletonSSE(res, `[Searching database and building structure...]\n\n`);
 
   let sessionId: string;
   try {
     sessionId = await createSession(options);
   } catch (err: any) {
     console.error("[COHERENCE] Session creation failed:", err);
-    sendContentSSE(res, `Error creating session: ${err.message}\n`);
+    sendSkeletonSSE(res, `Error creating session: ${err.message}\n`);
     return;
   }
 
@@ -1217,7 +1299,7 @@ export async function processWithCoherence(options: CoherenceOptions): Promise<v
     await updateSessionSkeleton(sessionId, skeleton, totalChunks);
   } catch (err: any) {
     console.error("[COHERENCE] Skeleton extraction failed:", err);
-    sendContentSSE(res, `[Skeleton extraction error - generating directly...]\n\n`);
+    sendSkeletonSSE(res, `[Skeleton extraction error - generating directly...]\n\n`);
     skeleton = {
       thesis: userPrompt.substring(0, 200),
       outline: Array.from({ length: totalChunks }, (_, i) => `Part ${i + 1}`),
@@ -1315,7 +1397,7 @@ export async function processWithCoherence(options: CoherenceOptions): Promise<v
     const dbSkeleton = await getSessionSkeleton(sessionId);
     if (!dbSkeleton) {
       console.error("Could not retrieve skeleton from database");
-      sendContentSSE(res, "\n\nError: Could not retrieve skeleton from database.\n");
+      sendSkeletonSSE(res, "\n\nError: Could not retrieve skeleton from database.\n");
       return;
     }
 
@@ -1326,7 +1408,7 @@ export async function processWithCoherence(options: CoherenceOptions): Promise<v
       const hasEnoughTrackedItems = dialogueState.materialTracker.items.length >= 6;
       if (globalExhaustion >= 0.9 && i > 0 && hasEnoughTrackedItems && alreadyMetTarget) {
         console.log(`[COHERENCE] Material exhaustion at ${(globalExhaustion * 100).toFixed(0)}%. Generating final conclusion.`);
-        sendContentSSE(res, `\n\n[Source material ${(globalExhaustion * 100).toFixed(0)}% exhausted. Concluding debate.]\n\n`);
+        sendSkeletonSSE(res, `\n\n[Source material ${(globalExhaustion * 100).toFixed(0)}% exhausted. Concluding debate.]\n\n`);
 
         const conclusionPrompt = `All uploaded and database material has been substantially deployed (${(globalExhaustion * 100).toFixed(0)}% used). Write a FINAL CONCLUDING exchange (300-500 words) where:
 1. Each speaker summarizes their strongest argument from the material already cited
@@ -1356,7 +1438,10 @@ Format: "SPEAKER_NAME: text". Do NOT introduce new arguments. Do NOT repeat prio
     }
 
     const priorDeltas = await getPriorDeltas(sessionId);
-    const { system, user } = buildChunkPrompt(dbSkeleton, i, totalChunks, wordsPerChunk, thinkerName, priorDeltas, enhanced, sessionType, secondSpeaker, allSpeakers, dialogueState, commonDocument);
+    const chunkParas = documentParagraphs.length > 0
+      ? documentParagraphs.slice(i * PARAGRAPHS_PER_CHUNK, (i + 1) * PARAGRAPHS_PER_CHUNK)
+      : undefined;
+    const { system, user } = buildChunkPrompt(dbSkeleton, i, totalChunks, wordsPerChunk, thinkerName, priorDeltas, enhanced, sessionType, secondSpeaker, allSpeakers, dialogueState, commonDocument, chunkParas);
 
     let chunkOutput = "";
     
@@ -1367,13 +1452,13 @@ Format: "SPEAKER_NAME: text". Do NOT introduce new arguments. Do NOT repeat prio
       }
     } catch (err: any) {
       console.error(`[COHERENCE] Chunk ${i + 1} generation error:`, err);
-      sendContentSSE(res, `\n\n[Generation error in section ${i + 1}: ${err.message}]\n\n`);
+      sendSkeletonSSE(res, `\n\n[Generation error in section ${i + 1}: ${err.message}]\n\n`);
       if (chunkOutput.length === 0) {
         if (i === 0) {
-          sendContentSSE(res, `[Unable to generate content. Please try again.]\n`);
+          sendSkeletonSSE(res, `[Unable to generate content. Please try again.]\n`);
           return;
         }
-        sendContentSSE(res, `[Attempting to continue with available content...]\n\n`);
+        sendSkeletonSSE(res, `[Attempting to continue with available content...]\n\n`);
         continue;
       }
     }
@@ -1433,9 +1518,9 @@ Format: "SPEAKER_NAME: text". Do NOT introduce new arguments. Do NOT repeat prio
 
   if (dialogueState) {
     const finalExhaustion = getExhaustionRatio(dialogueState.materialTracker);
-    sendContentSSE(res, `\n\n[Word Count: ${totalWordCount.toLocaleString()} | Material Used: ${(finalExhaustion * 100).toFixed(0)}% | Claims Logged: ${dialogueState.materialTracker.claimLog.length}]`);
+    sendSkeletonSSE(res, `\n\n[Word Count: ${totalWordCount.toLocaleString()} | Material Used: ${(finalExhaustion * 100).toFixed(0)}% | Claims Logged: ${dialogueState.materialTracker.claimLog.length}]`);
   } else {
-    sendContentSSE(res, `\n\n[Word Count: ${totalWordCount.toLocaleString()}]`);
+    sendSkeletonSSE(res, `\n\n[Word Count: ${totalWordCount.toLocaleString()}]`);
   }
 
   console.log(`[COHERENCE] Complete: ${totalWordCount} words | Session: ${sessionId} | Conflicts: ${allConflicts.length}`);

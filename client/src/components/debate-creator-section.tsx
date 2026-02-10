@@ -247,8 +247,30 @@ export function DebateCreatorSection() {
               if (key in artifacts || ["outline", "skeleton", "documentCitations", "debaterContent"].includes(key)) {
                 setArtifacts(prev => ({ ...prev, [key]: parsed.content }));
               }
-            } else if (parsed.content) {
-              setArtifacts(prev => ({ ...prev, debate: prev.debate + parsed.content }));
+            } else if (parsed.type === "skeleton") {
+              setArtifacts(prev => ({ ...prev, skeleton: prev.skeleton + parsed.content }));
+            } else if (parsed.type === "content" || (!parsed.type && parsed.content)) {
+              const text = parsed.content as string;
+              const cleaned = text
+                .replace(/\[CD\d+\]/g, "")
+                .replace(/\[P\d+\]/g, "")
+                .replace(/\[Q\d+\]/g, "")
+                .replace(/\[A\d+\]/g, "")
+                .replace(/\[W\d+\]/g, "")
+                .replace(/\[UD\d+\]/g, "")
+                .replace(/\[SKELETON_COMPLETE\]/g, "")
+                .replace(/\[Searching database and building structure\.\.\.\]/g, "")
+                .replace(/\[Skeleton extraction error[^\]]*\]/g, "")
+                .replace(/\[Source material \d+% exhausted[^\]]*\]/g, "")
+                .replace(/\[Word Count:[^\]]*\]/g, "")
+                .replace(/\[Material Used:[^\]]*\]/g, "")
+                .replace(/\[Claims Logged:[^\]]*\]/g, "")
+                .replace(/\[Generation error[^\]]*\]/g, "")
+                .replace(/\[Unable to generate[^\]]*\]/g, "")
+                .replace(/\[Attempting to continue[^\]]*\]/g, "");
+              if (cleaned.trim() || cleaned.includes("\n")) {
+                setArtifacts(prev => ({ ...prev, debate: prev.debate + cleaned }));
+              }
             }
           } catch {
             // skip unparseable lines

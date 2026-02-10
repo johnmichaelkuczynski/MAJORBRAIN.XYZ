@@ -82,9 +82,20 @@ function setupSSE(res: Response) {
   res.flushHeaders(); // Send headers immediately
 }
 
-// Helper to send SSE response with immediate flush
+function stripCitationCodes(text: string): string {
+  return text
+    .replace(/\[CD\d+\]/g, "")
+    .replace(/\[P\d+\]/g, "")
+    .replace(/\[Q\d+\]/g, "")
+    .replace(/\[A\d+\]/g, "")
+    .replace(/\[W\d+\]/g, "")
+    .replace(/\[UD\d+\]/g, "");
+}
+
 function sendSSE(res: Response, data: string) {
-  res.write(`data: ${JSON.stringify({ content: data })}\n\n`);
+  const cleaned = stripCitationCodes(data);
+  if (!cleaned && !data.includes("\n")) return;
+  res.write(`data: ${JSON.stringify({ content: cleaned })}\n\n`);
   if (typeof (res as any).flush === 'function') {
     (res as any).flush();
   }
@@ -1163,11 +1174,32 @@ Every substantive claim must cite a specific database item. NO FREELANCING.`;
       : (hasUploadedMaterial ? "[P#], [Q#], [A#], [W#], [UD#]" : "[P#], [Q#], [A#], [W#]");
     const speakerExample = debaterNames.map((n: string) => `${n}: [Their argument citing ${citationTypes}...]`).join("\n\n");
     
-    let shortDocCitations: string[] = [];
+    let shortDocParagraphs: string[] = [];
     if (hasCommonDoc) {
-      const { extractDocumentCitations } = await import("./services/coherenceService");
-      shortDocCitations = extractDocumentCitations(commonDocument, 30);
-      console.log(`[DEBATE-SHORT] Extracted ${shortDocCitations.length} [CD#] citations for short-path debate`);
+      const { extractDocumentParagraphs } = await import("./services/coherenceService");
+      shortDocParagraphs = extractDocumentParagraphs(commonDocument);
+      console.log(`[DEBATE-SHORT] Extracted ${shortDocParagraphs.length} paragraphs for short-path debate`);
+    }
+
+    let documentSection = "";
+    if (hasCommonDoc && shortDocParagraphs.length > 0) {
+      documentSection = `
+=== THE UPLOADED DOCUMENT (THIS IS THE ENTIRE PURPOSE OF THE DEBATE) ===
+The speakers MUST debate THIS document paragraph by paragraph.
+For EACH paragraph below, the speakers must:
+1. QUOTE the paragraph (or its key claims) verbatim
+2. Then debate its merits fiercely - agree, disagree, challenge, defend
+
+`;
+      shortDocParagraphs.forEach((para, idx) => {
+        documentSection += `--- PARAGRAPH ${idx + 1} ---\n"${para}"\n\n`;
+      });
+      documentSection += `=== END DOCUMENT ===
+
+MANDATORY: Every paragraph above must be quoted and discussed. Do NOT skip paragraphs.
+Do NOT talk generically about the topic - discuss the SPECIFIC TEXT of each paragraph.
+Be FIERCE - praise what deserves praise, attack what deserves attack.
+`;
     }
 
     const systemPrompt = `You are creating a formal philosophical DEBATE between ${debaterNames.length} speakers: ${speakerList}.
@@ -1180,66 +1212,44 @@ You DO NOT fabricate what thinkers "probably" think. You DO NOT substitute gener
 FORMAT REQUIREMENT - THIS IS A DEBATE, NOT AN ESSAY:
 ALL ${debaterNames.length} speakers take turns. Format EXACTLY like this:
 
-${speakerExample}
+${debaterNames[0]}: [Their argument quoting from the document and citing database items]
+
+${debaterNames[1]}: [Their response quoting from the document and citing database items]
 
 [Continue rotating through ALL speakers]
 
-DEBATE STRUCTURE:
+${hasCommonDoc ? `DEBATE STRUCTURE (DOCUMENT-BASED):
+Go through the uploaded document paragraph by paragraph. For each paragraph:
+1. Quote the paragraph
+2. Each speaker reacts to its claims using their own philosophical framework
+3. Move to the next paragraph
+` : `DEBATE STRUCTURE:
 1. OPENING STATEMENTS - EACH of the ${debaterNames.length} debaters presents their position
 2. REBUTTALS - Each debater responds to the others' points
 3. CROSS-EXAMINATION - Direct questions and answers between debaters
 4. CLOSING ARGUMENTS - Each debater summarizes their position
-
+`}
 WORD COUNT: At least ${wordCount} words total.
 
-${hasCommonDoc ? `
-=== SOURCE DOCUMENT: QUOTABLE PASSAGES (CITE AS [CD1], [CD2], etc.) ===
-THIS IS THE UPLOADED DOCUMENT THAT ALL SPEAKERS MUST QUOTE FROM DIRECTLY.
-Every debater MUST use [CD#] codes to quote specific passages from this document.
-These are EXACT QUOTES from the source text - use them VERBATIM in quotation marks.
-
-${shortDocCitations.join("\n")}
-
-=== END SOURCE DOCUMENT CITATIONS ===
-
-FULL DOCUMENT TEXT (for context):
-${commonDocument.substring(0, 8000)}
-${commonDocument.length > 8000 ? "\n[Document continues...]" : ""}
-
-=== DOCUMENT CITATION RULES (MANDATORY - ZERO TOLERANCE) ===
-- EVERY speaker turn MUST include at least one [CD#] citation quoting the source document
-- Use the EXACT text from the [CD#] items above in quotation marks
-- Speakers should AGREE WITH, CHALLENGE, INTERPRET, or BUILD UPON these specific passages
-- [CD#] citations are IN ADDITION TO [P#], [Q#], [A#] database citations
-- A turn without any [CD#] citation is a FAILED turn - the uploaded document is the ENTIRE POINT of this debate
-` : ""}
+${documentSection}
 
 CONTENT RULES:
 1. Build from database content below - EACH speaker has their own database items
-2. Include at least ${quoteCount} database citations ${citationTypes}
-3. ${modeInstruction}
-4. Each speaker argues FROM THEIR OWN PERSPECTIVE in first person
-5. NO MARKDOWN - plain text only
-6. Speakers should DISAGREE and CHALLENGE each other
-7. ALL ${debaterNames.length} speakers MUST appear throughout - do NOT skip anyone
-8. DO NOT FREELANCE - every substantive claim must cite a database item or uploaded material
-${hasUploadedMaterial ? `9. Some debaters have UPLOADED MATERIAL marked with [UD#] codes - these are EXCLUSIVE to that debater and should be cited alongside database items` : ""}
-${hasCommonDoc ? `${hasUploadedMaterial ? "10" : "9"}. EVERY turn MUST cite at least one [CD#] passage from the SOURCE DOCUMENT above - this is the whole purpose of this debate` : ""}
+2. ${modeInstruction}
+3. Each speaker argues FROM THEIR OWN PERSPECTIVE in first person
+4. NO MARKDOWN - plain text only
+5. Speakers should DISAGREE and CHALLENGE each other
+6. ALL ${debaterNames.length} speakers MUST appear throughout - do NOT skip anyone
+7. DO NOT FREELANCE - every substantive claim must cite a database item or uploaded material
+8. Do NOT include bracketed citation codes like [P1], [CD3] in your output. Quote naturally.
 
-ANTI-REPETITION RULES (HARD CONSTRAINT):
+ANTI-REPETITION RULES:
 - NO repetition of argumentative content between turns
-- If a claim has been made by either debater, it must NOT be restated
-- Each turn must introduce NEW evidence, make a GENUINE CONCESSION, or produce NOVEL SYNTHESIS
-
-MATERIAL USAGE RULES:
-- Each debater must EXHAUST their unique database and uploaded material before recycling
-- Cite DIFFERENT items in each turn - never re-cite the same [P#], [Q#], [A#], or [UD#]
-${hasCommonDoc ? `- Each turn must cite a DIFFERENT [CD#] passage - distribute citations across all available [CD#] items` : ""}
+- Each turn must introduce NEW evidence or a NEW perspective
 
 ${allSkeletons}
 
-Write a ${wordCount}-word debate on "${topic}" with ALL ${debaterNames.length} speakers (${speakerList}) taking turns.
-Every substantive claim must cite a specific database item.${hasCommonDoc ? " CRITICAL: Every speaker turn MUST quote from the SOURCE DOCUMENT using [CD#] codes. The document is the ENTIRE PURPOSE of this debate." : ""} NO FREELANCING.`;
+Write a ${wordCount}-word debate on "${topic}" with ALL ${debaterNames.length} speakers (${speakerList}) taking turns.${hasCommonDoc ? " CRITICAL: The debate must go through the uploaded document paragraph by paragraph, quoting each paragraph before debating it. The document is the ENTIRE PURPOSE of this debate." : ""}`;
 
     try {
       if (isOpenAIModel(model)) {
