@@ -604,7 +604,7 @@ Return ONLY the JSON skeleton.`;
   }
 
   const result: GlobalSkeleton = {
-    thesis: parsedSkeleton?.thesis || userPrompt,
+    thesis: userPrompt,
     outline: parsedSkeleton?.outline || ["Introduction", "Main Analysis", "Conclusion"],
     keyTerms: parsedSkeleton?.keyTerms || {},
     commitments: parsedSkeleton?.commitments || [],
@@ -849,7 +849,9 @@ STYLE:
 - Start with the actual answer, not with setup
 - No markdown (no #, *, -, **)
 
-WORD COUNT: AT LEAST ${minWords} words of SUBSTANCE.`;
+WORD COUNT (ABSOLUTE MINIMUM - NON-NEGOTIABLE):
+AT LEAST ${minWords} words of SUBSTANCE in this section.
+${minWords} words is the MINIMUM floor. More is acceptable. Less is a FAILURE.`;
 
   let system: string;
   
@@ -1137,12 +1139,21 @@ ${priorClaimsStr ? `PRIOR CLAIMS MADE: ${priorClaimsStr}` : ""}
     const turnInfo = dialogueState ? Object.entries(dialogueState.turnCount).map(([s, c]) => `${s}: ${c} turns`).join(", ") : "";
     const hasDoc = !!(commonDocument || skeleton.commonDocument);
     const hasParagraphs = chunkParagraphs && chunkParagraphs.length > 0;
-    const docRef = hasParagraphs
-      ? `MANDATORY: Quote and debate each paragraph from the uploaded document listed in the system prompt. Do NOT skip any.`
-      : (hasDoc ? `MANDATORY: Every speaker turn MUST quote from the uploaded document directly.` : "");
-    user = `Continue the ${allSpeakers!.length}-speaker ${sessionType} on: "${outlineSection}"
+    let docRef = "";
+    if (hasParagraphs) {
+      docRef = `CRITICAL INSTRUCTION: This section MUST debate the specific paragraphs from the uploaded document listed in the system prompt.
+For EACH paragraph:
+1. QUOTE the paragraph verbatim (or its key sentences)
+2. Each speaker then reacts to, challenges, or defends the specific claims
+Do NOT skip any paragraph. Do NOT generate generic philosophical debate. The document paragraphs are the ENTIRE content of this section.`;
+    } else if (hasDoc) {
+      docRef = `MANDATORY: Every speaker turn MUST quote from the uploaded document directly. Do NOT generate a generic debate.`;
+    }
+    user = `USER'S INSTRUCTIONS: ${skeleton.thesis}
 
-Write ${minWords}+ words as alternating speaker turns.
+Section ${chunkIndex + 1} of ${totalChunks}: "${outlineSection}"
+
+Write AT LEAST ${minWords} words as alternating speaker turns. ${minWords} is the MINIMUM, not a target.
 ALL ${allSpeakers!.length} speakers (${allSpeakers!.join(", ")}) MUST appear in this section.
 Format: "SPEAKER_NAME: [what they say]"
 Do NOT include citation codes like [P1] or [CD3] in the output text.
@@ -1156,12 +1167,21 @@ BEGIN NOW with speaker turns only.`;
     const turnInfo = dialogueState ? Object.entries(dialogueState.turnCount).map(([s, c]) => `${s}: ${c} turns`).join(", ") : "";
     const hasDoc2 = !!(commonDocument || skeleton.commonDocument);
     const hasParagraphs2 = chunkParagraphs && chunkParagraphs.length > 0;
-    const docRef2 = hasParagraphs2
-      ? `MANDATORY: Quote and debate each paragraph from the uploaded document listed in the system prompt. Do NOT skip any.`
-      : (hasDoc2 ? `MANDATORY: Every speaker turn MUST quote from the uploaded document directly.` : "");
-    user = `Continue the ${sessionType} on: "${outlineSection}"
+    let docRef2 = "";
+    if (hasParagraphs2) {
+      docRef2 = `CRITICAL INSTRUCTION: This section MUST debate the specific paragraphs from the uploaded document listed in the system prompt.
+For EACH paragraph:
+1. QUOTE the paragraph verbatim (or its key sentences)
+2. Each speaker then reacts to, challenges, or defends the specific claims
+Do NOT skip any paragraph. Do NOT generate generic debate.`;
+    } else if (hasDoc2) {
+      docRef2 = `MANDATORY: Every speaker turn MUST quote from the uploaded document directly.`;
+    }
+    user = `USER'S INSTRUCTIONS: ${skeleton.thesis}
 
-Write ${minWords}+ words as alternating speaker turns.
+Section ${chunkIndex + 1} of ${totalChunks}: "${outlineSection}"
+
+Write AT LEAST ${minWords} words as alternating speaker turns. ${minWords} is the MINIMUM, not a target.
 Format: "SPEAKER_NAME: [what they say]"
 Do NOT include citation codes like [P1] or [CD3] in the output text.
 ${docRef2}
@@ -1256,6 +1276,13 @@ export async function processWithCoherence(options: CoherenceOptions): Promise<v
   if (commonDocument && (sessionType === "debate" || sessionType === "dialogue")) {
     documentParagraphs = extractDocumentParagraphs(commonDocument);
     console.log(`[COHERENCE] Extracted ${documentParagraphs.length} paragraphs from uploaded document`);
+    if (documentParagraphs.length === 0 && commonDocument.length > 100) {
+      documentParagraphs = commonDocument.split(/\n{2,}/).filter(p => p.trim().length > 50);
+      if (documentParagraphs.length === 0) {
+        documentParagraphs = [commonDocument.trim()];
+      }
+      console.log(`[COHERENCE] Fallback paragraph split: ${documentParagraphs.length} paragraphs`);
+    }
   }
 
   const WORDS_PER_CHUNK = 1000;
@@ -1402,7 +1429,7 @@ export async function processWithCoherence(options: CoherenceOptions): Promise<v
     }
 
     if (dialogueState) {
-      const alreadyMetTarget = totalWordCount >= targetWords * 0.85;
+      const alreadyMetTarget = totalWordCount >= targetWords;
 
       const globalExhaustion = getExhaustionRatio(dialogueState.materialTracker);
       const hasEnoughTrackedItems = dialogueState.materialTracker.items.length >= 6;
@@ -1446,7 +1473,8 @@ Format: "SPEAKER_NAME: text". Do NOT introduce new arguments. Do NOT repeat prio
     let chunkOutput = "";
     
     try {
-      for await (const text of streamText({ model, systemPrompt: system, userPrompt: user, maxTokens: 4096 })) {
+      const chunkMaxTokens = Math.max(4096, Math.ceil(wordsPerChunk * 2.5));
+      for await (const text of streamText({ model, systemPrompt: system, userPrompt: user, maxTokens: chunkMaxTokens })) {
         chunkOutput += text;
         sendContentSSE(res, text);
       }
@@ -1485,7 +1513,7 @@ Format: "SPEAKER_NAME: text". Do NOT introduce new arguments. Do NOT repeat prio
     }
   }
 
-  if (totalWordCount < targetWords * 0.9 && !isDialogueType) {
+  if (totalWordCount < targetWords) {
     const shortfall = targetWords - totalWordCount;
     console.log(`[COHERENCE] Shortfall: ${shortfall} words. Generating supplement...`);
     
@@ -1496,7 +1524,8 @@ Format: "SPEAKER_NAME: text". Do NOT introduce new arguments. Do NOT repeat prio
       
       sendContentSSE(res, "\n\n");
       try {
-        for await (const text of streamText({ model, systemPrompt: supplementPrompt.system, userPrompt: supplementPrompt.user, maxTokens: 4096 })) {
+        const supplementMaxTokens = Math.max(4096, Math.ceil(shortfall * 2));
+        for await (const text of streamText({ model, systemPrompt: supplementPrompt.system, userPrompt: `You MUST write at least ${shortfall} more words to meet the user's minimum word count requirement.\n\n${supplementPrompt.user}`, maxTokens: supplementMaxTokens })) {
           supplementOutput += text;
           sendContentSSE(res, text);
         }

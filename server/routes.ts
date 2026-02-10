@@ -1124,6 +1124,17 @@ Every substantive claim must cite a specific database item. NO FREELANCING.`;
       }));
       combinedContent.positions = [...combinedContent.positions, ...allUploadedPositions];
 
+      const debateUserPrompt = commonDocument
+        ? `USER'S EXACT INSTRUCTIONS (FOLLOW TO THE LETTER): "${topic}"
+
+DEBATE between ${debaterNames.join(" and ")}. 
+MINIMUM WORD COUNT: ${wordCount} words. This is a MINIMUM, not an approximation. The output MUST be at least ${wordCount} words.
+The debaters MUST debate the uploaded document PARAGRAPH BY PARAGRAPH. Each major claim from the document must be QUOTED VERBATIM and then debated fiercely. Do NOT generate a generic debate - the document IS the debate.`
+        : `USER'S EXACT INSTRUCTIONS (FOLLOW TO THE LETTER): "${topic}"
+
+DEBATE between ${debaterNames.join(" and ")}.
+MINIMUM WORD COUNT: ${wordCount} words. This is a MINIMUM, not an approximation. The output MUST be at least ${wordCount} words.`;
+
       await processWithCoherence({
         sessionType: "debate",
         thinkerId: debaters.join("-vs-"),
@@ -1131,7 +1142,7 @@ Every substantive claim must cite a specific database item. NO FREELANCING.`;
         secondSpeaker: debaterNames[1] || debaterNames[0],
         allSpeakers: debaterNames,
         perSpeakerContent,
-        userPrompt: `Create a DEBATE on "${topic}" between ${debaterNames.join(", ")}.${commonDocument ? " The debaters must discuss the COMMON DOCUMENT provided and quote from it using [CD#] codes." : ""}`,
+        userPrompt: debateUserPrompt,
         commonDocument: commonDocument || undefined,
         targetWords: wordCount,
         model: model as any,
@@ -1229,7 +1240,12 @@ Go through the uploaded document paragraph by paragraph. For each paragraph:
 3. CROSS-EXAMINATION - Direct questions and answers between debaters
 4. CLOSING ARGUMENTS - Each debater summarizes their position
 `}
-WORD COUNT: At least ${wordCount} words total.
+WORD COUNT REQUIREMENT (ABSOLUTE MINIMUM - NON-NEGOTIABLE):
+The output MUST be AT LEAST ${wordCount} words. This is a MINIMUM floor, not an approximation.
+${wordCount} words is the LEAST acceptable length. More is acceptable. Less is a FAILURE.
+
+USER'S EXACT INSTRUCTIONS (FOLLOW TO THE LETTER):
+"${topic}"
 
 ${documentSection}
 
@@ -1249,7 +1265,7 @@ ANTI-REPETITION RULES:
 
 ${allSkeletons}
 
-Write a ${wordCount}-word debate on "${topic}" with ALL ${debaterNames.length} speakers (${speakerList}) taking turns.${hasCommonDoc ? " CRITICAL: The debate must go through the uploaded document paragraph by paragraph, quoting each paragraph before debating it. The document is the ENTIRE PURPOSE of this debate." : ""}`;
+Write AT LEAST ${wordCount} words. The user's instructions are: "${topic}". ALL ${debaterNames.length} speakers (${speakerList}) take turns.${hasCommonDoc ? " CRITICAL: The debate must go through the uploaded document paragraph by paragraph, quoting each paragraph before debating it. The document is the ENTIRE PURPOSE of this debate. Do NOT generate a generic debate." : ""}`;
 
     try {
       if (isOpenAIModel(model)) {
