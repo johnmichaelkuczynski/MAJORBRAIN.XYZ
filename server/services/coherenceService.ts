@@ -658,7 +658,7 @@ function buildChunkPrompt(
   if (sessionType === "interview") {
     formatInstructions = `
 === MANDATORY INTERVIEW FORMAT ===
-This is an INTERVIEW with clear Q&A turns. EVERY line must start with a speaker name and colon.
+This is an INTERVIEW with clear Q&A turns. Each speaker's turn begins with their name and colon.
 
 EXACT FORMAT REQUIRED:
 ${secondSpeaker}: [interviewer asks a question]
@@ -667,25 +667,38 @@ ${thinkerName}: [interviewee gives substantive answer]
 ${secondSpeaker}: [next question]
 ${thinkerName}: [next answer]
 
+SPEAKER LABEL RULE (MANDATORY):
+- Only write a speaker's name ONCE when they begin speaking
+- If a speaker's response spans multiple paragraphs, do NOT repeat their name on each paragraph
+- The next name label only appears when a DIFFERENT speaker takes over
+
 RULES:
 - Alternate between ${secondSpeaker} asking questions and ${thinkerName} answering
 - ${secondSpeaker} asks probing follow-up questions based on answers
 - ${thinkerName} gives substantive answers (3-6 sentences each)
-- NO essay paragraphs. ONLY speaker turns with "NAME: text" format
-- Every single line of output must start with either "${secondSpeaker}:" or "${thinkerName}:"
+- ONLY speaker turns with "NAME: text" format
+- A speaker's name appears ONLY at the start of their turn, NOT on every paragraph
 `;
   } else if (sessionType === "debate" && allSpeakers && allSpeakers.length > 2) {
     const speakerList = allSpeakers.join(", ");
     formatInstructions = `
 === MANDATORY MULTI-SPEAKER DEBATE FORMAT ===
 This is a DEBATE with ${allSpeakers.length} speakers: ${speakerList}
-ALL speakers must participate actively. EVERY line must start with a speaker name and colon.
+ALL speakers must participate actively. Each speaker's turn begins with their name and colon.
 
 EXACT FORMAT REQUIRED:
 ${allSpeakers[0]}: [makes an argument or claim, citing their database items]
+
 ${allSpeakers[1]}: [challenges or responds, citing their own database items]
+
 ${allSpeakers[2]}: [adds perspective or disagrees, citing their database items]
-${allSpeakers.length > 3 ? `${allSpeakers[3]}: [contributes their view, citing their database items]\n` : ""}
+${allSpeakers.length > 3 ? `\n${allSpeakers[3]}: [contributes their view, citing their database items]\n` : ""}
+SPEAKER LABEL RULE (MANDATORY):
+- Only write a speaker's name ONCE when they begin speaking
+- If a speaker's response spans multiple paragraphs, do NOT repeat their name on each paragraph
+- The next name label only appears when a DIFFERENT speaker takes over
+- WRONG: "${allSpeakers[0]}: First point.\n\n${allSpeakers[0]}: Second point."
+- RIGHT: "${allSpeakers[0]}: First point.\n\nSecond point."
 
 ANTI-REPETITION RULES (HARD CONSTRAINT):
 - Before generating any turn, check the RUNNING CLAIM LOG below
@@ -708,21 +721,31 @@ RULES:
 - Each turn is a direct response to previous speakers
 - Sharp, pointed exchanges - no agreement or pleasantries
 - NO essay paragraphs. ONLY speaker turns with "NAME: text" format
-- Every single line of output must start with one of: ${allSpeakers.map(s => `"${s}:"`).join(", ")}
+- A speaker's name appears ONLY at the start of their turn, NOT on every paragraph
 - Each speaker cites THEIR OWN database items (marked with their name)
 - Rotate through all speakers - do not skip anyone
 `;
   } else if (sessionType === "debate") {
     formatInstructions = `
 === MANDATORY DEBATE FORMAT ===
-This is a DEBATE with opposing speakers taking turns. EVERY line must start with a speaker name and colon.
+This is a DEBATE with opposing speakers taking turns. Each speaker's turn begins with their name and colon.
 
 EXACT FORMAT REQUIRED:
 ${thinkerName}: [makes an argument or claim]
+
 ${secondSpeaker}: [challenges, disagrees, or counters]
 
 ${thinkerName}: [responds to challenge]
+
 ${secondSpeaker}: [further objection or rebuttal]
+
+SPEAKER LABEL RULE (MANDATORY):
+- Only write a speaker's name ONCE when they begin speaking
+- If a speaker's response spans multiple paragraphs, do NOT repeat their name on each paragraph
+- The next name label only appears when a DIFFERENT speaker takes over
+- WRONG: "${thinkerName}: First point.\n\n${thinkerName}: Second point."
+- RIGHT: "${thinkerName}: First point.\n\nSecond point."
+- Pattern is: ${thinkerName}: [all their paragraphs]\n\n${secondSpeaker}: [all their paragraphs]
 
 ANTI-REPETITION RULES (HARD CONSTRAINT):
 - Before generating any turn, check the RUNNING CLAIM LOG below
@@ -742,15 +765,15 @@ RULES:
 - Speakers DISAGREE and CHALLENGE each other
 - Each turn is a direct response to the previous speaker
 - Sharp, pointed exchanges - no agreement or pleasantries
-- NO essay paragraphs. ONLY speaker turns with "NAME: text" format
-- Every single line of output must start with either "${thinkerName}:" or "${secondSpeaker}:"
+- ONLY speaker turns with "NAME: text" format
+- A speaker's name appears ONLY at the start of their turn, NOT on every paragraph
 `;
   } else if (sessionType === "dialogue" && allSpeakers && allSpeakers.length > 2) {
     const speakerList = allSpeakers.join(", ");
     formatInstructions = `
 === MANDATORY MULTI-SPEAKER DIALOGUE FORMAT ===
 This is a DIALOGUE with ${allSpeakers.length} speakers: ${speakerList}
-ALL speakers must participate. EVERY line must start with a speaker name and colon.
+ALL speakers must participate. Each speaker's turn begins with their name and colon.
 
 FORMAT: "SPEAKER_NAME: [what they say]"
 
@@ -772,17 +795,23 @@ ANTI-REPETITION RULES:
 - NEVER cite a database item already cited (check the DIALOGUE STATE below)
 - NEVER use the same phrasing or argument structure twice
 - If you cannot advance the argument, END the dialogue with a synthesis/conclusion
+SPEAKER LABEL RULE (MANDATORY):
+- Only write a speaker's name ONCE when they begin speaking
+- If a speaker's response spans multiple paragraphs, do NOT repeat their name on each paragraph
+- The next name label only appears when a DIFFERENT speaker takes over
+
 RULES:
 - All ${allSpeakers.length} speakers rotate through turns
 - Each turn DIRECTLY responds to what was just said
 - Speakers must change their minds, introduce new evidence, or synthesize
 - NO parallel monologues - this is a REAL conversation with intellectual progression
-- NO essay paragraphs. ONLY speaker turns with "NAME: text" format
+- ONLY speaker turns with "NAME: text" format
+- A speaker's name appears ONLY at the start of their turn, NOT on every paragraph
 `;
   } else if (sessionType === "dialogue") {
     formatInstructions = `
 === MANDATORY DIALOGUE FORMAT ===
-This is a DIALOGUE between ${thinkerName} and ${secondSpeaker}. EVERY line must start with a speaker name and colon.
+This is a DIALOGUE between ${thinkerName} and ${secondSpeaker}. Each speaker's turn begins with their name and colon.
 
 FORMAT: "${thinkerName}: [what they say]" then "${secondSpeaker}: [their response]"
 
@@ -804,13 +833,20 @@ ANTI-REPETITION RULES:
 - NEVER cite a database item already cited (check the DIALOGUE STATE below)
 - NEVER use the same phrasing or argument structure twice
 - If you cannot advance the argument, END the dialogue with a synthesis/conclusion
+SPEAKER LABEL RULE (MANDATORY):
+- Only write a speaker's name ONCE when they begin speaking
+- If a speaker's response spans multiple paragraphs, do NOT repeat their name on each paragraph
+- The next name label only appears when a DIFFERENT speaker takes over
+- WRONG: "${thinkerName}: First point.\n\n${thinkerName}: Second point."
+- RIGHT: "${thinkerName}: First point.\n\nSecond point."
+
 RULES:
 - Natural back-and-forth with intellectual PROGRESSION
 - Each turn DIRECTLY responds to what was just said
 - Speakers must change their minds, introduce new evidence, or synthesize
 - NO parallel monologues - this is a REAL conversation
-- NO essay paragraphs. ONLY speaker turns with "NAME: text" format
-- Every line must start with either "${thinkerName}:" or "${secondSpeaker}:"
+- ONLY speaker turns with "NAME: text" format
+- A speaker's name appears ONLY at the start of their turn, NOT on every paragraph
 `;
   }
 
@@ -962,6 +998,7 @@ ${(commonDocument || skeleton.commonDocument) ? `- WRONG (ignoring document): "$
 - If a thinker has no database positions on a sub-topic, they acknowledge this honestly.
 
 CRITICAL: ALL ${allSpeakers!.length} speakers must appear. Output ONLY speaker turns. Format: "NAME: text"
+SPEAKER LABEL RULE: Only write a speaker's name ONCE when they start speaking. Do NOT repeat the same name on consecutive paragraphs. The next name label appears only when a DIFFERENT speaker takes over.
 Do NOT include citation codes like [P1], [CD3] etc in your output text. Just quote naturally.`;
   } else if (isConversation) {
     const hasPerSpeaker = sessionType === "dialogue" && skeleton.perSpeakerContent && allSpeakers;
@@ -1074,7 +1111,8 @@ THE LLM MUST NOT FREELANCE:
 ${(commonDocument || skeleton.commonDocument) ? `- DO NOT ignore the source document. Every turn MUST quote from it directly.` : ""}
 
 CRITICAL: Output ONLY speaker turns. Format: "NAME: text"
-NO essays. NO paragraphs. ONLY alternating speaker turns.
+SPEAKER LABEL RULE: Only write a speaker's name ONCE when they start speaking. Do NOT repeat the same name on consecutive paragraphs. The next name label appears only when a DIFFERENT speaker takes over.
+NO essays. ONLY alternating speaker turns.
 Do NOT include citation codes like [P1], [CD3] etc in your output text. Just quote naturally without bracketed codes.`;
   } else if (enhanced) {
     system = `You ARE ${thinkerName}. Speak in FIRST PERSON.
@@ -1155,7 +1193,7 @@ Section ${chunkIndex + 1} of ${totalChunks}: "${outlineSection}"
 
 Write AT LEAST ${minWords} words as alternating speaker turns. ${minWords} is the MINIMUM, not a target.
 ALL ${allSpeakers!.length} speakers (${allSpeakers!.join(", ")}) MUST appear in this section.
-Format: "SPEAKER_NAME: [what they say]"
+Format: "SPEAKER_NAME: [what they say]" - only label a speaker ONCE when they start speaking. Do NOT repeat the same name on consecutive paragraphs.
 Do NOT include citation codes like [P1] or [CD3] in the output text.
 ${docRef}
 ${turnInfo ? `\nTurn counts so far: ${turnInfo}` : ""}
@@ -1182,7 +1220,7 @@ Do NOT skip any paragraph. Do NOT generate generic debate.`;
 Section ${chunkIndex + 1} of ${totalChunks}: "${outlineSection}"
 
 Write AT LEAST ${minWords} words as alternating speaker turns. ${minWords} is the MINIMUM, not a target.
-Format: "SPEAKER_NAME: [what they say]"
+Format: "SPEAKER_NAME: [what they say]" - only label a speaker ONCE when they start speaking. Do NOT repeat the same name on consecutive paragraphs.
 Do NOT include citation codes like [P1] or [CD3] in the output text.
 ${docRef2}
 ${turnInfo ? `\nTurn counts so far: ${turnInfo}` : ""}
@@ -1441,7 +1479,7 @@ export async function processWithCoherence(options: CoherenceOptions): Promise<v
 1. Each speaker summarizes their strongest argument from the material already cited
 2. Each speaker acknowledges one point where their opponent was strongest
 3. End with each speaker's final position
-Format: "SPEAKER_NAME: text". Do NOT introduce new arguments. Do NOT repeat prior arguments. Summarize and conclude.`;
+Format: "SPEAKER_NAME: text" - only label each speaker once when they start speaking, not on every paragraph. Do NOT introduce new arguments. Do NOT repeat prior arguments. Summarize and conclude.`;
 
         let conclusionOutput = "";
         try {
