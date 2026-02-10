@@ -934,7 +934,7 @@ Every substantive claim must cite a specific database item. NO FREELANCING.`;
 
   // Debate Generator (streaming) - USES DATABASE AS SKELETON
   app.post("/api/debate/generate", async (req: Request, res: Response) => {
-    const { topic: rawTopic, debaters, wordCount = 2000, quoteCount = 20, enhanced = false, model = "gpt-4o", debaterDocuments = {}, commonDocument: rawCommonDoc = "" } = req.body;
+    const { topic: rawTopic, debaters, wordCount = 2000, quoteCount = 20, enhanced = false, model = "gpt-4o", debaterDocuments = {}, commonDocument: rawCommonDoc = "", responseLengths = {} } = req.body;
 
     if (!rawTopic || !debaters || debaters.length < 2) {
       return res.status(400).json({ error: "Topic and at least 2 debaters are required" });
@@ -1135,6 +1135,16 @@ The debaters MUST debate the uploaded document PARAGRAPH BY PARAGRAPH. Each majo
 DEBATE between ${debaterNames.join(" and ")}.
 MINIMUM WORD COUNT: ${wordCount} words. This is a MINIMUM, not an approximation. The output MUST be at least ${wordCount} words.`;
 
+      const responseLengthsByName: Record<string, number> = {};
+      if (responseLengths && typeof responseLengths === "object") {
+        for (const [id, words] of Object.entries(responseLengths)) {
+          const name = normalizeThinkerName(id);
+          if (typeof words === "number" && words > 0) {
+            responseLengthsByName[name] = words;
+          }
+        }
+      }
+
       await processWithCoherence({
         sessionType: "debate",
         thinkerId: debaters.join("-vs-"),
@@ -1148,6 +1158,7 @@ MINIMUM WORD COUNT: ${wordCount} words. This is a MINIMUM, not an approximation.
         model: model as any,
         enhanced: true,
         databaseContent: combinedContent,
+        responseLengths: Object.keys(responseLengthsByName).length > 0 ? responseLengthsByName : undefined,
         res,
       });
 

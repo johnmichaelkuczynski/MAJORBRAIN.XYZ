@@ -416,6 +416,7 @@ export interface CoherenceOptions {
     arguments: any[];
     works: any[];
   };
+  responseLengths?: Record<string, number>;
   res: Response;
 }
 
@@ -648,7 +649,8 @@ function buildChunkPrompt(
   allSpeakers?: string[],
   dialogueState?: DialogueStateTracker,
   commonDocument?: string,
-  chunkParagraphs?: string[]
+  chunkParagraphs?: string[],
+  responseLengths?: Record<string, number>
 ): { system: string; user: string } {
   const priorClaimsStr = priorDeltas.flatMap(d => d.claimsAdded || []).join("; ");
   const minWords = Math.ceil(targetWordsPerChunk * 1.2);
@@ -850,6 +852,21 @@ RULES:
 `;
   }
 
+  let responseLengthInstructions = "";
+  if (responseLengths && Object.keys(responseLengths).length > 0) {
+    const lengthEntries = Object.entries(responseLengths)
+      .map(([name, words]) => `- ${name}: approximately ${words} words per response turn`)
+      .join("\n");
+    responseLengthInstructions = `
+=== RESPONSE LENGTH PER SPEAKER (MANDATORY) ===
+Each speaker's individual response turn must be approximately the specified length:
+${lengthEntries}
+This means some speakers will write longer turns and others shorter turns. Respect these lengths.
+If a speaker is set to 50 words, their responses should be concise and punchy.
+If a speaker is set to 500 words, their responses should be expansive and detailed.
+`;
+  }
+
   const coreRules = `
 === ABSOLUTE REQUIREMENTS ===
 
@@ -922,6 +939,7 @@ material in natural dialogue voice. You DO NOT generate your own version of what
 thinkers "probably" think. You DO NOT substitute generic LLM knowledge about them.
 
 ${formatInstructions}
+${responseLengthInstructions}
 ${coreRules}
 
 ${perSpeakerSection}
@@ -1039,6 +1057,7 @@ Every substantive claim must trace to a specific database item. You articulate t
 material in natural dialogue voice. You DO NOT fabricate what thinkers "probably" think.
 
 ${formatInstructions}
+${responseLengthInstructions}
 ${coreRules}
 
 ${contentSection}
@@ -1299,7 +1318,7 @@ function sendContentSSE(res: Response, data: string) {
 }
 
 export async function processWithCoherence(options: CoherenceOptions): Promise<void> {
-  const { sessionType, thinkerId, thinkerName, secondSpeaker = "Interviewer", allSpeakers, perSpeakerContent, userPrompt, commonDocument: rawCommonDoc, targetWords, model, enhanced, databaseContent, res } = options;
+  const { sessionType, thinkerId, thinkerName, secondSpeaker = "Interviewer", allSpeakers, perSpeakerContent, userPrompt, commonDocument: rawCommonDoc, targetWords, model, enhanced, databaseContent, responseLengths, res } = options;
 
   let commonDocument = rawCommonDoc || "";
   if (!commonDocument && userPrompt.includes("--- DOCUMENT TO DISCUSS ---")) {
@@ -1483,7 +1502,7 @@ Format: "SPEAKER_NAME: text" - only label each speaker once when they start spea
 
         let conclusionOutput = "";
         try {
-          for await (const text of streamText({ model, systemPrompt: dbSkeleton ? buildChunkPrompt(dbSkeleton, i, totalChunks, 500, thinkerName, [], enhanced, sessionType, secondSpeaker, allSpeakers, dialogueState, commonDocument).system : "", userPrompt: conclusionPrompt, maxTokens: 2000 })) {
+          for await (const text of streamText({ model, systemPrompt: dbSkeleton ? buildChunkPrompt(dbSkeleton, i, totalChunks, 500, thinkerName, [], enhanced, sessionType, secondSpeaker, allSpeakers, dialogueState, commonDocument, undefined, responseLengths).system : "", userPrompt: conclusionPrompt, maxTokens: 2000 })) {
             conclusionOutput += text;
             sendContentSSE(res, text);
           }
@@ -1506,7 +1525,7 @@ Format: "SPEAKER_NAME: text" - only label each speaker once when they start spea
     const chunkParas = documentParagraphs.length > 0
       ? documentParagraphs.slice(i * PARAGRAPHS_PER_CHUNK, (i + 1) * PARAGRAPHS_PER_CHUNK)
       : undefined;
-    const { system, user } = buildChunkPrompt(dbSkeleton, i, totalChunks, wordsPerChunk, thinkerName, priorDeltas, enhanced, sessionType, secondSpeaker, allSpeakers, dialogueState, commonDocument, chunkParas);
+    const { system, user } = buildChunkPrompt(dbSkeleton, i, totalChunks, wordsPerChunk, thinkerName, priorDeltas, enhanced, sessionType, secondSpeaker, allSpeakers, dialogueState, commonDocument, chunkParas, responseLengths);
 
     let chunkOutput = "";
     
@@ -1557,7 +1576,7 @@ Format: "SPEAKER_NAME: text" - only label each speaker once when they start spea
     
     const dbSkeleton = await getSessionSkeleton(sessionId);
     if (dbSkeleton) {
-      const supplementPrompt = buildChunkPrompt(dbSkeleton, totalChunks, totalChunks + 1, shortfall, thinkerName, await getPriorDeltas(sessionId), enhanced, sessionType, secondSpeaker, allSpeakers, dialogueState, commonDocument);
+      const supplementPrompt = buildChunkPrompt(dbSkeleton, totalChunks, totalChunks + 1, shortfall, thinkerName, await getPriorDeltas(sessionId), enhanced, sessionType, secondSpeaker, allSpeakers, dialogueState, commonDocument, undefined, responseLengths);
       let supplementOutput = "";
       
       sendContentSSE(res, "\n\n");

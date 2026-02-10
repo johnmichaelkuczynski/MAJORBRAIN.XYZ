@@ -3,8 +3,10 @@ import { Play, Loader2, Plus, X, Download, Copy, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SectionHeader } from "./section-header";
 import { ThinkerSelect } from "./thinker-select";
 import { ModelSelect } from "./model-select";
@@ -150,6 +152,8 @@ export function DebateCreatorSection() {
   const [wordCount, setWordCount] = useState(2000);
   const [quoteCount, setQuoteCount] = useState(10);
   const [enhanced, setEnhanced] = useState(true);
+  const [responseLengthMode, setResponseLengthMode] = useState<"default" | "custom">("default");
+  const [responseLengths, setResponseLengths] = useState<Record<string, number>>({});
   const [debaterDocuments, setDebaterDocuments] = useState<Record<string, string>>({});
   const [artifacts, setArtifacts] = useState<DebateArtifacts>({
     outline: "",
@@ -169,6 +173,11 @@ export function DebateCreatorSection() {
   const removeDebater = (id: string) => {
     setDebaters(prev => prev.filter(d => d !== id));
     setDebaterDocuments(prev => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+    setResponseLengths(prev => {
       const next = { ...prev };
       delete next[id];
       return next;
@@ -203,6 +212,11 @@ export function DebateCreatorSection() {
         }
       }
 
+      const responseLengthsPayload: Record<string, number> | undefined = 
+        responseLengthMode === "custom" && Object.keys(responseLengths).length > 0
+          ? responseLengths
+          : undefined;
+
       const response = await fetch("/api/debate/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -215,6 +229,7 @@ export function DebateCreatorSection() {
           model: selectedModel,
           ...(documentContent.trim() && { commonDocument: documentContent.trim() }),
           ...(Object.keys(debaterDocsPayload).length > 0 && { debaterDocuments: debaterDocsPayload }),
+          ...(responseLengthsPayload && { responseLengths: responseLengthsPayload }),
         }),
       });
 
@@ -290,6 +305,8 @@ export function DebateCreatorSection() {
     setDocumentContent("");
     setDebaters([]);
     setDebaterDocuments({});
+    setResponseLengths({});
+    setResponseLengthMode("default");
     setArtifacts({ outline: "", skeleton: "", documentCitations: "", debaterContent: "", debate: "" });
   };
 
@@ -364,6 +381,59 @@ export function DebateCreatorSection() {
               })}
             </div>
           </div>
+
+          {debaters.length >= 2 && (
+            <div className="space-y-3">
+              <Label className="block text-sm font-medium">Response Length per Debater</Label>
+              <Select value={responseLengthMode} onValueChange={(v) => setResponseLengthMode(v as "default" | "custom")}>
+                <SelectTrigger data-testid="select-response-length-mode">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="default">Default (system decides response lengths)</SelectItem>
+                  <SelectItem value="custom">Custom (set words per response for each debater)</SelectItem>
+                </SelectContent>
+              </Select>
+              {responseLengthMode === "custom" && (
+                <div className="space-y-2 pl-2 border-l-2 border-primary/20">
+                  <p className="text-xs text-muted-foreground">
+                    Set approximately how many words each debater should write per response turn.
+                  </p>
+                  {debaters.map(id => {
+                    const thinker = THINKERS.find(t => t.id === id);
+                    return (
+                      <div key={id} className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-xs min-w-[100px] justify-center">{thinker?.name}</Badge>
+                        <Input
+                          type="number"
+                          min={25}
+                          max={2000}
+                          value={responseLengths[id] || ""}
+                          onChange={(e) => {
+                            const val = parseInt(e.target.value);
+                            if (!isNaN(val) && val >= 0) {
+                              setResponseLengths(prev => ({ ...prev, [id]: val }));
+                            } else if (e.target.value === "") {
+                              setResponseLengths(prev => {
+                                const next = { ...prev };
+                                delete next[id];
+                                return next;
+                              });
+                            }
+                          }}
+                          placeholder="e.g. 200"
+                          className="w-28"
+                          disabled={isStreaming}
+                          data-testid={`input-response-length-${id}`}
+                        />
+                        <span className="text-xs text-muted-foreground">words/response</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
 
           {debaters.length > 0 && (
             <div className="space-y-3">
