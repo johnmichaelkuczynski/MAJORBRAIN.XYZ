@@ -781,8 +781,8 @@ CRITICAL: DO NOT USE ANY MARKDOWN FORMATTING. No # headers, no * bullets, no - l
     const isInterview = exchangeMode === "interview";
     const minParticipants = isInterview ? 1 : 2;
 
-    if (!rawTopic || !debaters || debaters.length < minParticipants) {
-      return res.status(400).json({ error: `Topic and at least ${minParticipants} participant(s) are required` });
+    if ((!rawTopic && !rawCommonDoc) || !debaters || debaters.length < minParticipants) {
+      return res.status(400).json({ error: `Topic or document and at least ${minParticipants} participant(s) are required` });
     }
 
     setupSSE(res);

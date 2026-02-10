@@ -243,8 +243,10 @@ export function DebateCreatorSection() {
     }));
   };
 
+  const hasContent = topic.trim() || documentContent.trim() || Object.values(debaterDocuments).some(d => d.trim());
+
   const handleGenerate = async () => {
-    if (!topic.trim() || debaters.length < modeConfig.minParticipants || isStreaming) return;
+    if (!hasContent || debaters.length < modeConfig.minParticipants || isStreaming) return;
 
     setIsStreaming(true);
     setArtifacts({ outline: "", skeleton: "", documentCitations: "", debaterContent: "", debate: "" });
@@ -262,11 +264,23 @@ export function DebateCreatorSection() {
           ? responseLengths
           : undefined;
 
+      const participantNames = debaters.map(id => THINKERS.find(t => t.id === id)?.name || id);
+      let effectiveTopic = topic.trim();
+      if (!effectiveTopic && documentContent.trim()) {
+        if (exchangeMode === "debate") {
+          effectiveTopic = `Debate the uploaded document. Each debater must go through the document paragraph by paragraph, quoting it and arguing about it fiercely.`;
+        } else if (exchangeMode === "dialogue") {
+          effectiveTopic = `Discuss the uploaded document cooperatively. Each speaker explores the document's ideas, building on each other's insights.`;
+        } else if (exchangeMode === "interview") {
+          effectiveTopic = `Interview ${participantNames[0] || "the interviewee"} about the uploaded document. Ask probing questions about its claims and arguments.`;
+        }
+      }
+
       const response = await fetch("/api/debate/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          topic: topic.trim(),
+          topic: effectiveTopic,
           debaters,
           wordCount,
           quoteCount,
@@ -530,15 +544,15 @@ export function DebateCreatorSection() {
           </div>
 
           <div>
-            <Label className="mb-2 block">Topic / Instructions</Label>
+            <Label className="mb-2 block">Topic / Instructions {documentContent.trim() ? "(optional with document)" : ""}</Label>
             <Textarea 
               value={topic} 
               onChange={(e) => setTopic(e.target.value)} 
               placeholder={exchangeMode === "interview" 
-                ? "Enter the interview topic or questions you want explored..." 
+                ? "Enter the interview topic or questions you want explored... (optional if document uploaded)" 
                 : exchangeMode === "dialogue"
-                ? "Enter the topic for cooperative exploration..."
-                : "Enter the debate topic, thesis to argue, or instructions..."}
+                ? "Enter the topic for cooperative exploration... (optional if document uploaded)"
+                : "Enter the debate topic, thesis to argue, or instructions... (optional if document uploaded)"}
               className="min-h-[200px] text-base"
               data-testid="input-debate-topic" 
             />
@@ -688,7 +702,7 @@ export function DebateCreatorSection() {
 
           <ModelSelect value={selectedModel} onChange={setSelectedModel} className="w-full" />
 
-          <Button onClick={handleGenerate} disabled={!topic.trim() || debaters.length < modeConfig.minParticipants || isStreaming} className="w-full" data-testid="button-generate-debate">
+          <Button onClick={handleGenerate} disabled={!hasContent || debaters.length < modeConfig.minParticipants || isStreaming} className="w-full" data-testid="button-generate-debate">
             {isStreaming ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Generating...</> : <><Play className="mr-2 h-4 w-4" />{modeConfig.buttonLabel}</>}
           </Button>
         </div>
