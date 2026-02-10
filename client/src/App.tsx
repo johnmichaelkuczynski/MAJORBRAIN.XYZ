@@ -18,7 +18,6 @@ import { OutlineGeneratorSection } from "@/components/outline-generator-section"
 import { FullDocumentSection } from "@/components/full-document-section";
 import { AiChatSection } from "@/components/ai-chat-section";
 import { DocumentAnalyzerSection } from "@/components/document-analyzer-section";
-import { BookOpen } from "lucide-react";
 
 function App() {
   const [clearKey, setClearKey] = useState(0);
@@ -37,11 +36,11 @@ function App() {
                 <div className="container mx-auto px-4 py-4">
                   <div className="flex items-center justify-between gap-4 flex-wrap">
                     <div className="flex items-center gap-3">
-                      <BookOpen className="h-8 w-8 text-primary" />
+                      <img src="/images/major-brain-logo.png" alt="Major Brain" className="h-8 w-8 rounded-md" />
                       <div>
                         <h1 className="text-2xl font-bold tracking-tight">MAJOR BRAIN</h1>
                         <p className="text-sm text-muted-foreground">
-                          Philosophical AI Platform
+                          Speak with the Greats
                         </p>
                       </div>
                     </div>

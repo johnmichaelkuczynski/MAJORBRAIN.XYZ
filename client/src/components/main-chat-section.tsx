@@ -8,7 +8,6 @@ import { ThinkerSelect } from "./thinker-select";
 import { ModelSelect } from "./model-select";
 import { GenerationControls } from "./generation-controls";
 import { FileUpload } from "./file-upload";
-import { ThinkerAvatar } from "./thinker-avatar";
 import { SkeletonPopup } from "./skeleton-popup";
 import { SkeletonBuildPopup } from "./skeleton-build-popup";
 import { StreamingPopup } from "./streaming-popup";
@@ -219,20 +218,19 @@ export function MainChatSection() {
     <>
       <Card className="p-6 border-2 border-primary/20 shadow-lg">
         <div className="flex items-center gap-4 mb-6">
-          <ThinkerAvatar 
-            thinkerId={selectedThinker} 
-            name={thinker?.name}
-            size="xl" 
-            isAnimating={isStreaming}
-            showName={true}
+          <img 
+            src="/images/major-brain-logo.png" 
+            alt="Major Brain" 
+            className={`h-20 w-20 rounded-xl shadow-lg border-2 border-white/30 ${isStreaming ? "animate-pulse" : ""}`}
+            style={{ animationDuration: isStreaming ? "1.5s" : undefined }}
           />
           <div className="flex-1">
             <h2 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent flex items-center gap-2">
               <MessageSquare className="h-6 w-6 text-primary" />
-              Ask {thinker?.name || "a Thinker"}
+              Ask a Major Brain
             </h2>
             <p className="text-sm text-muted-foreground">
-              Engage in philosophical dialogue grounded in actual writings
+              Speak with the Greats
             </p>
           </div>
           <Button variant="outline" size="sm" onClick={handleClear} disabled={isStreaming}>
@@ -269,7 +267,7 @@ export function MainChatSection() {
             <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder={`Ask ${thinker?.name || "a thinker"} a question...`}
+              placeholder="Ask a question..."
               className="min-h-[120px] text-base border-2 focus:border-primary"
               disabled={isStreaming}
               data-testid="input-chat-message"
