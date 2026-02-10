@@ -93,10 +93,10 @@ function stripCitationCodes(text: string): string {
     .replace(/\[UD\d+\]/g, "");
 }
 
-function sendSSE(res: Response, data: string) {
-  const cleaned = stripCitationCodes(data);
-  if (!cleaned && !data.includes("\n")) return;
-  res.write(`data: ${JSON.stringify({ content: cleaned })}\n\n`);
+function sendSSE(res: Response, data: string, preserveCitations: boolean = false) {
+  const output = preserveCitations ? data : stripCitationCodes(data);
+  if (!output && !data.includes("\n")) return;
+  res.write(`data: ${JSON.stringify({ content: output })}\n\n`);
   if (typeof (res as any).flush === 'function') {
     (res as any).flush();
   }
@@ -966,6 +966,14 @@ Every substantive claim must cite a specific database item. NO FREELANCING.`;
 
     const debaterNames = debaters.map((d: string) => normalizeThinkerName(d));
 
+    debaterNames.forEach((name: string, idx: number) => {
+      const ctx = contexts[idx];
+      console.log(`[DEBATE] Database content for ${name}: ${(ctx.positions || []).length} positions, ${(ctx.quotes || []).length} quotes, ${(ctx.arguments || []).length} arguments, ${(ctx.works || []).length} works`);
+      if ((ctx.positions || []).length > 0) {
+        console.log(`[DEBATE] Sample position for ${name}: "${((ctx.positions[0] as any).positionText || (ctx.positions[0] as any).position_text || '').substring(0, 100)}..."`);
+      }
+    });
+
     const MAX_DEBATER_DOC_WORDS = 50000;
     const debaterUploadedContent: Record<string, string[]> = {};
     for (let idx = 0; idx < debaters.length; idx++) {
@@ -1157,7 +1165,7 @@ MINIMUM WORD COUNT: ${wordCount} words. This is a MINIMUM, not an approximation.
         commonDocument: commonDocument || undefined,
         targetWords: wordCount,
         model: model as any,
-        enhanced: true,
+        enhanced,
         databaseContent: combinedContent,
         responseLengths: Object.keys(responseLengthsByName).length > 0 ? responseLengthsByName : undefined,
         res,
@@ -1269,7 +1277,8 @@ CONTENT RULES:
 5. Speakers should DISAGREE and CHALLENGE each other
 6. ALL ${debaterNames.length} speakers MUST appear throughout - do NOT skip anyone
 7. DO NOT FREELANCE - every substantive claim must cite a database item or uploaded material
-8. Do NOT include bracketed citation codes like [P1], [CD3] in your output. Quote naturally.
+8. You MUST include citation codes [P1], [Q1], [A1] in your output to show which database items you are using
+9. Every claim must trace to a specific [P#], [Q#], or [A#] from the database content below
 
 ANTI-REPETITION RULES:
 - NO repetition of argumentative content between turns
@@ -1287,7 +1296,7 @@ Write AT LEAST ${wordCount} words. The user's instructions are: "${topic}". ALL 
         ];
 
         for await (const chunk of streamOpenAI(messages, model)) {
-          sendSSE(res, chunk);
+          sendSSE(res, chunk, true);
         }
       } else {
         const messages: Array<{ role: "user" | "assistant"; content: string }> = [
@@ -1295,7 +1304,7 @@ Write AT LEAST ${wordCount} words. The user's instructions are: "${topic}". ALL 
         ];
 
         for await (const chunk of streamAnthropic(systemPrompt, messages, model)) {
-          sendSSE(res, chunk);
+          sendSSE(res, chunk, true);
         }
       }
 

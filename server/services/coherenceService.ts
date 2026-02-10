@@ -923,10 +923,10 @@ ${minWords} words is the MINIMUM floor. More is acceptable. Less is a FAILURE.`;
         const uncitedQuotes = citedSet ? sc.quotes.filter(q => !citedSet.has(q.match(/\[([^\]]+)\]/)?.[0] || "")) : sc.quotes;
         const uncitedArgs = citedSet ? sc.arguments.filter(a => !citedSet.has(a.match(/\[([^\]]+)\]/)?.[0] || "")) : sc.arguments;
 
-        perSpeakerSection += `\n=== ${speaker.toUpperCase()}'S DATABASE CONTENT (${speaker} MUST cite THESE) ===\n`;
-        perSpeakerSection += `${speaker}'s UNCITED POSITIONS (use these NEXT):\n${uncitedPositions.slice(0, 6).join("\n")}\n`;
-        perSpeakerSection += `${speaker}'s UNCITED QUOTES:\n${uncitedQuotes.slice(0, 5).join("\n")}\n`;
-        perSpeakerSection += `${speaker}'s UNCITED ARGUMENTS:\n${uncitedArgs.slice(0, 4).join("\n")}\n\n`;
+        perSpeakerSection += `\n=== ${speaker.toUpperCase()}'S DATABASE CONTENT (${speaker} MUST cite THESE - this is REAL content from the database) ===\n`;
+        perSpeakerSection += `${speaker}'s UNCITED POSITIONS (use these NEXT - cite as [P#]):\n${uncitedPositions.slice(0, 10).join("\n")}\n`;
+        perSpeakerSection += `${speaker}'s UNCITED QUOTES (use these - cite as [Q#]):\n${uncitedQuotes.slice(0, 8).join("\n")}\n`;
+        perSpeakerSection += `${speaker}'s UNCITED ARGUMENTS (use these - cite as [A#]):\n${uncitedArgs.slice(0, 6).join("\n")}\n\n`;
       }
     }
 
@@ -1017,7 +1017,12 @@ ${(commonDocument || skeleton.commonDocument) ? `- WRONG (ignoring document): "$
 
 CRITICAL: ALL ${allSpeakers!.length} speakers must appear. Output ONLY speaker turns. Format: "NAME: text"
 SPEAKER LABEL RULE: Only write a speaker's name ONCE when they start speaking. Do NOT repeat the same name on consecutive paragraphs. The next name label appears only when a DIFFERENT speaker takes over.
-Do NOT include citation codes like [P1], [CD3] etc in your output text. Just quote naturally.`;
+
+CITATION FORMAT (MANDATORY):
+- You MUST include citation codes [P1], [Q1], [A1] etc. in your output text
+- Every substantive claim MUST have a citation code from the database content listed above
+- Example: "Truth is what works in practice [P3]. As I wrote, 'the true is the name of whatever proves itself to be good in the way of belief' [Q1]."
+- A response without citation codes is a FAILED response`;
   } else if (isConversation) {
     const hasPerSpeaker = sessionType === "dialogue" && skeleton.perSpeakerContent && allSpeakers;
     let contentSection = "";
@@ -1031,10 +1036,10 @@ Do NOT include citation codes like [P1], [CD3] etc in your output text. Just quo
           const uncitedQuotes = citedSet ? sc.quotes.filter(q => !citedSet.has(q.match(/\[([^\]]+)\]/)?.[0] || "")) : sc.quotes;
           const uncitedArgs = citedSet ? sc.arguments.filter(a => !citedSet.has(a.match(/\[([^\]]+)\]/)?.[0] || "")) : sc.arguments;
 
-          contentSection += `\n=== ${speaker.toUpperCase()}'S UNCITED DATABASE CONTENT (cite THESE next) ===\n`;
-          contentSection += `POSITIONS:\n${uncitedPositions.slice(0, 8).join("\n")}\n`;
-          contentSection += `QUOTES:\n${uncitedQuotes.slice(0, 6).join("\n")}\n`;
-          contentSection += `ARGUMENTS:\n${uncitedArgs.slice(0, 4).join("\n")}\n`;
+          contentSection += `\n=== ${speaker.toUpperCase()}'S UNCITED DATABASE CONTENT (cite THESE next - this is REAL content from the database) ===\n`;
+          contentSection += `POSITIONS (cite as [P#]):\n${uncitedPositions.slice(0, 10).join("\n")}\n`;
+          contentSection += `QUOTES (cite as [Q#]):\n${uncitedQuotes.slice(0, 8).join("\n")}\n`;
+          contentSection += `ARGUMENTS (cite as [A#]):\n${uncitedArgs.slice(0, 6).join("\n")}\n`;
         }
       }
     } else {
@@ -1132,7 +1137,12 @@ ${(commonDocument || skeleton.commonDocument) ? `- DO NOT ignore the source docu
 CRITICAL: Output ONLY speaker turns. Format: "NAME: text"
 SPEAKER LABEL RULE: Only write a speaker's name ONCE when they start speaking. Do NOT repeat the same name on consecutive paragraphs. The next name label appears only when a DIFFERENT speaker takes over.
 NO essays. ONLY alternating speaker turns.
-Do NOT include citation codes like [P1], [CD3] etc in your output text. Just quote naturally without bracketed codes.`;
+
+CITATION FORMAT (MANDATORY):
+- You MUST include citation codes [P1], [Q1], [A1] etc. in your output text
+- Every substantive claim MUST have a citation code from the database content listed above
+- Example: "Truth is what works in practice [P3]. As I wrote, 'the true is the name of whatever proves itself to be good in the way of belief' [Q1]."
+- A response without citation codes is a FAILED response`;
   } else if (enhanced) {
     system = `You ARE ${thinkerName}. Speak in FIRST PERSON.
 
@@ -1298,20 +1308,9 @@ function sendSkeletonSSE(res: Response, data: string) {
   }
 }
 
-function stripMetadata(text: string): string {
-  return text
-    .replace(/\[CD\d+\]/g, "")
-    .replace(/\[P\d+\]/g, "")
-    .replace(/\[Q\d+\]/g, "")
-    .replace(/\[A\d+\]/g, "")
-    .replace(/\[W\d+\]/g, "")
-    .replace(/\[UD\d+\]/g, "");
-}
-
 function sendContentSSE(res: Response, data: string) {
-  const cleaned = stripMetadata(data);
-  if (!cleaned && !data.includes("\n")) return;
-  res.write(`data: ${JSON.stringify({ type: "content", content: cleaned })}\n\n`);
+  if (!data || (data.trim() === "" && !data.includes("\n"))) return;
+  res.write(`data: ${JSON.stringify({ type: "content", content: data })}\n\n`);
   if (typeof (res as any).flush === "function") {
     (res as any).flush();
   }
