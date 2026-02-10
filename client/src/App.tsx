@@ -39,7 +39,7 @@ function App() {
                     <div className="flex items-center gap-3">
                       <BookOpen className="h-8 w-8 text-primary" />
                       <div>
-                        <h1 className="text-2xl font-bold tracking-tight">ASK THEM</h1>
+                        <h1 className="text-2xl font-bold tracking-tight">MAJOR BRAIN</h1>
                         <p className="text-sm text-muted-foreground">
                           Philosophical AI Platform
                         </p>
@@ -83,7 +83,7 @@ function App() {
 
               <footer className="border-t py-6 mt-12">
                 <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-                  <p>ASK THEM - Philosophical AI Platform</p>
+                  <p>MAJOR BRAIN - Philosophical AI Platform</p>
                   <p className="mt-1">Grounded in actual philosophical writings</p>
                 </div>
               </footer>

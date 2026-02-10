@@ -1,7 +1,7 @@
-# ASK THEM - Philosophical AI Platform
+# MAJOR BRAIN - Philosophical AI Platform
 
 ## Overview
-ASK THEM is a comprehensive philosophical AI platform that allows users to interact with 50+ philosophers through AI-powered chat, generate debates, interviews, and academic papers grounded in actual philosophical writings.
+MAJOR BRAIN is a comprehensive philosophical AI platform that allows users to interact with 50+ philosophers through AI-powered chat, generate debates, interviews, and academic papers grounded in actual philosophical writings.
 
 ## Architecture
 
