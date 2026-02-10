@@ -161,3 +161,7 @@ For outputs > 500 words, the app uses a three-pass architecture to ensure cohere
 - All thinkers displayed by last name only
 - Cross-Chunk Coherence (CC) for outputs > 500 words
 - White background (light theme) by default for accessibility
+- Speaker labels only appear once when a speaker starts talking, never repeated on consecutive paragraphs within the same turn
+- Custom response lengths per debater: Default mode (system decides) or Custom mode (per-debater word count inputs)
+- Response lengths flow from client → routes.ts → coherenceService and are injected into chunk-level prompts
+- Word counts are treated as ABSOLUTE MINIMUMS, not approximations
