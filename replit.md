@@ -165,3 +165,6 @@ For outputs > 500 words, the app uses a three-pass architecture to ensure cohere
 - Custom response lengths per debater: Default mode (system decides) or Custom mode (per-debater word count inputs)
 - Response lengths flow from client → routes.ts → coherenceService and are injected into chunk-level prompts
 - Word counts are treated as ABSOLUTE MINIMUMS, not approximations
+- ElevenLabs TTS integration: debates can be converted to audio with unique voices per debater
+- TTS voice assignment uses gender-aware mapping (female thinkers get female voices)
+- Audio served as base64 MP3 via SSE with progress updates

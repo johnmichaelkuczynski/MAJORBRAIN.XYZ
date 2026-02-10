@@ -14,6 +14,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import multer from "multer";
 import { z } from "zod";
 import { processIngestFolder } from "./ingest";
+import { generateDebateAudio } from "./services/ttsService";
 
 // Initialize AI clients
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -1932,6 +1933,43 @@ CRITICAL: DO NOT USE ANY MARKDOWN FORMATTING. No # headers, no * bullets, no - l
       });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/debate/tts", async (req: Request, res: Response) => {
+    try {
+      const { debateText } = req.body;
+      if (!debateText || typeof debateText !== "string") {
+        return res.status(400).json({ error: "debateText is required" });
+      }
+
+      if (!process.env.ELEVENLABS_API_KEY) {
+        return res.status(500).json({ error: "ElevenLabs API key not configured" });
+      }
+
+      setupSSE(res);
+
+      const sendProgress = (msg: string) => {
+        res.write(`data: ${JSON.stringify({ type: "progress", message: msg })}\n\n`);
+      };
+
+      sendProgress("Starting audio generation...");
+
+      const { audio, voiceMap } = await generateDebateAudio(debateText, sendProgress);
+
+      const base64Audio = audio.toString("base64");
+
+      res.write(`data: ${JSON.stringify({ type: "audio", audio: base64Audio, voiceMap, format: "mp3" })}\n\n`);
+      res.write("data: [DONE]\n\n");
+      res.end();
+    } catch (error: any) {
+      console.error("[TTS] Error:", error.message);
+      if (!res.headersSent) {
+        res.status(500).json({ error: error.message });
+      } else {
+        res.write(`data: ${JSON.stringify({ type: "error", message: error.message })}\n\n`);
+        res.end();
+      }
     }
   });
 

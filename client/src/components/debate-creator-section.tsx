@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Play, Loader2, Plus, X, Download, Copy, FileText } from "lucide-react";
+import { useState, useRef } from "react";
+import { Play, Loader2, Plus, X, Download, Copy, FileText, Volume2, Square, Pause } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
@@ -162,6 +162,12 @@ export function DebateCreatorSection() {
     debaterContent: "",
     debate: "",
   });
+  const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
+  const [audioProgress, setAudioProgress] = useState("");
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [audioVoiceMap, setAudioVoiceMap] = useState<Record<string, string>>({});
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const addDebater = () => {
     if (currentDebater && !debaters.includes(currentDebater) && debaters.length < 4) {
@@ -300,6 +306,102 @@ export function DebateCreatorSection() {
     }
   };
 
+  const handleGenerateAudio = async () => {
+    if (!artifacts.debate || isGeneratingAudio) return;
+
+    setIsGeneratingAudio(true);
+    setAudioProgress("Starting audio generation...");
+    setAudioUrl(null);
+    setAudioVoiceMap({});
+
+    if (audioRef.current) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    }
+
+    try {
+      const response = await fetch("/api/debate/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ debateText: artifacts.debate }),
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || "Failed to generate audio");
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error("No response body");
+
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          const dataStr = line.slice(6).trim();
+          if (dataStr === "[DONE]") continue;
+
+          try {
+            const parsed = JSON.parse(dataStr);
+            if (parsed.type === "progress") {
+              setAudioProgress(parsed.message);
+            } else if (parsed.type === "audio") {
+              const byteString = atob(parsed.audio);
+              const bytes = new Uint8Array(byteString.length);
+              for (let i = 0; i < byteString.length; i++) {
+                bytes[i] = byteString.charCodeAt(i);
+              }
+              const blob = new Blob([bytes], { type: "audio/mpeg" });
+              const url = URL.createObjectURL(blob);
+              setAudioUrl(url);
+              setAudioVoiceMap(parsed.voiceMap || {});
+              setAudioProgress("Audio ready!");
+            } else if (parsed.type === "error") {
+              throw new Error(parsed.message);
+            }
+          } catch (e: any) {
+            if (e.message && !e.message.includes("JSON")) {
+              throw e;
+            }
+          }
+        }
+      }
+    } catch (error: any) {
+      console.error("Audio generation error:", error);
+      setAudioProgress(`Error: ${error.message}`);
+    } finally {
+      setIsGeneratingAudio(false);
+    }
+  };
+
+  const handlePlayPause = () => {
+    if (!audioRef.current || !audioUrl) return;
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      audioRef.current.play();
+      setIsPlaying(true);
+    }
+  };
+
+  const handleDownloadAudio = () => {
+    if (!audioUrl) return;
+    const a = document.createElement("a");
+    a.href = audioUrl;
+    a.download = `debate-audio-${Date.now()}.mp3`;
+    a.click();
+  };
+
   const handleClear = () => {
     setTopic("");
     setDocumentContent("");
@@ -308,6 +410,13 @@ export function DebateCreatorSection() {
     setResponseLengths({});
     setResponseLengthMode("default");
     setArtifacts({ outline: "", skeleton: "", documentCitations: "", debaterContent: "", debate: "" });
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
+    setAudioUrl(null);
+    setAudioVoiceMap({});
+    setAudioProgress("");
+    setIsPlaying(false);
   };
 
   const hasAnyContent = Object.values(artifacts).some(v => v.length > 0);
@@ -506,6 +615,114 @@ export function DebateCreatorSection() {
               placeholder="The debate will stream here after artifacts are prepared..." 
             />
           </div>
+
+          {artifacts.debate && !isStreaming && (
+            <div className="border rounded-md" data-testid="audio-section">
+              <div className="flex items-center justify-between gap-2 p-3 border-b bg-muted/30">
+                <div className="flex items-center gap-2">
+                  <Volume2 className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-semibold">Audio Version</span>
+                </div>
+              </div>
+              <div className="p-3 space-y-3">
+                {!audioUrl && !isGeneratingAudio && (
+                  <Button
+                    onClick={handleGenerateAudio}
+                    variant="outline"
+                    className="w-full"
+                    data-testid="button-generate-audio"
+                  >
+                    <Volume2 className="mr-2 h-4 w-4" />
+                    Convert Debate to Audio
+                  </Button>
+                )}
+
+                {isGeneratingAudio && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>{audioProgress}</span>
+                    </div>
+                    <div className="h-1 bg-muted rounded-full overflow-hidden">
+                      <div className="h-full bg-primary rounded-full animate-pulse" style={{ width: "60%" }} />
+                    </div>
+                  </div>
+                )}
+
+                {audioUrl && (
+                  <div className="space-y-3">
+                    {Object.keys(audioVoiceMap).length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {Object.entries(audioVoiceMap).map(([speaker, voice]) => (
+                          <Badge key={speaker} variant="outline" className="text-xs">
+                            {speaker}: {voice}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+
+                    <audio
+                      ref={audioRef}
+                      src={audioUrl}
+                      onEnded={() => setIsPlaying(false)}
+                      onPause={() => setIsPlaying(false)}
+                      onPlay={() => setIsPlaying(true)}
+                      className="hidden"
+                      data-testid="audio-player"
+                    />
+
+                    <div className="flex items-center gap-2">
+                      <Button
+                        onClick={handlePlayPause}
+                        variant="outline"
+                        size="icon"
+                        data-testid="button-play-pause-audio"
+                      >
+                        {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          if (audioRef.current) {
+                            audioRef.current.pause();
+                            audioRef.current.currentTime = 0;
+                            setIsPlaying(false);
+                          }
+                        }}
+                        variant="outline"
+                        size="icon"
+                        data-testid="button-stop-audio"
+                      >
+                        <Square className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        onClick={handleDownloadAudio}
+                        variant="outline"
+                        size="icon"
+                        data-testid="button-download-audio"
+                      >
+                        <Download className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        onClick={handleGenerateAudio}
+                        variant="outline"
+                        size="sm"
+                        data-testid="button-regenerate-audio"
+                      >
+                        <Volume2 className="mr-1 h-3 w-3" />
+                        Regenerate
+                      </Button>
+                    </div>
+
+                    <p className="text-xs text-muted-foreground">{audioProgress}</p>
+                  </div>
+                )}
+
+                {!isGeneratingAudio && !audioUrl && audioProgress && audioProgress.startsWith("Error") && (
+                  <p className="text-xs text-destructive">{audioProgress}</p>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </Card>
