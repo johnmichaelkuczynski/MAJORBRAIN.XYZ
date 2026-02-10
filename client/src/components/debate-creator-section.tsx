@@ -243,7 +243,7 @@ export function DebateCreatorSection() {
     }));
   };
 
-  const hasContent = topic.trim() || documentContent.trim() || Object.values(debaterDocuments).some(d => d.trim());
+  const hasContent = !!(topic.trim() || documentContent.trim() || Object.values(debaterDocuments).some(d => d.trim().length > 0));
 
   const handleGenerate = async () => {
     if (!hasContent || debaters.length < modeConfig.minParticipants || isStreaming) return;
