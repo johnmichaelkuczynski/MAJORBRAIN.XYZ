@@ -1716,14 +1716,18 @@ OUTPUT FORMAT - Generate in this EXACT order with these EXACT headers:
 [Identify 5-10 general intellectual trends, themes, or patterns in this work. Each on its own line, starting with "TREND:"]
 
 === QUESTIONS AND ANSWERS ===
-[Generate exactly 50 question-answer pairs based on this text. Format each as:]
-Q1: [Question that someone might ask the author about this text]
-A1: [Answer based on what the author says in this text]
+YOU MUST GENERATE ALL 50 QUESTION-ANSWER PAIRS. DO NOT STOP EARLY. DO NOT WRITE "[Continue with remaining questions...]" OR ANY SIMILAR PLACEHOLDER. WRITE OUT EVERY SINGLE Q&A FROM Q1/A1 THROUGH Q50/A50.
 
-Q2: [Next question]
-A2: [Answer based on text]
+Q1: [Question about the text]
+A1: [Answer based on what the author says - 2-5 sentences]
 
-[Continue through Q50/A50]
+Q2: [Question about the text]
+A2: [Answer based on text - 2-5 sentences]
+
+...continue writing every single pair through...
+
+Q50: [Question about the text]
+A50: [Answer based on text - 2-5 sentences]
 
 CRITICAL RULES:
 1. All content must come from the provided text - do not invent
@@ -1731,7 +1735,8 @@ CRITICAL RULES:
 3. Questions should cover the full range of topics in the document
 4. Answers should be substantive (2-5 sentences each)
 5. NO MARKDOWN - plain text only
-6. No filler phrases like "This raises profound questions..."`;
+6. No filler phrases like "This raises profound questions..."
+7. YOU MUST WRITE ALL 50 Q&A PAIRS IN FULL. Never use placeholders like "[Continue with...]" or "[35 more Q&A pairs...]". If you stop before Q50/A50, your output is INCOMPLETE and UNACCEPTABLE.`;
 
     try {
       const userMessage = `Analyze this document and generate the CORE content:\n\n${content.substring(0, 100000)}`;
