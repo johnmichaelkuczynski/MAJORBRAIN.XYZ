@@ -69,11 +69,21 @@ export function DocumentAnalyzerSection() {
     copyToClipboard(output);
   };
 
-  const handleDownloadCore = async () => {
+  const getCoreFilename = () => {
     const sanitizedAuthor = authorName.trim().replace(/\s+/g, "_").toUpperCase();
-    const filename = `CORE_${sanitizedAuthor}_${coreDocNumber}.txt`;
+    if (documentTitle.trim()) {
+      const sanitizedTitle = documentTitle.trim().replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_-]/g, "");
+      return `CORE_${sanitizedAuthor}_${sanitizedTitle}.txt`;
+    }
+    return `CORE_${sanitizedAuthor}_${coreDocNumber}.txt`;
+  };
+
+  const handleDownloadCore = async () => {
+    const filename = getCoreFilename();
     await downloadText(output, filename);
-    setCoreDocNumber(prev => prev + 1);
+    if (!documentTitle.trim()) {
+      setCoreDocNumber(prev => prev + 1);
+    }
   };
 
   const wordCount = documentContent.split(/\s+/).filter(w => w.length > 0).length;
@@ -164,7 +174,7 @@ export function DocumentAnalyzerSection() {
               data-testid="button-download-core"
             >
               <Download className="mr-2 h-4 w-4" />
-              Download as CORE_{authorName.toUpperCase()}_{coreDocNumber}.txt
+              Download as {getCoreFilename()}
             </Button>
           )}
         </div>
