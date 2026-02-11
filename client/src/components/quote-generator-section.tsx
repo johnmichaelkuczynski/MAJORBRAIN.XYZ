@@ -53,7 +53,7 @@ export function QuoteGeneratorSection() {
 
   const handleClear = () => { setInputText(""); setDocumentContent(""); setOutput(""); };
   const handleCopy = () => { copyToClipboard(output); };
-  const handleDownload = () => { downloadText(output, `extracted-quotes-${Date.now()}.txt`); };
+  const handleDownload = async () => { await downloadText(output, `extracted-quotes-${Date.now()}.txt`); };
 
   return (
     <Card className="p-6">

@@ -94,8 +94,8 @@ export function StreamingPopup({
     copyToClipboard(content);
   };
 
-  const handleDownload = () => {
-    downloadText(content, `output-${Date.now()}.txt`);
+  const handleDownload = async () => {
+    await downloadText(content, `output-${Date.now()}.txt`);
   };
 
   if (!isOpen) return null;

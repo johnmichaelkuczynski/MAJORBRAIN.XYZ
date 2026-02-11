@@ -91,7 +91,7 @@ export function SkeletonPopup({
     setIsResizing(true);
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!skeleton) return;
     let text = "SKELETON\n========\n\n";
     text += `THESIS:\n${skeleton.thesis}\n\n`;
@@ -102,7 +102,7 @@ export function SkeletonPopup({
     if (skeleton.keyTerms && Object.keys(skeleton.keyTerms).length > 0) {
       text += `KEY TERMS:\n${Object.entries(skeleton.keyTerms).map(([k, v]) => `  - ${k}: ${v}`).join("\n")}\n\n`;
     }
-    downloadText(text, `skeleton-${Date.now()}.txt`);
+    await downloadText(text, `skeleton-${Date.now()}.txt`);
   };
 
   const handleSendFeedback = () => {

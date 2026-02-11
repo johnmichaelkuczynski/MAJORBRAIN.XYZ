@@ -82,7 +82,7 @@ export function AiChatSection() {
 
   const handleClear = () => { setMessages([]); setInput(""); setDocumentContent(""); };
   const handleCopy = () => { copyToClipboard(messages.map(m => `${m.role.toUpperCase()}: ${m.content}`).join("\n\n")); };
-  const handleDownload = () => { downloadText(messages.map(m => `${m.role.toUpperCase()}: ${m.content}`).join("\n\n"), `ai-chat-${Date.now()}.txt`); };
+  const handleDownload = async () => { await downloadText(messages.map(m => `${m.role.toUpperCase()}: ${m.content}`).join("\n\n"), `ai-chat-${Date.now()}.txt`); };
 
   return (
     <Card className="p-6">

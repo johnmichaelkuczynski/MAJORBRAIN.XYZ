@@ -59,10 +59,10 @@ export function OutlineGeneratorSection() {
 
   const handleClear = () => { setTopic(""); setDocumentContent(""); setThinker(""); setOutput(""); };
   const handleCopy = () => { copyToClipboard(output); };
-  const handleDownload = () => {
+  const handleDownload = async () => {
     const topicSlug = topic.trim().split(/\s+/).slice(0, 3).join("_").replace(/[^a-zA-Z0-9_]/g, "").toUpperCase() || "GENERAL";
     const thinkerName = thinker.charAt(0).toUpperCase() + thinker.slice(1).toLowerCase();
-    downloadText(output, `${thinkerName}_OUTLINES_${topicSlug}.txt`);
+    await downloadText(output, `${thinkerName}_OUTLINES_${topicSlug}.txt`);
   };
 
   return (

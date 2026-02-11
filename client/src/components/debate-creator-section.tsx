@@ -155,7 +155,7 @@ function ArtifactPanel({ title, content, artifactKey, isStreaming }: {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => downloadText(content, `debate-${artifactKey}-${Date.now()}.txt`)}
+              onClick={async () => await downloadText(content, `debate-${artifactKey}-${Date.now()}.txt`)}
               data-testid={`button-download-${artifactKey}`}
             >
               <Download className="h-3 w-3" />
@@ -477,7 +477,7 @@ export function DebateCreatorSection() {
 
   const hasAnyContent = Object.values(artifacts).some(v => v.length > 0);
 
-  const handleDownloadAll = () => {
+  const handleDownloadAll = async () => {
     const allContent = [
       artifacts.outline ? `=== ARTIFACT 1: OUTLINE ===\n\n${artifacts.outline}` : "",
       artifacts.skeleton ? `\n\n=== ARTIFACT 2: SKELETON ===\n\n${artifacts.skeleton}` : "",
@@ -485,7 +485,7 @@ export function DebateCreatorSection() {
       artifacts.debaterContent ? `\n\n=== ARTIFACT 4: PER-DEBATER DATABASE CONTENT ===\n\n${artifacts.debaterContent}` : "",
       artifacts.debate ? `\n\n=== ARTIFACT 5: THE DEBATE ===\n\n${artifacts.debate}` : "",
     ].filter(Boolean).join("");
-    downloadText(allContent, `complete-debate-${Date.now()}.txt`);
+    await downloadText(allContent, `complete-debate-${Date.now()}.txt`);
   };
 
   const handleModeChange = (mode: ExchangeMode) => {
@@ -738,7 +738,7 @@ export function DebateCreatorSection() {
                   <Button variant="ghost" size="icon" onClick={() => copyToClipboard(artifacts.debate)} data-testid="button-copy-debate">
                     <Copy className="h-3 w-3" />
                   </Button>
-                  <Button variant="ghost" size="icon" onClick={() => downloadText(artifacts.debate, `debate-text-${Date.now()}.txt`)} data-testid="button-download-debate">
+                  <Button variant="ghost" size="icon" onClick={async () => await downloadText(artifacts.debate, `debate-text-${Date.now()}.txt`)} data-testid="button-download-debate">
                     <Download className="h-3 w-3" />
                   </Button>
                 </div>

@@ -83,8 +83,8 @@ export function SkeletonBuildPopup({
     setIsResizing(true);
   };
 
-  const handleDownload = () => {
-    downloadText(content, `skeleton-${Date.now()}.txt`);
+  const handleDownload = async () => {
+    await downloadText(content, `skeleton-${Date.now()}.txt`);
   };
 
   if (!isOpen) return null;

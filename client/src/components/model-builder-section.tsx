@@ -68,7 +68,7 @@ export function ModelBuilderSection() {
 
   const handleClear = () => { setInputText(""); setDocumentContent(""); setOutput(""); };
   const handleCopy = () => { copyToClipboard(output); };
-  const handleDownload = () => { downloadText(output, `logical-model-${mode}-${Date.now()}.txt`); };
+  const handleDownload = async () => { await downloadText(output, `logical-model-${mode}-${Date.now()}.txt`); };
 
   return (
     <Card className="p-6" id="model-builder-section">

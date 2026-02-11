@@ -69,10 +69,10 @@ export function DocumentAnalyzerSection() {
     copyToClipboard(output);
   };
 
-  const handleDownloadCore = () => {
+  const handleDownloadCore = async () => {
     const sanitizedAuthor = authorName.trim().replace(/\s+/g, "_").toUpperCase();
     const filename = `CORE_${sanitizedAuthor}_${coreDocNumber}.txt`;
-    downloadText(output, filename);
+    await downloadText(output, filename);
     setCoreDocNumber(prev => prev + 1);
   };
 

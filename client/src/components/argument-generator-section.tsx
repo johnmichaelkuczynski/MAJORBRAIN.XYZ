@@ -72,7 +72,7 @@ export function ArgumentGeneratorSection() {
 
   const handleClear = () => { setTopic(""); setDocumentContent(""); setThinker(""); setOutput(""); };
   const handleCopy = () => { copyToClipboard(output); };
-  const handleDownload = () => { downloadText(output, `arguments-${thinker}-${Date.now()}.txt`); };
+  const handleDownload = async () => { await downloadText(output, `arguments-${thinker}-${Date.now()}.txt`); };
 
   return (
     <Card className="p-6">
