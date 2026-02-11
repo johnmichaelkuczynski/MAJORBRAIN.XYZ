@@ -453,6 +453,14 @@ function buildDatabaseSkeleton(context: any, thinkerName: string, quoteCount: nu
     });
   }
 
+  if (context.outlines?.length > 0) {
+    skeleton += `\n--- ${thinkerName}'s OUTLINES (${context.outlines.length} total) ---\n`;
+    context.outlines.slice(0, Math.floor(quoteCount / 2)).forEach((o: any, i: number) => {
+      const text = (o.outlineText || o.outline_text || '').substring(0, 1000);
+      skeleton += `[${prefix}-OL${i + 1}] ${text}\n`;
+    });
+  }
+
   skeleton += `\n=== END ${thinkerName.toUpperCase()}'s DATABASE CONTENT ===\n`;
   skeleton += `\nREMINDER: ${thinkerName}'s output MUST be built from the above content. Reference items by their speaker-prefixed codes [${prefix}-P1], [${prefix}-Q1], [${prefix}-A1] etc. DO NOT invent content.\n`;
   skeleton += `PRIORITY: Use CORE content (${prefix}-CP, ${prefix}-CA) first if available - these are from comprehensive document analysis.\n`;
@@ -544,6 +552,8 @@ ${context.arguments?.length > 0 ? `\n--- MY ARGUMENTS ---\n${context.arguments.s
 
 ${context.works?.length > 0 ? `\n--- MY WORKS ---\n${context.works.slice(0, Math.floor(quoteCount / 3)).map((w: any, i: number) => `[W${i + 1}] ${(w.workText || w.work_text || '').substring(0, 500)}...`).join('\n')}` : ''}
 
+${context.outlines?.length > 0 ? `\n--- MY OUTLINES ---\n${context.outlines.slice(0, Math.floor(quoteCount / 2)).map((o: any, i: number) => `[OL${i + 1}] ${(o.outlineText || o.outline_text || '').substring(0, 1000)}`).join('\n')}` : ''}
+
 === HOW TO RESPOND (STRICT DATABASE GROUNDING) ===
 
 1. Answer the question DIRECTLY using the database content above
@@ -626,6 +636,7 @@ export async function registerRoutes(
             quotes: context.quotes || [],
             arguments: context.arguments || [],
             works: context.works || [],
+            outlines: context.outlines || [],
           },
           res,
         });
@@ -709,8 +720,17 @@ export async function registerRoutes(
         });
       }
 
+      if (context.outlines?.length > 0) {
+        skeleton += `\n--- OUTLINES (${context.outlines.length}) ---\n`;
+        context.outlines.slice(0, Math.floor(quoteCount / 2)).forEach((o: any, i: number) => {
+          const text = (o.outlineText || o.outline_text || '').substring(0, 500);
+          skeleton += `[OL${i + 1}] ${text}...\n\n`;
+        });
+      }
+
       const totalItems = (context.positions?.length || 0) + (context.quotes?.length || 0) + 
-                         (context.arguments?.length || 0) + (context.works?.length || 0);
+                         (context.arguments?.length || 0) + (context.works?.length || 0) +
+                         (context.outlines?.length || 0);
       
       skeleton += `\n=== END SKELETON (${totalItems} total items) ===`;
 
@@ -949,6 +969,15 @@ CRITICAL: DO NOT USE ANY MARKDOWN FORMATTING. No # headers, no * bullets, no - l
         perDebaterArtifact.push(`[A${i + 1}] ${a.argumentText || a.argument_text || ''}`);
       });
       
+      const outlines = ctx.outlines || [];
+      if (outlines.length > 0) {
+        perDebaterArtifact.push(``);
+        perDebaterArtifact.push(`OUTLINES (${outlines.length} total):`);
+        outlines.slice(0, 10).forEach((o: any, i: number) => {
+          perDebaterArtifact.push(`[OL${i + 1}] ${(o.outlineText || o.outline_text || '').substring(0, 500)}`);
+        });
+      }
+      
       const uploadedChunks = debaterUploadedContent[name];
       if (uploadedChunks && uploadedChunks.length > 0) {
         perDebaterArtifact.push(``);
@@ -1001,9 +1030,10 @@ CRITICAL: DO NOT USE ANY MARKDOWN FORMATTING. No # headers, no * bullets, no - l
         quotes: contexts.flatMap(c => c.quotes || []),
         arguments: contexts.flatMap(c => c.arguments || []),
         works: contexts.flatMap(c => c.works || []),
+        outlines: contexts.flatMap(c => c.outlines || []),
       };
 
-      const perSpeakerContent: Record<string, { positions: any[]; quotes: any[]; arguments: any[]; works: any[] }> = {};
+      const perSpeakerContent: Record<string, { positions: any[]; quotes: any[]; arguments: any[]; works: any[]; outlines: any[] }> = {};
       debaterNames.forEach((name: string, idx: number) => {
         const uploadedItems = debaterUploadedContent[name] || [];
         perSpeakerContent[name] = {
@@ -1019,6 +1049,7 @@ CRITICAL: DO NOT USE ANY MARKDOWN FORMATTING. No # headers, no * bullets, no - l
           quotes: contexts[idx].quotes || [],
           arguments: contexts[idx].arguments || [],
           works: contexts[idx].works || [],
+          outlines: contexts[idx].outlines || [],
         };
       });
 
@@ -1531,6 +1562,7 @@ Create a detailed outline for a paper on "${topic}" using the database content.`
           quotes: context.quotes || [],
           arguments: context.arguments || [],
           works: context.works || [],
+          outlines: context.outlines || [],
         },
         res,
       });

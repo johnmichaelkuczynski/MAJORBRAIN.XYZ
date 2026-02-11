@@ -17,12 +17,14 @@ export interface GlobalSkeleton {
     quotes: string[];
     arguments: string[];
     works: string[];
+    outlines?: string[];
   };
   perSpeakerContent?: Record<string, {
     positions: string[];
     quotes: string[];
     arguments: string[];
     works: string[];
+    outlines?: string[];
   }>;
 }
 
@@ -404,6 +406,7 @@ export interface CoherenceOptions {
     quotes: any[];
     arguments: any[];
     works: any[];
+    outlines?: any[];
   }>;
   userPrompt: string;
   commonDocument?: string;
@@ -415,6 +418,7 @@ export interface CoherenceOptions {
     quotes: any[];
     arguments: any[];
     works: any[];
+    outlines?: any[];
   };
   responseLengths?: Record<string, number>;
   exchangeMode?: string;
@@ -524,7 +528,7 @@ function speakerPrefix(name: string): string {
   return clean.substring(0, 3);
 }
 
-function formatDbContent(items: any[], type: "P" | "Q" | "A" | "W", speakerName: string, limit: number = 20): string[] {
+function formatDbContent(items: any[], type: "P" | "Q" | "A" | "W" | "OL", speakerName: string, limit: number = 20): string[] {
   const prefix = speakerPrefix(speakerName);
   const regularItems = items.filter((item: any) => !item._uploadedDoc);
   const uploadedItems = items.filter((item: any) => item._uploadedDoc);
@@ -535,6 +539,7 @@ function formatDbContent(items: any[], type: "P" | "Q" | "A" | "W", speakerName:
     if (type === "Q") return `${code} "${item.quoteText || item.quote_text}"`;
     if (type === "A") return `${code} ${item.argumentText || item.argument_text}`;
     if (type === "W") return `${code} ${(item.workText || item.work_text || '').substring(0, 500)}...`;
+    if (type === "OL") return `${code} ${(item.outlineText || item.outline_text || '').substring(0, 1000)}`;
     return "";
   });
 
@@ -636,6 +641,7 @@ Return ONLY the JSON skeleton.`;
           quotes: formatDbContent(sc.quotes, "Q", speaker, 20),
           arguments: formatDbContent(sc.arguments, "A", speaker, 12),
           works: formatDbContent(sc.works, "W", speaker, 5),
+          outlines: sc.outlines ? formatDbContent(sc.outlines, "OL", speaker, 10) : [],
         };
       }
     }
@@ -931,11 +937,17 @@ ${minWords} words is the MINIMUM floor. More is acceptable. Less is a FAILURE.`;
         const uncitedQuotes = citedSet ? sc.quotes.filter(q => !citedSet.has(q.match(/\[([^\]]+)\]/)?.[0] || "")) : sc.quotes;
         const uncitedArgs = citedSet ? sc.arguments.filter(a => !citedSet.has(a.match(/\[([^\]]+)\]/)?.[0] || "")) : sc.arguments;
 
+        const uncitedOutlines = sc.outlines ? (citedSet ? sc.outlines.filter(o => !citedSet.has(o.match(/\[([^\]]+)\]/)?.[0] || "")) : sc.outlines) : [];
+
         perSpeakerSection += `\n=== ${speaker.toUpperCase()}'S DATABASE CONTENT (${speaker} MUST cite THESE - this is REAL content from the database) ===\n`;
         const sp = speakerPrefix(speaker);
         perSpeakerSection += `${speaker}'s UNCITED POSITIONS (cite as [${sp}-P#]):\n${uncitedPositions.slice(0, 15).join("\n")}\n`;
         perSpeakerSection += `${speaker}'s UNCITED QUOTES (cite as [${sp}-Q#]):\n${uncitedQuotes.slice(0, 12).join("\n")}\n`;
-        perSpeakerSection += `${speaker}'s UNCITED ARGUMENTS (cite as [${sp}-A#]):\n${uncitedArgs.slice(0, 8).join("\n")}\n\n`;
+        perSpeakerSection += `${speaker}'s UNCITED ARGUMENTS (cite as [${sp}-A#]):\n${uncitedArgs.slice(0, 8).join("\n")}\n`;
+        if (uncitedOutlines.length > 0) {
+          perSpeakerSection += `${speaker}'s OUTLINES (cite as [${sp}-OL#]):\n${uncitedOutlines.slice(0, 5).join("\n")}\n`;
+        }
+        perSpeakerSection += `\n`;
       }
     }
 
@@ -1059,11 +1071,16 @@ CITATION FORMAT (MANDATORY):
           const uncitedQuotes = citedSet ? sc.quotes.filter(q => !citedSet.has(q.match(/\[([^\]]+)\]/)?.[0] || "")) : sc.quotes;
           const uncitedArgs = citedSet ? sc.arguments.filter(a => !citedSet.has(a.match(/\[([^\]]+)\]/)?.[0] || "")) : sc.arguments;
 
+          const uncitedOutlines2 = sc.outlines ? (citedSet ? sc.outlines.filter(o => !citedSet.has(o.match(/\[([^\]]+)\]/)?.[0] || "")) : sc.outlines) : [];
+
           const sp2 = speakerPrefix(speaker);
           contentSection += `\n=== ${speaker.toUpperCase()}'S UNCITED DATABASE CONTENT (cite THESE next - this is REAL content from the database) ===\n`;
           contentSection += `${speaker}'s POSITIONS (cite as [${sp2}-P#]):\n${uncitedPositions.slice(0, 15).join("\n")}\n`;
           contentSection += `${speaker}'s QUOTES (cite as [${sp2}-Q#]):\n${uncitedQuotes.slice(0, 12).join("\n")}\n`;
           contentSection += `${speaker}'s ARGUMENTS (cite as [${sp2}-A#]):\n${uncitedArgs.slice(0, 8).join("\n")}\n`;
+          if (uncitedOutlines2.length > 0) {
+            contentSection += `${speaker}'s OUTLINES (cite as [${sp2}-OL#]):\n${uncitedOutlines2.slice(0, 5).join("\n")}\n`;
+          }
         }
       }
     } else {
@@ -1448,6 +1465,7 @@ export async function processWithCoherence(options: CoherenceOptions): Promise<v
             quotes: formatDbContent(sc.quotes, "Q", speaker, 20),
             arguments: formatDbContent(sc.arguments, "A", speaker, 12),
             works: formatDbContent(sc.works, "W", speaker, 5),
+            outlines: sc.outlines ? formatDbContent(sc.outlines, "OL", speaker, 10) : [],
           };
         }
       }
@@ -1485,7 +1503,7 @@ export async function processWithCoherence(options: CoherenceOptions): Promise<v
   if (skeleton.perSpeakerContent) {
     sendSkeletonSSE(res, `\nPER-SPEAKER CONTENT\n`);
     for (const [speaker, sc] of Object.entries(skeleton.perSpeakerContent)) {
-      sendSkeletonSSE(res, `${speaker}: ${sc.positions.length}P, ${sc.quotes.length}Q, ${sc.arguments.length}A, ${sc.works.length}W\n`);
+      sendSkeletonSSE(res, `${speaker}: ${sc.positions.length}P, ${sc.quotes.length}Q, ${sc.arguments.length}A, ${sc.works.length}W, ${(sc.outlines || []).length}OL\n`);
     }
   }
   
@@ -1511,6 +1529,7 @@ export async function processWithCoherence(options: CoherenceOptions): Promise<v
         addMaterialItems(dialogueState.materialTracker, udPositions, speaker, "uploaded");
         addMaterialItems(dialogueState.materialTracker, sc.quotes, speaker, "database");
         addMaterialItems(dialogueState.materialTracker, sc.arguments, speaker, "database");
+        if (sc.outlines) addMaterialItems(dialogueState.materialTracker, sc.outlines, speaker, "database");
       }
     }
     console.log(`[COHERENCE] Material tracker initialized: ${dialogueState.materialTracker.items.length} total items across ${speakers.length} speakers`);

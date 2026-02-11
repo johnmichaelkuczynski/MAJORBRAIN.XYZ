@@ -74,7 +74,18 @@ async function initCoherenceTables() {
         created_at TIMESTAMP DEFAULT NOW()
       )
     `;
-    console.log("Coherence and core_content tables initialized");
+    await client`
+      CREATE TABLE IF NOT EXISTS outlines (
+        id SERIAL PRIMARY KEY,
+        thinker TEXT NOT NULL,
+        outline_text TEXT NOT NULL,
+        title TEXT,
+        topic TEXT,
+        source_document TEXT,
+        search_vector tsvector
+      )
+    `;
+    console.log("Coherence, core_content, and outlines tables initialized");
   } catch (error) {
     console.error("Failed to initialize coherence tables:", error);
   }

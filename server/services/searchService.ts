@@ -5,7 +5,7 @@ import OpenAI from "openai";
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 interface RetrievedItem {
-  type: "position" | "quote" | "argument" | "work" | "core";
+  type: "position" | "quote" | "argument" | "work" | "core" | "outline";
   id: number | string;
   text: string;
   thinker: string;
@@ -20,6 +20,7 @@ interface RetrievalResult {
   arguments: RetrievedItem[];
   works: RetrievedItem[];
   coreContent: RetrievedItem[];
+  outlines: RetrievedItem[];
   searchTerms: string[];
   expandedTerms: string[];
   auditLog: AuditLogEntry;
@@ -36,6 +37,7 @@ interface AuditLogEntry {
     argumentsFound: number;
     worksFound: number;
     coreFound: number;
+    outlinesFound: number;
     topRelevanceScore: number;
     searchMethod: string;
   }>;
@@ -112,6 +114,17 @@ export async function initFullTextSearch(retryCount: number = 0): Promise<void> 
       END $$;
     `);
 
+    await db.execute(sql`
+      DO $$ BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name = 'outlines' AND column_name = 'search_vector'
+        ) THEN
+          ALTER TABLE outlines ADD COLUMN search_vector tsvector;
+        END IF;
+      END $$;
+    `);
+
     console.log("[FTS] Added search_vector columns");
 
     await db.execute(sql`
@@ -130,6 +143,12 @@ export async function initFullTextSearch(retryCount: number = 0): Promise<void> 
       UPDATE works SET search_vector = to_tsvector('english', COALESCE(work_text, '') || ' ' || COALESCE(title, ''))
       WHERE search_vector IS NULL;
     `);
+    await safeQuery(async () => {
+      await db.execute(sql`
+        UPDATE outlines SET search_vector = to_tsvector('english', COALESCE(outline_text, '') || ' ' || COALESCE(title, '') || ' ' || COALESCE(topic, ''))
+        WHERE search_vector IS NULL;
+      `);
+    }, undefined);
 
     console.log("[FTS] Populated search vectors");
 
@@ -138,6 +157,7 @@ export async function initFullTextSearch(retryCount: number = 0): Promise<void> 
       await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_arguments_fts ON arguments USING GIN(search_vector);`);
       await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_quotes_fts ON quotes USING GIN(search_vector);`);
       await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_works_fts ON works USING GIN(search_vector);`);
+      await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_outlines_fts ON outlines USING GIN(search_vector);`);
     }, undefined);
 
     console.log("[FTS] Created GIN indexes");
@@ -197,6 +217,20 @@ export async function initFullTextSearch(retryCount: number = 0): Promise<void> 
         DROP TRIGGER IF EXISTS trg_works_search ON works;
         CREATE TRIGGER trg_works_search BEFORE INSERT OR UPDATE ON works
         FOR EACH ROW EXECUTE FUNCTION update_works_search_vector();
+      `);
+
+      await db.execute(sql`
+        CREATE OR REPLACE FUNCTION update_outlines_search_vector() RETURNS trigger AS $$
+        BEGIN
+          NEW.search_vector := to_tsvector('english', COALESCE(NEW.outline_text, '') || ' ' || COALESCE(NEW.title, '') || ' ' || COALESCE(NEW.topic, ''));
+          RETURN NEW;
+        END;
+        $$ LANGUAGE plpgsql;
+      `);
+      await db.execute(sql`
+        DROP TRIGGER IF EXISTS trg_outlines_search ON outlines;
+        CREATE TRIGGER trg_outlines_search BEFORE INSERT OR UPDATE ON outlines
+        FOR EACH ROW EXECUTE FUNCTION update_outlines_search_vector();
       `);
     }, undefined);
 
@@ -312,15 +346,17 @@ export async function topicFirstRetrieval(
   let arguments_: RetrievedItem[] = [];
   let works: RetrievedItem[] = [];
   let coreContent: RetrievedItem[] = [];
+  let outlines: RetrievedItem[] = [];
 
   if (tsQueryStr) {
     positions = await searchWithFTS("positions", "position_text", thinkerName, thinkerId, tsQueryStr, maxResults);
     quotes = await searchWithFTS("quotes", "quote_text", thinkerName, thinkerId, tsQueryStr, maxResults);
     arguments_ = await searchWithFTS("arguments", "argument_text", thinkerName, thinkerId, tsQueryStr, maxResults);
     works = await searchWithFTS("works", "work_text", thinkerName, thinkerId, tsQueryStr, Math.floor(maxResults / 2));
+    outlines = await searchWithFTS("outlines", "outline_text", thinkerName, thinkerId, tsQueryStr, Math.floor(maxResults / 2));
   }
 
-  console.log(`[RETRIEVAL] FTS results: ${positions.length} positions, ${quotes.length} quotes, ${arguments_.length} arguments, ${works.length} works`);
+  console.log(`[RETRIEVAL] FTS results: ${positions.length} positions, ${quotes.length} quotes, ${arguments_.length} arguments, ${works.length} works, ${outlines.length} outlines`);
 
   if (positions.length < 5 || quotes.length < 3) {
     console.log(`[RETRIEVAL] FTS insufficient, augmenting with ILIKE multi-term search...`);
@@ -328,19 +364,21 @@ export async function topicFirstRetrieval(
     const ilikeQuotes = await searchWithILIKE("quotes", "quote_text", thinkerName, thinkerId, allTerms, maxResults);
     const ilikeArguments = await searchWithILIKE("arguments", "argument_text", thinkerName, thinkerId, allTerms, maxResults);
     const ilikeWorks = await searchWithILIKE("works", "work_text", thinkerName, thinkerId, allTerms, Math.floor(maxResults / 2));
+    const ilikeOutlines = await searchWithILIKE("outlines", "outline_text", thinkerName, thinkerId, allTerms, Math.floor(maxResults / 2));
 
     positions = deduplicateItems([...positions, ...ilikePositions]);
     quotes = deduplicateItems([...quotes, ...ilikeQuotes]);
     arguments_ = deduplicateItems([...arguments_, ...ilikeArguments]);
     works = deduplicateItems([...works, ...ilikeWorks]);
+    outlines = deduplicateItems([...outlines, ...ilikeOutlines]);
 
-    console.log(`[RETRIEVAL] After ILIKE augmentation: ${positions.length} positions, ${quotes.length} quotes, ${arguments_.length} arguments, ${works.length} works`);
+    console.log(`[RETRIEVAL] After ILIKE augmentation: ${positions.length} positions, ${quotes.length} quotes, ${arguments_.length} arguments, ${works.length} works, ${outlines.length} outlines`);
   }
 
   coreContent = await searchCoreContent(thinkerName, thinkerId, allTerms, maxResults);
-  console.log(`[RETRIEVAL] Core content: ${coreContent.length} items`);
+  console.log(`[RETRIEVAL] Core content: ${coreContent.length} items, Outlines: ${outlines.length} items`);
 
-  const totalRelevant = positions.length + quotes.length + arguments_.length + works.length + coreContent.length;
+  const totalRelevant = positions.length + quotes.length + arguments_.length + works.length + coreContent.length + outlines.length;
 
   if (totalRelevant < 3) {
     console.log(`[RETRIEVAL] WARNING: Only ${totalRelevant} relevant items found. Falling back to general thinker content...`);
@@ -362,6 +400,7 @@ export async function topicFirstRetrieval(
     argumentsFound: arguments_.length,
     worksFound: works.length,
     coreFound: coreContent.length,
+    outlinesFound: outlines.length,
     topRelevanceScore: Math.max(
       ...positions.map(p => p.relevanceScore),
       ...quotes.map(q => q.relevanceScore),
@@ -369,7 +408,7 @@ export async function topicFirstRetrieval(
     ),
     searchMethod: tsQueryStr ? "FTS+ILIKE" : "ILIKE",
   };
-  auditLog.totalRetrieved = positions.length + quotes.length + arguments_.length + works.length + coreContent.length;
+  auditLog.totalRetrieved = positions.length + quotes.length + arguments_.length + works.length + coreContent.length + outlines.length;
 
   console.log(`[RETRIEVAL] AUDIT: Total retrieved = ${auditLog.totalRetrieved}`);
   console.log(`[RETRIEVAL] Top relevance scores:`);
@@ -387,6 +426,7 @@ export async function topicFirstRetrieval(
     arguments: arguments_,
     works,
     coreContent,
+    outlines,
     searchTerms: basicTerms,
     expandedTerms: allTerms,
     auditLog,
@@ -417,7 +457,8 @@ async function searchWithFTS(
     return rows.map((row: any) => ({
       type: table === "positions" ? "position" :
             table === "quotes" ? "quote" :
-            table === "arguments" ? "argument" : "work",
+            table === "arguments" ? "argument" :
+            table === "outlines" ? "outline" : "work",
       id: row.id,
       text: row.text || "",
       thinker: row.thinker || "",
@@ -465,7 +506,8 @@ async function searchWithILIKE(
     return rows.map((row: any) => ({
       type: table === "positions" ? "position" :
             table === "quotes" ? "quote" :
-            table === "arguments" ? "argument" : "work",
+            table === "arguments" ? "argument" :
+            table === "outlines" ? "outline" : "work",
       id: row.id,
       text: row.text || "",
       thinker: row.thinker || "",
@@ -529,7 +571,8 @@ async function searchGeneralThinkerContent(
     return rows.map((row: any) => ({
       type: table === "positions" ? "position" :
             table === "quotes" ? "quote" :
-            table === "arguments" ? "argument" : "work",
+            table === "arguments" ? "argument" :
+            table === "outlines" ? "outline" : "work",
       id: row.id,
       text: row.text || "",
       thinker: row.thinker || "",
@@ -702,6 +745,14 @@ export function convertRetrievalToLegacyFormat(result: RetrievalResult): any {
       content_text: c.text,
       content_type: c.topic || "general",
       importance: Math.round(c.relevanceScore * 10),
+    })),
+    outlines: result.outlines.map(o => ({
+      id: o.id,
+      thinker: o.thinker,
+      outlineText: o.text,
+      outline_text: o.text,
+      topic: o.topic,
+      relevanceScore: o.relevanceScore,
     })),
     textChunks: [],
     searchTerms: result.searchTerms,

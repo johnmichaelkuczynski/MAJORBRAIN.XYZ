@@ -52,7 +52,7 @@ function parseFileName(fileName: string): ParsedFileName | null {
   const type = parts[1].toUpperCase();
   const number = parts[2];
   
-  if (!["QUOTES", "WORKS", "POSITIONS", "ARGUMENTS"].includes(type)) {
+  if (!["QUOTES", "WORKS", "POSITIONS", "ARGUMENTS", "OUTLINES"].includes(type)) {
     return null;
   }
   
@@ -207,6 +207,16 @@ async function ensureTablesExist(): Promise<boolean> {
         created_at TIMESTAMP DEFAULT NOW()
       )
     `);
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS outlines (
+        id SERIAL PRIMARY KEY,
+        thinker TEXT NOT NULL,
+        outline_text TEXT NOT NULL,
+        title TEXT,
+        topic TEXT,
+        source_document TEXT
+      )
+    `);
     return true;
   } catch (error) {
     console.error("Failed to ensure tables exist:", error);
@@ -287,6 +297,8 @@ async function ingestFile(filePath: string): Promise<IngestResult> {
           values.push(`('${author.replace(/'/g, "''")}', '${escaped}')`);
         } else if (type === "WORKS") {
           values.push(`('${author.replace(/'/g, "''")}', '${escaped}', '${fileName.replace(/'/g, "''")}')`);
+        } else if (type === "OUTLINES") {
+          values.push(`('${author.replace(/'/g, "''")}', '${escaped}', '${fileName.replace(/'/g, "''")}')`);
         }
       }
       
@@ -301,6 +313,8 @@ async function ingestFile(filePath: string): Promise<IngestResult> {
           await db.execute(sql.raw(`INSERT INTO arguments (thinker, argument_text) VALUES ${values.join(",")}`));
         } else if (type === "WORKS") {
           await db.execute(sql.raw(`INSERT INTO works (thinker, work_text, source_document) VALUES ${values.join(",")}`));
+        } else if (type === "OUTLINES") {
+          await db.execute(sql.raw(`INSERT INTO outlines (thinker, outline_text, source_document) VALUES ${values.join(",")}`));
         }
         recordsInserted += values.length;
       } catch (insertError: any) {
@@ -394,7 +408,7 @@ export async function processIngestFolder(): Promise<IngestResult[]> {
 export function startIngestWatcher(intervalMs: number = 10000): NodeJS.Timeout {
   console.log(`Starting ingest watcher. Monitoring: ${INGEST_DIR}`);
   console.log(`Standard format: AUTHOR_TYPE_N.txt (e.g., Kuczynski_QUOTES_1.txt)`);
-  console.log(`Standard types: QUOTES, POSITIONS, ARGUMENTS, WORKS`);
+  console.log(`Standard types: QUOTES, POSITIONS, ARGUMENTS, WORKS, OUTLINES`);
   console.log(`CORE format: CORE_AUTHOR_N.txt (e.g., CORE_Kuczynski_1.txt) - Priority content from document analysis`);
   
   if (!fs.existsSync(INGEST_DIR)) {
