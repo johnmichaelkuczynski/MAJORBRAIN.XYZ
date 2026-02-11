@@ -1621,7 +1621,7 @@ Now write a ${wordCount}-word document on "${topic}".`;
 
   // Document Analyzer - Generate CORE document from uploaded text
   app.post("/api/document/analyze", async (req: Request, res: Response) => {
-    const { content, author, title, model = "gpt-4o" } = req.body;
+    const { content, author, title, model = "gpt-4o", outlineGranularity = "standard" } = req.body;
 
     if (!content || !author) {
       return res.status(400).json({ error: "Content and author are required" });
@@ -1641,6 +1641,15 @@ Now write a ${wordCount}-word document on "${topic}".`;
     setupSSE(res);
 
     const wordCount = content.split(/\s+/).filter((w: string) => w.length > 0).length;
+
+    const outlineInstructions: Record<string, string> = {
+      "coarse": "Create a HIGH-LEVEL outline with ONLY major sections (no subsections). Use simple numbering: 1, 2, 3, etc. Aim for 5-10 top-level items that capture the document's main structural divisions.",
+      "standard": "Create a comprehensive outline with main sections and subsections, numbered 1, 1.1, 1.2, 2, 2.1, etc. Aim for 15-30 total items.",
+      "fine": "Create a highly detailed outline with sections, subsections, and sub-subsections, numbered 1, 1.1, 1.1.1, 1.1.2, 1.2, 2, 2.1, 2.1.1, etc. Aim for 30-60 total items capturing every significant point and transition in the text.",
+      "ultra-fine": "Create an exhaustively detailed, paragraph-level outline with deep nesting (1, 1.1, 1.1.1, 1.1.1.1, etc.). Every paragraph or distinct idea should have its own entry. Aim for 60+ items. This should serve as a complete map of the entire document at the finest grain, capturing every claim, example, and argument step.",
+    };
+
+    const outlineInstruction = outlineInstructions[outlineGranularity] || outlineInstructions["standard"];
     
     const systemPrompt = `You are a scholarly document analyzer. You will analyze the provided text and extract structured content.
 
@@ -1652,7 +1661,7 @@ Word Count: ${wordCount.toLocaleString()}
 OUTPUT FORMAT - Generate in this EXACT order with these EXACT headers:
 
 === DETAILED OUTLINE ===
-[Create a comprehensive outline with main sections and subsections, numbered 1, 1.1, 1.2, 2, 2.1, etc.]
+[${outlineInstruction}]
 
 === KEY POSITIONS ===
 [List 10-20 of the most important philosophical/intellectual positions from this text. Each on its own line, starting with "POSITION:"]

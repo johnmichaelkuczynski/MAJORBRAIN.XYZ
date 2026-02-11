@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SectionHeader } from "./section-header";
 import { FileUpload } from "./file-upload";
 import { StreamingOutput } from "./streaming-output";
@@ -16,6 +17,7 @@ export function DocumentAnalyzerSection() {
   const [authorName, setAuthorName] = useState("");
   const [documentTitle, setDocumentTitle] = useState("");
   const [selectedModel, setSelectedModel] = useState("gpt-4o");
+  const [outlineGranularity, setOutlineGranularity] = useState("standard");
   const [output, setOutput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [coreDocNumber, setCoreDocNumber] = useState(1);
@@ -42,6 +44,7 @@ export function DocumentAnalyzerSection() {
           author: authorName.trim(),
           title: documentTitle.trim() || "Untitled",
           model: selectedModel,
+          outlineGranularity,
         }),
       });
 
@@ -131,6 +134,21 @@ export function DocumentAnalyzerSection() {
               disabled={isStreaming}
               data-testid="input-doc-title"
             />
+          </div>
+
+          <div>
+            <Label className="mb-2 block">Outline Granularity</Label>
+            <Select value={outlineGranularity} onValueChange={setOutlineGranularity}>
+              <SelectTrigger data-testid="select-outline-granularity">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="coarse">Coarse (major sections only, 5-10 items)</SelectItem>
+                <SelectItem value="standard">Standard (sections + subsections, 15-30 items)</SelectItem>
+                <SelectItem value="fine">Fine (detailed sub-subsections, 30-60 items)</SelectItem>
+                <SelectItem value="ultra-fine">Ultra-Fine (paragraph-level detail, 60+ items)</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
