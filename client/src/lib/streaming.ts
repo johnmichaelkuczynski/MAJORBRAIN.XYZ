@@ -78,7 +78,26 @@ export async function* streamResponseSimple(response: Response): AsyncGenerator<
   }
 }
 
-export function downloadText(content: string, filename: string) {
+export async function downloadText(content: string, filename: string) {
+  if ('showSaveFilePicker' in window) {
+    try {
+      const handle = await (window as any).showSaveFilePicker({
+        suggestedName: filename,
+        types: [
+          {
+            description: "Text Files",
+            accept: { "text/plain": [".txt"] },
+          },
+        ],
+      });
+      const writable = await handle.createWritable();
+      await writable.write(content);
+      await writable.close();
+      return;
+    } catch (err: any) {
+      if (err.name === "AbortError") return;
+    }
+  }
   const blob = new Blob([content], { type: "text/plain" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
