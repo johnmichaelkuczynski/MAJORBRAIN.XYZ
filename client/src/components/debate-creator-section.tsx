@@ -44,7 +44,7 @@ const MODE_CONFIG = {
     icon: Mic,
     description: "One thinker (or the user) interviews another thinker with probing questions",
     participants: "Participants",
-    minParticipants: 2,
+    minParticipants: 1,
     maxParticipants: 2,
     artifactLabel: "The Interview",
     buttonLabel: "Generate Interview",
