@@ -369,14 +369,20 @@ function splitUploadedContent(text: string, targetWordsPerChunk: number = 200): 
 }
 
 // Build a SKELETON from database content that the AI MUST use
+function thinkerPrefix(name: string): string {
+  const clean = name.replace(/[^a-zA-Z]/g, "").toUpperCase();
+  if (clean.length <= 3) return clean;
+  return clean.substring(0, 3);
+}
+
 function buildDatabaseSkeleton(context: any, thinkerName: string, quoteCount: number): string {
-  let skeleton = `\n\n=== MANDATORY DATABASE CONTENT - YOU MUST USE THIS AS YOUR SKELETON ===\n`;
+  const prefix = thinkerPrefix(thinkerName);
+  let skeleton = `\n\n=== ${thinkerName.toUpperCase()}'s MANDATORY DATABASE CONTENT - USE THIS AS ${thinkerName.toUpperCase()}'s SKELETON ===\n`;
   skeleton += `The following content is from ${thinkerName}'s actual writings in the database.\n`;
-  skeleton += `You MUST incorporate AT LEAST ${quoteCount} of these items into your response.\n`;
+  skeleton += `${thinkerName} MUST cite these items using the speaker-prefixed codes shown (e.g., [${prefix}-P1], [${prefix}-Q1]).\n`;
   skeleton += `DO NOT make up positions or quotes - use ONLY what is provided below.\n`;
   skeleton += `CRITICAL: DO NOT USE ANY MARKDOWN FORMATTING. No #, no *, no -, no **. Plain text only.\n\n`;
   
-  // PRIORITY: CORE content first (from analyzed documents)
   if (context.coreContent?.length > 0) {
     const corePositions = context.coreContent.filter((c: any) => c.content_type === 'position');
     const coreArguments = context.coreContent.filter((c: any) => c.content_type === 'argument');
@@ -386,34 +392,34 @@ function buildDatabaseSkeleton(context: any, thinkerName: string, quoteCount: nu
     
     if (coreOutline.length > 0) {
       skeleton += `\n--- ${thinkerName}'s DOCUMENT OUTLINE (PRIORITY) ---\n`;
-      skeleton += `[OUTLINE] ${coreOutline[0].content?.substring(0, 2000) || ''}\n`;
+      skeleton += `[${prefix}-OUTLINE] ${coreOutline[0].content?.substring(0, 2000) || ''}\n`;
     }
     
     if (corePositions.length > 0) {
       skeleton += `\n--- ${thinkerName}'s CORE POSITIONS (PRIORITY - ${corePositions.length} total) ---\n`;
       corePositions.slice(0, quoteCount).forEach((p: any, i: number) => {
-        skeleton += `[CP${i + 1}] ${p.content}\n`;
+        skeleton += `[${prefix}-CP${i + 1}] ${p.content}\n`;
       });
     }
     
     if (coreArguments.length > 0) {
       skeleton += `\n--- ${thinkerName}'s CORE ARGUMENTS (PRIORITY - ${coreArguments.length} total) ---\n`;
       coreArguments.slice(0, quoteCount).forEach((a: any, i: number) => {
-        skeleton += `[CA${i + 1}] ${a.content}\n`;
+        skeleton += `[${prefix}-CA${i + 1}] ${a.content}\n`;
       });
     }
     
     if (coreTrends.length > 0) {
       skeleton += `\n--- ${thinkerName}'s THOUGHT TRENDS (PRIORITY - ${coreTrends.length} total) ---\n`;
       coreTrends.slice(0, 10).forEach((t: any, i: number) => {
-        skeleton += `[T${i + 1}] ${t.content}\n`;
+        skeleton += `[${prefix}-T${i + 1}] ${t.content}\n`;
       });
     }
     
     if (coreQAs.length > 0) {
       skeleton += `\n--- ${thinkerName}'s Q&A (PRIORITY - ${coreQAs.length} total) ---\n`;
       coreQAs.slice(0, quoteCount).forEach((qa: any, i: number) => {
-        skeleton += `[QA${i + 1}] ${qa.content}\n`;
+        skeleton += `[${prefix}-QA${i + 1}] ${qa.content}\n`;
       });
     }
   }
@@ -421,21 +427,21 @@ function buildDatabaseSkeleton(context: any, thinkerName: string, quoteCount: nu
   if (context.positions?.length > 0) {
     skeleton += `\n--- ${thinkerName}'s POSITIONS (${context.positions.length} total) ---\n`;
     context.positions.slice(0, quoteCount).forEach((p: any, i: number) => {
-      skeleton += `[P${i + 1}] ${p.positionText || p.position_text}\n`;
+      skeleton += `[${prefix}-P${i + 1}] ${p.positionText || p.position_text}\n`;
     });
   }
 
   if (context.quotes?.length > 0) {
     skeleton += `\n--- ${thinkerName}'s QUOTES (${context.quotes.length} total) ---\n`;
     context.quotes.slice(0, quoteCount).forEach((q: any, i: number) => {
-      skeleton += `[Q${i + 1}] "${q.quoteText || q.quote_text}"\n`;
+      skeleton += `[${prefix}-Q${i + 1}] "${q.quoteText || q.quote_text}"\n`;
     });
   }
 
   if (context.arguments?.length > 0) {
     skeleton += `\n--- ${thinkerName}'s ARGUMENTS (${context.arguments.length} total) ---\n`;
     context.arguments.slice(0, Math.floor(quoteCount / 2)).forEach((a: any, i: number) => {
-      skeleton += `[A${i + 1}] ${a.argumentText || a.argument_text}\n`;
+      skeleton += `[${prefix}-A${i + 1}] ${a.argumentText || a.argument_text}\n`;
     });
   }
 
@@ -443,13 +449,13 @@ function buildDatabaseSkeleton(context: any, thinkerName: string, quoteCount: nu
     skeleton += `\n--- ${thinkerName}'s WORKS EXCERPTS (${context.works.length} total) ---\n`;
     context.works.slice(0, Math.floor(quoteCount / 3)).forEach((w: any, i: number) => {
       const text = (w.workText || w.work_text || '').substring(0, 500);
-      skeleton += `[W${i + 1}] ${text}...\n`;
+      skeleton += `[${prefix}-W${i + 1}] ${text}...\n`;
     });
   }
 
-  skeleton += `\n=== END DATABASE CONTENT ===\n`;
-  skeleton += `\nREMINDER: Your output MUST be built from the above content. Reference items by their codes [CP1], [CA1], [T1], [QA1], [P1], [Q1], [A1], [W1] etc. DO NOT invent content.\n`;
-  skeleton += `PRIORITY: Use CORE content (CP, CA, T, QA) first if available - these are from comprehensive document analysis.\n`;
+  skeleton += `\n=== END ${thinkerName.toUpperCase()}'s DATABASE CONTENT ===\n`;
+  skeleton += `\nREMINDER: ${thinkerName}'s output MUST be built from the above content. Reference items by their speaker-prefixed codes [${prefix}-P1], [${prefix}-Q1], [${prefix}-A1] etc. DO NOT invent content.\n`;
+  skeleton += `PRIORITY: Use CORE content (${prefix}-CP, ${prefix}-CA) first if available - these are from comprehensive document analysis.\n`;
   skeleton += `ABSOLUTELY NO MARKDOWN. No # headers, no * bullets, no - lists, no ** bold. Use plain text with numbered sections like "1." "2." etc.\n`;
   
   return skeleton;
@@ -776,7 +782,7 @@ CRITICAL: DO NOT USE ANY MARKDOWN FORMATTING. No # headers, no * bullets, no - l
 
   // Debate Generator (streaming) - USES DATABASE AS SKELETON
   app.post("/api/debate/generate", async (req: Request, res: Response) => {
-    const { topic: rawTopic, debaters, wordCount = 2000, quoteCount = 20, enhanced = false, model = "gpt-4o", debaterDocuments = {}, commonDocument: rawCommonDoc = "", responseLengths = {}, exchangeMode = "debate", interviewer: interviewerParam } = req.body;
+    const { topic: rawTopic, debaters, wordCount = 2000, quoteCount = 50, enhanced = false, model = "gpt-4o", debaterDocuments = {}, commonDocument: rawCommonDoc = "", responseLengths = {}, exchangeMode = "debate", interviewer: interviewerParam } = req.body;
 
     const isInterview = exchangeMode === "interview";
     const minParticipants = isInterview ? 1 : 2;
@@ -1096,10 +1102,16 @@ MINIMUM WORD COUNT: ${wordCount} words. This is a MINIMUM, not an approximation.
     const speakerList = debaterNames.join(", ");
     const hasUploadedMaterial = Object.keys(debaterUploadedContent).length > 0;
     const hasCommonDoc = !!commonDocument;
-    const citationTypes = hasCommonDoc 
-      ? (hasUploadedMaterial ? "[P#], [Q#], [A#], [W#], [UD#], [CD#]" : "[P#], [Q#], [A#], [W#], [CD#]")
-      : (hasUploadedMaterial ? "[P#], [Q#], [A#], [W#], [UD#]" : "[P#], [Q#], [A#], [W#]");
-    const speakerExample = debaterNames.map((n: string) => `${n}: [Their argument citing ${citationTypes}...]`).join("\n\n");
+    const citationExamples = debaterNames.map((n: string) => {
+      const pf = thinkerPrefix(n);
+      return hasCommonDoc 
+        ? `[${pf}-P#], [${pf}-Q#], [${pf}-A#], [CD#]`
+        : `[${pf}-P#], [${pf}-Q#], [${pf}-A#]`;
+    }).join(" / ");
+    const speakerExample = debaterNames.map((n: string) => {
+      const pf = thinkerPrefix(n);
+      return `${n}: [Their argument citing [${pf}-P#], [${pf}-Q#], [${pf}-A#]...]`;
+    }).join("\n\n");
     
     let shortDocParagraphs: string[] = [];
     if (hasCommonDoc) {
@@ -1222,8 +1234,20 @@ Go through the uploaded document paragraph by paragraph. For each paragraph:
 
 === YOUR ROLE ===
 You are the VOICE, not the BRAIN. The database content below IS the brain.
-Every substantive claim must trace to a specific database item or uploaded material.
+Every substantive claim must trace to a SPECIFIC database item or uploaded material.
 You DO NOT fabricate what thinkers "probably" think. You DO NOT substitute generic LLM knowledge.
+If a thinker's database has specific concepts (e.g., "primal horde theory", "father-complex", "sick soul", "twice-born"), you MUST use those EXACT terms and concepts, not generic paraphrases.
+
+=== SPECIFICITY REQUIREMENT ===
+- WRONG: "Religion operates in the realm of the unconscious" (generic, any bot could say this)
+- RIGHT: "Religion is the universal obsessional neurosis of humanity [P3]. The totemic meal is the origin of religious ritual [P7]."
+- WRONG: "Religion provides meaning and purpose" (vapid filler with no database grounding)
+- RIGHT: "The sick soul requires the twice-born experience [P2]. 'The completest religions are those in which pessimistic elements are best developed' [Q4]."
+${exchangeMode === "debate" ? `
+=== GENUINE DISAGREEMENT ===
+- Speakers must have IRRECONCILABLE positions - this is a DEBATE, not a polite conversation
+- NEVER have a speaker say "I see your point" or "that's a fair observation"
+- Each speaker ATTACKS the other's claims using their OWN specific database content` : ""}
 
 ${modeSpecificFormat}
 
@@ -1244,8 +1268,8 @@ CONTENT RULES:
 4. NO MARKDOWN - plain text only
 ${modeSpecificRules}
 7. DO NOT FREELANCE - every substantive claim must cite a database item or uploaded material
-8. You MUST include citation codes [P1], [Q1], [A1] in your output to show which database items you are using
-9. Every claim must trace to a specific [P#], [Q#], or [A#] from the database content below
+8. You MUST include speaker-prefixed citation codes in your output (e.g., ${citationExamples}) to show which database items you are using
+9. Each speaker cites ONLY from THEIR OWN prefixed codes - never cite another speaker's items
 
 ANTI-REPETITION RULES:
 - NO repetition of argumentative content between turns

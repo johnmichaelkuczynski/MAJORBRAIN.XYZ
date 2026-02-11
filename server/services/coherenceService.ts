@@ -288,7 +288,7 @@ function updateDialogueState(tracker: DialogueStateTracker, chunkOutput: string,
     if (!tracker.allTurnsText[matchedSpeaker]) tracker.allTurnsText[matchedSpeaker] = [];
     tracker.allTurnsText[matchedSpeaker].push(turnText);
 
-    const citationMatches = turnText.match(/\[([A-Z]+\d+)\]/g);
+    const citationMatches = turnText.match(/\[([A-Z]+-)?[A-Z]+\d+\]/g);
     if (citationMatches) {
       if (!tracker.citedPositions[matchedSpeaker]) tracker.citedPositions[matchedSpeaker] = new Set<string>();
       for (let ci = 0; ci < citationMatches.length; ci++) {
@@ -518,12 +518,19 @@ async function saveStitchResult(sessionId: string, totalWords: number, conflicts
     .where(eq(coherenceSessions.id, sessionId));
 }
 
+function speakerPrefix(name: string): string {
+  const clean = name.replace(/[^a-zA-Z]/g, "").toUpperCase();
+  if (clean.length <= 3) return clean;
+  return clean.substring(0, 3);
+}
+
 function formatDbContent(items: any[], type: "P" | "Q" | "A" | "W", speakerName: string, limit: number = 20): string[] {
+  const prefix = speakerPrefix(speakerName);
   const regularItems = items.filter((item: any) => !item._uploadedDoc);
   const uploadedItems = items.filter((item: any) => item._uploadedDoc);
 
   const formatted = regularItems.slice(0, limit).map((item: any, i: number) => {
-    const code = `[${type}${i + 1}]`;
+    const code = `[${prefix}-${type}${i + 1}]`;
     if (type === "P") return `${code} ${item.positionText || item.position_text}`;
     if (type === "Q") return `${code} "${item.quoteText || item.quote_text}"`;
     if (type === "A") return `${code} ${item.argumentText || item.argument_text}`;
@@ -531,9 +538,8 @@ function formatDbContent(items: any[], type: "P" | "Q" | "A" | "W", speakerName:
     return "";
   });
 
-  // Format uploaded document items with [UD#] codes
   const uploadedFormatted = uploadedItems.slice(0, 50).map((item: any, i: number) => {
-    const code = `[UD${item._udIndex || (i + 1)}]`;
+    const code = `[${prefix}-UD${item._udIndex || (i + 1)}]`;
     return `${code} ${item.positionText || item.position_text}`;
   });
 
@@ -548,22 +554,23 @@ export async function extractGlobalSkeleton(
   perSpeakerContent?: CoherenceOptions["perSpeakerContent"],
   allSpeakers?: string[]
 ): Promise<GlobalSkeleton> {
+  const tp = speakerPrefix(thinkerName);
   const regularPositions = databaseContent.positions.filter((p: any) => !p._uploadedDoc);
   const uploadedPositions = databaseContent.positions.filter((p: any) => p._uploadedDoc);
-  const positionTexts = regularPositions.slice(0, 20).map((p: any, i: number) => 
-    `[P${i + 1}] ${p.positionText || p.position_text}`
+  const positionTexts = regularPositions.slice(0, 30).map((p: any, i: number) => 
+    `[${tp}-P${i + 1}] ${p.positionText || p.position_text}`
   );
   const uploadedTexts = uploadedPositions.slice(0, 50).map((p: any, i: number) => 
-    `[UD${p._udIndex || (i + 1)}] ${p.positionText || p.position_text}`
+    `[${tp}-UD${p._udIndex || (i + 1)}] ${p.positionText || p.position_text}`
   );
-  const quoteTexts = databaseContent.quotes.slice(0, 20).map((q: any, i: number) => 
-    `[Q${i + 1}] "${q.quoteText || q.quote_text}"`
+  const quoteTexts = databaseContent.quotes.slice(0, 25).map((q: any, i: number) => 
+    `[${tp}-Q${i + 1}] "${q.quoteText || q.quote_text}"`
   );
-  const argumentTexts = databaseContent.arguments.slice(0, 10).map((a: any, i: number) => 
-    `[A${i + 1}] ${a.argumentText || a.argument_text}`
+  const argumentTexts = databaseContent.arguments.slice(0, 15).map((a: any, i: number) => 
+    `[${tp}-A${i + 1}] ${a.argumentText || a.argument_text}`
   );
   const workTexts = databaseContent.works.slice(0, 5).map((w: any, i: number) => 
-    `[W${i + 1}] ${(w.workText || w.work_text || '').substring(0, 500)}...`
+    `[${tp}-W${i + 1}] ${(w.workText || w.work_text || '').substring(0, 500)}...`
   );
 
   const systemPrompt = `You are a skeleton extractor. Extract the structural DNA of this request.
@@ -625,10 +632,10 @@ Return ONLY the JSON skeleton.`;
       const sc = perSpeakerContent[speaker];
       if (sc) {
         result.perSpeakerContent[speaker] = {
-          positions: formatDbContent(sc.positions, "P", speaker, 15),
-          quotes: formatDbContent(sc.quotes, "Q", speaker, 15),
-          arguments: formatDbContent(sc.arguments, "A", speaker, 8),
-          works: formatDbContent(sc.works, "W", speaker, 3),
+          positions: formatDbContent(sc.positions, "P", speaker, 25),
+          quotes: formatDbContent(sc.quotes, "Q", speaker, 20),
+          arguments: formatDbContent(sc.arguments, "A", speaker, 12),
+          works: formatDbContent(sc.works, "W", speaker, 5),
         };
       }
     }
@@ -925,9 +932,10 @@ ${minWords} words is the MINIMUM floor. More is acceptable. Less is a FAILURE.`;
         const uncitedArgs = citedSet ? sc.arguments.filter(a => !citedSet.has(a.match(/\[([^\]]+)\]/)?.[0] || "")) : sc.arguments;
 
         perSpeakerSection += `\n=== ${speaker.toUpperCase()}'S DATABASE CONTENT (${speaker} MUST cite THESE - this is REAL content from the database) ===\n`;
-        perSpeakerSection += `${speaker}'s UNCITED POSITIONS (use these NEXT - cite as [P#]):\n${uncitedPositions.slice(0, 10).join("\n")}\n`;
-        perSpeakerSection += `${speaker}'s UNCITED QUOTES (use these - cite as [Q#]):\n${uncitedQuotes.slice(0, 8).join("\n")}\n`;
-        perSpeakerSection += `${speaker}'s UNCITED ARGUMENTS (use these - cite as [A#]):\n${uncitedArgs.slice(0, 6).join("\n")}\n\n`;
+        const sp = speakerPrefix(speaker);
+        perSpeakerSection += `${speaker}'s UNCITED POSITIONS (cite as [${sp}-P#]):\n${uncitedPositions.slice(0, 15).join("\n")}\n`;
+        perSpeakerSection += `${speaker}'s UNCITED QUOTES (cite as [${sp}-Q#]):\n${uncitedQuotes.slice(0, 12).join("\n")}\n`;
+        perSpeakerSection += `${speaker}'s UNCITED ARGUMENTS (cite as [${sp}-A#]):\n${uncitedArgs.slice(0, 8).join("\n")}\n\n`;
       }
     }
 
@@ -935,9 +943,23 @@ ${minWords} words is the MINIMUM floor. More is acceptable. Less is a FAILURE.`;
 
 === YOUR ROLE ===
 You are the VOICE, not the BRAIN. The database content below IS the brain.
-Every substantive claim must trace to a specific database item. You articulate the retrieved
-material in natural dialogue voice. You DO NOT generate your own version of what these
-thinkers "probably" think. You DO NOT substitute generic LLM knowledge about them.
+Every substantive claim must trace to a SPECIFIC database item with its citation code.
+You articulate the retrieved material in natural dialogue voice.
+You DO NOT generate your own version of what these thinkers "probably" think.
+You DO NOT substitute generic LLM knowledge about them.
+If a thinker's database has positions about specific concepts (e.g., "primal horde theory", "sick soul vs healthy-minded", "twice-born"), you MUST use those EXACT concepts and terms, not generic paraphrases.
+
+=== CRITICAL: SPECIFICITY OVER GENERALITY ===
+- WRONG: "Religion operates in the realm of the unconscious" (generic, any bot could say this)
+- RIGHT: "Religion is the universal obsessional neurosis [FRE-P3]. The father-complex is the root of every form of religion [FRE-P5]." (specific, uses actual database terms with speaker-prefixed codes)
+- WRONG: "Religion provides meaning and purpose" (vapid filler)
+- RIGHT: "The sick soul knows that the evil aspects of life are its truest meaning [JAM-P2]. 'The completest religions are those in which pessimistic elements are best developed' [JAM-Q4]." (specific database concepts with speaker codes)
+
+${sessionType === "debate" ? `=== CRITICAL: GENUINE DISAGREEMENT ===
+- Speakers must have IRRECONCILABLE positions, not polite disagreements
+- NEVER have a speaker say "I see your point" or "that's a fair observation"
+- Speakers must ATTACK each other's specific claims using their OWN database content
+- The debate must feel like two OPPOSED intellectual frameworks colliding` : ""}
 
 ${formatInstructions}
 ${responseLengthInstructions}
@@ -1003,29 +1025,29 @@ ${priorClaimsStr ? `PRIOR CLAIMS MADE: ${priorClaimsStr}` : ""}
 
 === GROUNDING REQUIREMENTS ===
 EVERY speaker's response MUST:
-1. CITE their own database content with codes like [P1], [Q1], [A1] etc.
-2. USE the EXACT positions, quotes, and arguments listed under THEIR name above
+1. CITE their own database content using THEIR speaker-prefixed codes (e.g., [FRE-P1], [JAM-Q2])
+2. Each speaker has UNIQUE citation codes with their name prefix - USE ONLY YOUR OWN codes
 3. NOT fabricate or invent positions not in the database
 4. ONLY cite items from the UNCITED lists above - never re-cite already-used items
 ${(commonDocument || skeleton.commonDocument) ? `5. EVERY turn MUST ALSO quote from the uploaded document paragraphs above` : ""}
 
 THE LLM MUST NOT FREELANCE:
 - WRONG (generic): "${allSpeakers![0]}: I believe psychological explanations are complex..."
-${(commonDocument || skeleton.commonDocument) ? `- WRONG (ignoring document): "${allSpeakers![0]}: Religion serves as a psychological projection [P1]..." (doesn't quote the document!)
-- RIGHT (document-grounded): "${allSpeakers![0]}: The text states 'religion cannot be reduced to mere psychological projection.' I disagree. As my database shows, religion IS projection [P1]. As I wrote, 'religious beliefs are wish fulfillments' [Q2]."` 
-: `- RIGHT (database-grounded): "${allSpeakers![0]}: The DN model fails in psychological explanation [P1]. As I wrote, 'the cause of many a psychological event is known' [Q2]. This argument [A1] shows..."`}
+${(commonDocument || skeleton.commonDocument) ? `- WRONG (ignoring document): "${allSpeakers![0]}: Religion serves as a psychological projection..." (doesn't quote the document and no citation!)
+- RIGHT (document-grounded): "${allSpeakers![0]}: The text states 'religion cannot be reduced to mere psychological projection.' I disagree. Religion IS projection [${speakerPrefix(allSpeakers![0])}-P1]. As I wrote, 'religious beliefs are wish fulfillments' [${speakerPrefix(allSpeakers![0])}-Q2]."` 
+: `- RIGHT (database-grounded): "${allSpeakers![0]}: The DN model fails in psychological explanation [${speakerPrefix(allSpeakers![0])}-P1]. As I wrote, 'the cause of many a psychological event is known' [${speakerPrefix(allSpeakers![0])}-Q2]."`}
 - If a thinker has no database positions on a sub-topic, they acknowledge this honestly.
 
 CRITICAL: ALL ${allSpeakers!.length} speakers must appear. Output ONLY speaker turns. Format: "NAME: text"
 SPEAKER LABEL RULE: Only write a speaker's name ONCE when they start speaking. Do NOT repeat the same name on consecutive paragraphs. The next name label appears only when a DIFFERENT speaker takes over.
 
 CITATION FORMAT (MANDATORY):
-- You MUST include citation codes [P1], [Q1], [A1] etc. in your output text
+- You MUST include speaker-prefixed citation codes in your output text (e.g., [FRE-P1], [JAM-Q3])
 - Every substantive claim MUST have a citation code from the database content listed above
-- Example: "Truth is what works in practice [P3]. As I wrote, 'the true is the name of whatever proves itself to be good in the way of belief' [Q1]."
+- Each speaker cites ONLY from THEIR OWN prefixed codes - never cite another speaker's items
 - A response without citation codes is a FAILED response`;
   } else if (isConversation) {
-    const hasPerSpeaker = sessionType === "dialogue" && skeleton.perSpeakerContent && allSpeakers;
+    const hasPerSpeaker = (sessionType === "dialogue" || sessionType === "debate" || sessionType === "interview") && skeleton.perSpeakerContent && allSpeakers;
     let contentSection = "";
 
     if (hasPerSpeaker && skeleton.perSpeakerContent && allSpeakers) {
@@ -1037,30 +1059,47 @@ CITATION FORMAT (MANDATORY):
           const uncitedQuotes = citedSet ? sc.quotes.filter(q => !citedSet.has(q.match(/\[([^\]]+)\]/)?.[0] || "")) : sc.quotes;
           const uncitedArgs = citedSet ? sc.arguments.filter(a => !citedSet.has(a.match(/\[([^\]]+)\]/)?.[0] || "")) : sc.arguments;
 
+          const sp2 = speakerPrefix(speaker);
           contentSection += `\n=== ${speaker.toUpperCase()}'S UNCITED DATABASE CONTENT (cite THESE next - this is REAL content from the database) ===\n`;
-          contentSection += `POSITIONS (cite as [P#]):\n${uncitedPositions.slice(0, 10).join("\n")}\n`;
-          contentSection += `QUOTES (cite as [Q#]):\n${uncitedQuotes.slice(0, 8).join("\n")}\n`;
-          contentSection += `ARGUMENTS (cite as [A#]):\n${uncitedArgs.slice(0, 6).join("\n")}\n`;
+          contentSection += `${speaker}'s POSITIONS (cite as [${sp2}-P#]):\n${uncitedPositions.slice(0, 15).join("\n")}\n`;
+          contentSection += `${speaker}'s QUOTES (cite as [${sp2}-Q#]):\n${uncitedQuotes.slice(0, 12).join("\n")}\n`;
+          contentSection += `${speaker}'s ARGUMENTS (cite as [${sp2}-A#]):\n${uncitedArgs.slice(0, 8).join("\n")}\n`;
         }
       }
     } else {
       contentSection = `
 === ${thinkerName.toUpperCase()}'S ACTUAL INDEXED POSITIONS (MANDATORY - CITE THESE) ===
-${skeleton.databaseContent.positions.slice(0, 8).join("\n")}
+${skeleton.databaseContent.positions.slice(0, 15).join("\n")}
 
 === ${thinkerName.toUpperCase()}'S ACTUAL QUOTES (MANDATORY - USE WITH [Q#] CODES) ===
-${skeleton.databaseContent.quotes.slice(0, 6).join("\n")}
+${skeleton.databaseContent.quotes.slice(0, 15).join("\n")}
 
 === ${thinkerName.toUpperCase()}'S ACTUAL ARGUMENTS (MANDATORY - CITE WITH [A#]) ===
-${skeleton.databaseContent.arguments.slice(0, 4).join("\n")}`;
+${skeleton.databaseContent.arguments.slice(0, 10).join("\n")}`;
     }
 
     system = `You are generating a ${sessionType.toUpperCase()}.
 
 === YOUR ROLE ===
 You are the VOICE, not the BRAIN. The database content below IS the brain.
-Every substantive claim must trace to a specific database item. You articulate the retrieved
-material in natural dialogue voice. You DO NOT fabricate what thinkers "probably" think.
+Every substantive claim must trace to a SPECIFIC database item with its citation code.
+You articulate the retrieved material in natural dialogue voice.
+You DO NOT generate your own version of what these thinkers "probably" think.
+You DO NOT substitute generic LLM knowledge about them.
+If a thinker's database has positions about "primal horde theory" or "sick soul vs healthy-minded", you MUST use those SPECIFIC concepts and terms, not generic paraphrases.
+
+=== CRITICAL: SPECIFICITY OVER GENERALITY ===
+- WRONG: "I believe religion operates in the realm of the unconscious" (generic, could be anyone)
+- RIGHT: "Religion is the universal obsessional neurosis of humanity [FRE-P3]. The religious ritual parallels obsessional neurotic behavior [FRE-P7]." (specific, cites actual database positions with speaker prefix)
+- WRONG: "Religion provides meaning and purpose" (vapid, no database grounding)
+- RIGHT: "The sick soul requires the twice-born experience [JAM-P2]. As I wrote, 'the completest religions are those in which the pessimistic elements are best developed' [JAM-Q4]." (specific concepts with speaker-prefixed citation)
+
+=== CRITICAL: GENUINE DISAGREEMENT (FOR DEBATES) ===
+${sessionType === "debate" ? `- Speakers must have IRRECONCILABLE positions, not polite disagreements
+- If one speaker thinks X is pathological and the other thinks X is epistemically valid, that tension must be SHARP and SUSTAINED
+- NEVER have a speaker say "I see your point" or "that's a fair observation" - they must ATTACK
+- Every concession must be immediately followed by a stronger counterattack
+- Speakers must CHALLENGE each other's specific claims, not talk past each other` : ""}
 
 ${formatInstructions}
 ${responseLengthInstructions}
@@ -1124,8 +1163,8 @@ ${priorClaimsStr ? `PRIOR CLAIMS MADE: ${priorClaimsStr}` : ""}
 
 === GROUNDING REQUIREMENTS ===
 ALL speakers' responses MUST:
-1. CITE database content with codes like [P1], [Q1], [A1] etc.
-2. USE the EXACT positions, quotes, and arguments from above
+1. CITE their own database content using THEIR speaker-prefixed codes (e.g., [FRE-P1], [JAM-Q2])
+2. Each speaker has UNIQUE citation codes with their name prefix - USE ONLY YOUR OWN codes
 3. NOT fabricate or invent positions not in the database
 4. ONLY cite items from the UNCITED lists - never re-cite already-used items
 ${(commonDocument || skeleton.commonDocument) ? `5. EVERY turn MUST ALSO quote from the uploaded document paragraphs above` : ""}
@@ -1140,9 +1179,9 @@ SPEAKER LABEL RULE: Only write a speaker's name ONCE when they start speaking. D
 NO essays. ONLY alternating speaker turns.
 
 CITATION FORMAT (MANDATORY):
-- You MUST include citation codes [P1], [Q1], [A1] etc. in your output text
+- You MUST include speaker-prefixed citation codes in your output text (e.g., [FRE-P1], [JAM-Q3])
 - Every substantive claim MUST have a citation code from the database content listed above
-- Example: "Truth is what works in practice [P3]. As I wrote, 'the true is the name of whatever proves itself to be good in the way of belief' [Q1]."
+- Each speaker cites ONLY from THEIR OWN prefixed codes - never cite another speaker's items
 - A response without citation codes is a FAILED response`;
   } else if (enhanced) {
     system = `You ARE ${thinkerName}. Speak in FIRST PERSON.
@@ -1224,7 +1263,7 @@ Section ${chunkIndex + 1} of ${totalChunks}: "${outlineSection}"
 Write AT LEAST ${minWords} words as alternating speaker turns. ${minWords} is the MINIMUM, not a target.
 ALL ${allSpeakers!.length} speakers (${allSpeakers!.join(", ")}) MUST appear in this section.
 Format: "SPEAKER_NAME: [what they say]" - only label a speaker ONCE when they start speaking. Do NOT repeat the same name on consecutive paragraphs.
-Do NOT include citation codes like [P1] or [CD3] in the output text.
+You MUST include speaker-prefixed citation codes (e.g., [FRE-P1], [JAM-Q3]) in the output text to show which database items each claim comes from. Each speaker cites ONLY their own prefixed codes.
 ${docRef}
 ${turnInfo ? `\nTurn counts so far: ${turnInfo}` : ""}
 
@@ -1251,7 +1290,7 @@ Section ${chunkIndex + 1} of ${totalChunks}: "${outlineSection}"
 
 Write AT LEAST ${minWords} words as alternating speaker turns. ${minWords} is the MINIMUM, not a target.
 Format: "SPEAKER_NAME: [what they say]" - only label a speaker ONCE when they start speaking. Do NOT repeat the same name on consecutive paragraphs.
-Do NOT include citation codes like [P1] or [CD3] in the output text.
+You MUST include speaker-prefixed citation codes (e.g., [FRE-P1], [JAM-Q3]) in the output text to show which database items each claim comes from. Each speaker cites ONLY their own prefixed codes.
 ${docRef2}
 ${turnInfo ? `\nTurn counts so far: ${turnInfo}` : ""}
 
@@ -1405,10 +1444,10 @@ export async function processWithCoherence(options: CoherenceOptions): Promise<v
         const sc = perSpeakerContent[speaker];
         if (sc) {
           skeleton.perSpeakerContent[speaker] = {
-            positions: formatDbContent(sc.positions, "P", speaker, 15),
-            quotes: formatDbContent(sc.quotes, "Q", speaker, 15),
-            arguments: formatDbContent(sc.arguments, "A", speaker, 8),
-            works: formatDbContent(sc.works, "W", speaker, 3),
+            positions: formatDbContent(sc.positions, "P", speaker, 25),
+            quotes: formatDbContent(sc.quotes, "Q", speaker, 20),
+            arguments: formatDbContent(sc.arguments, "A", speaker, 12),
+            works: formatDbContent(sc.works, "W", speaker, 5),
           };
         }
       }
