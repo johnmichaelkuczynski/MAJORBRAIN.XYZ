@@ -32,7 +32,7 @@ export function FullDocumentSection() {
   };
 
   const handleGenerate = async () => {
-    if (!topic.trim() || !thinker || isStreaming) return;
+    if (!topic.trim() || isStreaming) return;
 
     const controller = new AbortController();
     setAbortController(controller);
@@ -44,7 +44,7 @@ export function FullDocumentSection() {
       const response = await fetch("/api/document/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic: fullTopic.trim(), thinker, wordCount, quoteCount, enhanced, model: selectedModel }),
+        body: JSON.stringify({ topic: fullTopic.trim(), thinker: thinker || null, wordCount, quoteCount, enhanced, model: selectedModel }),
         signal: controller.signal
       });
 
@@ -69,13 +69,16 @@ export function FullDocumentSection() {
   const handleHalt = () => { if (abortController) abortController.abort(); };
   const handleClear = () => { setTopic(""); setDocumentContent(""); setThinker(""); setOutput(""); };
   const handleCopy = () => { copyToClipboard(output); };
-  const handleDownload = async () => { await downloadText(output, `full-document-${thinker}-${Date.now()}.txt`); };
+  const handleDownload = async () => { 
+    const label = thinker ? `document_${thinker}_${Date.now()}` : `document_${Date.now()}`;
+    await downloadText(output, `${label}.txt`); 
+  };
 
   return (
     <Card className="p-6">
       <SectionHeader
         title="Full Document Generator"
-        subtitle="Generate comprehensive philosophical documents (up to 100,000 words)"
+        subtitle="Generate comprehensive documents (up to 100,000 words) - optionally grounded in a thinker's database content"
         onClear={handleClear}
         onCopy={handleCopy}
         onDownload={handleDownload}
@@ -104,8 +107,8 @@ export function FullDocumentSection() {
           </div>
 
           <div>
-            <Label className="mb-2 block">Thinker</Label>
-            <ThinkerSelect value={thinker} onChange={setThinker} className="w-full" placeholder="Select a thinker..." />
+            <Label className="mb-2 block">Thinker (Optional - grounds document in their database content)</Label>
+            <ThinkerSelect value={thinker} onChange={setThinker} className="w-full" placeholder="None (generate from instructions only)" />
           </div>
 
           <GenerationControls wordCount={wordCount} onWordCountChange={setWordCount} quoteCount={quoteCount} onQuoteCountChange={setQuoteCount} enhanced={enhanced} onEnhancedChange={setEnhanced} />
@@ -113,7 +116,7 @@ export function FullDocumentSection() {
           <ModelSelect value={selectedModel} onChange={setSelectedModel} className="w-full" />
 
           <div className="flex gap-2">
-            <Button onClick={handleGenerate} disabled={!topic.trim() || !thinker || isStreaming} className="flex-1" data-testid="button-generate-document">
+            <Button onClick={handleGenerate} disabled={!topic.trim() || isStreaming} className="flex-1" data-testid="button-generate-document">
               {isStreaming ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Generating...</> : <><Play className="mr-2 h-4 w-4" />Generate Document</>}
             </Button>
             {isStreaming && (

@@ -1534,48 +1534,48 @@ Create a detailed outline for a paper on "${topic}" using the database content.`
   app.post("/api/document/generate", async (req: Request, res: Response) => {
     const { topic, thinker, wordCount = 5000, quoteCount = 25, enhanced = false, model = "gpt-4o" } = req.body;
 
-    if (!topic || !thinker) {
-      return res.status(400).json({ error: "Topic and thinker are required" });
+    if (!topic) {
+      return res.status(400).json({ error: "Topic is required" });
     }
 
     setupSSE(res);
 
-    const thinkerName = normalizeThinkerName(thinker);
-    
-    // Fetch EXTENSIVE database content - this is the SKELETON
-    const context = await getThinkerContext(thinker, topic, quoteCount);
+    const hasThinker = !!thinker;
+    const thinkerName = hasThinker ? normalizeThinkerName(thinker) : null;
 
-    // For outputs > 500 words, use Cross-Chunk Coherence system
-    if (wordCount > 500) {
-      const { processWithCoherence } = await import("./services/coherenceService");
+    if (hasThinker) {
+      // THINKER MODE: Ground document in thinker's database content
+      const context = await getThinkerContext(thinker, topic, quoteCount);
+
+      if (wordCount > 500) {
+        const { processWithCoherence } = await import("./services/coherenceService");
+        
+        await processWithCoherence({
+          sessionType: "document",
+          thinkerId: thinker,
+          thinkerName: thinkerName!,
+          userPrompt: `Create a comprehensive document on "${topic}" grounded in ${thinkerName}'s actual writings and positions from the database.`,
+          targetWords: wordCount,
+          model: model as any,
+          enhanced: true,
+          databaseContent: {
+            positions: context.positions || [],
+            quotes: context.quotes || [],
+            arguments: context.arguments || [],
+            works: context.works || [],
+            outlines: context.outlines || [],
+          },
+          res,
+        });
+
+        res.write("data: [DONE]\n\n");
+        res.end();
+        return;
+      }
+
+      const skeleton = buildDatabaseSkeleton(context, thinkerName!, quoteCount);
       
-      await processWithCoherence({
-        sessionType: "document",
-        thinkerId: thinker,
-        thinkerName,
-        userPrompt: `Create a comprehensive philosophical document on "${topic}" based on ${thinkerName}'s actual writings.`,
-        targetWords: wordCount,
-        model: model as any,
-        enhanced: true,
-        databaseContent: {
-          positions: context.positions || [],
-          quotes: context.quotes || [],
-          arguments: context.arguments || [],
-          works: context.works || [],
-          outlines: context.outlines || [],
-        },
-        res,
-      });
-
-      res.write("data: [DONE]\n\n");
-      res.end();
-      return;
-    }
-
-    // Short output path
-    const skeleton = buildDatabaseSkeleton(context, thinkerName, quoteCount);
-    
-    const systemPrompt = `You are creating a comprehensive philosophical document based ENTIRELY on ${thinkerName}'s actual writings from the database.
+      const systemPrompt = `You are creating a comprehensive document grounded in ${thinkerName}'s actual writings from the database.
 
 ABSOLUTE WORD COUNT REQUIREMENT - NO EXCEPTIONS:
 The document MUST be AT LEAST ${wordCount} words.
@@ -1584,38 +1584,81 @@ CRITICAL INSTRUCTIONS:
 1. Your document MUST be built from the database content as the SKELETON
 2. Reference specific positions [P#], quotes [Q#], arguments [A#], and works [W#]
 3. DO NOT USE ANY MARKDOWN - plain text only.
+4. The document uses ${thinkerName}'s actual database content (positions, quotes, arguments, works) as its foundation. The AI elaborates on and connects this real content.
 
 ${skeleton}
 
 Now write a ${wordCount}-word document on "${topic}".`;
 
-    try {
-      if (isOpenAIModel(model)) {
-        const messages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: `Create the ${wordCount}-word document.` }
-        ];
+      try {
+        if (isOpenAIModel(model)) {
+          const messages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: `Create the ${wordCount}-word document.` }
+          ];
 
-        for await (const chunk of streamOpenAI(messages, model)) {
-          sendSSE(res, chunk);
-        }
-      } else {
-        const messages: Array<{ role: "user" | "assistant"; content: string }> = [
-          { role: "user", content: `Create the ${wordCount}-word document.` }
-        ];
+          for await (const chunk of streamOpenAI(messages, model)) {
+            sendSSE(res, chunk);
+          }
+        } else {
+          const messages: Array<{ role: "user" | "assistant"; content: string }> = [
+            { role: "user", content: `Create the ${wordCount}-word document.` }
+          ];
 
-        for await (const chunk of streamAnthropic(systemPrompt, messages, model)) {
-          sendSSE(res, chunk);
+          for await (const chunk of streamAnthropic(systemPrompt, messages, model)) {
+            sendSSE(res, chunk);
+          }
         }
+
+        res.write("data: [DONE]\n\n");
+        res.end();
+      } catch (error: any) {
+        console.error("Document error:", error);
+        sendSSE(res, `Error: ${error.message}`);
+        res.write("data: [DONE]\n\n");
+        res.end();
       }
+    } else {
+      // NO THINKER MODE: Generate purely from instructions
+      const systemPrompt = `You are a scholarly document generator. Follow the user's instructions precisely to create a comprehensive document.
 
-      res.write("data: [DONE]\n\n");
-      res.end();
-    } catch (error: any) {
-      console.error("Document error:", error);
-      sendSSE(res, `Error: ${error.message}`);
-      res.write("data: [DONE]\n\n");
-      res.end();
+ABSOLUTE WORD COUNT REQUIREMENT - NO EXCEPTIONS:
+The document MUST be AT LEAST ${wordCount} words.
+
+CRITICAL INSTRUCTIONS:
+1. Follow the user's topic and instructions exactly
+2. DO NOT USE ANY MARKDOWN - plain text only
+3. Write substantive, well-structured content
+4. Use numbered sections (1, 2, 3, etc.) for organization`;
+
+      try {
+        if (isOpenAIModel(model)) {
+          const messages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: `Write a ${wordCount}-word document on the following topic/instructions:\n\n${topic}` }
+          ];
+
+          for await (const chunk of streamOpenAI(messages, model)) {
+            sendSSE(res, chunk);
+          }
+        } else {
+          const messages: Array<{ role: "user" | "assistant"; content: string }> = [
+            { role: "user", content: `Write a ${wordCount}-word document on the following topic/instructions:\n\n${topic}` }
+          ];
+
+          for await (const chunk of streamAnthropic(systemPrompt, messages, model)) {
+            sendSSE(res, chunk);
+          }
+        }
+
+        res.write("data: [DONE]\n\n");
+        res.end();
+      } catch (error: any) {
+        console.error("Document error:", error);
+        sendSSE(res, `Error: ${error.message}`);
+        res.write("data: [DONE]\n\n");
+        res.end();
+      }
     }
   });
 
