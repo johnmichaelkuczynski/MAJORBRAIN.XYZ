@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Play, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -98,8 +99,15 @@ export function OutlineGeneratorSection() {
           </div>
 
           <div>
-            <Label className="mb-2 block">Thinker</Label>
-            <ThinkerSelect value={thinker} onChange={setThinker} className="w-full" placeholder="Select a thinker..." />
+            <Label className="mb-2 block">Author / Thinker</Label>
+            <Input
+              value={thinker}
+              onChange={(e) => setThinker(e.target.value)}
+              placeholder="Type any author name or select from database below..."
+              className="mb-2"
+              data-testid="input-outline-thinker"
+            />
+            <ThinkerSelect value={thinker} onChange={setThinker} className="w-full" placeholder="Or pick from database..." />
           </div>
 
           <GenerationControls wordCount={wordCount} onWordCountChange={setWordCount} quoteCount={quoteCount} onQuoteCountChange={setQuoteCount} enhanced={enhanced} onEnhancedChange={setEnhanced} />
