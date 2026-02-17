@@ -150,6 +150,7 @@ export const modelBuilderRequestSchema = z.object({
   inputText: z.string().min(1),
   mode: z.enum(["formal", "informal"]),
   model: z.enum(["gpt-4o", "gpt-4o-mini", "claude-sonnet-4", "claude-haiku-4-5"]).optional(),
+  customInstructions: z.string().optional(),
 });
 
 export type ModelBuilderRequest = z.infer<typeof modelBuilderRequestSchema>;

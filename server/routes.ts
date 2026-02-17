@@ -749,32 +749,61 @@ export async function registerRoutes(
       return res.status(400).json({ error: validation.error.issues[0]?.message || "Invalid request" });
     }
     
-    const { inputText, mode, model = "gpt-4o" } = validation.data;
+    const { inputText, mode, model = "gpt-4o", customInstructions } = validation.data;
 
     setupSSE(res);
 
+    const customBlock = customInstructions ? `\n\nUSER'S CUSTOM INSTRUCTIONS (follow these precisely):\n${customInstructions}\n` : "";
+
     const systemPrompt = mode === "formal" 
-      ? `You are a formal logic expert. Build a formal logical model that makes the given text TRUE. Include:
-1. DOMAIN: Define the universe of discourse
-2. INTERPRETATION: Define predicates, constants, and functions
-3. AXIOMS: List the foundational assumptions
-4. THEOREMS: Derive logical consequences
+      ? `You are an expert in mathematical logic and model theory. Your job is to construct a FORMAL MODEL (in the model-theoretic sense) that makes the given propositions TRUE.
 
-Use first-order logic notation where appropriate.
-CRITICAL: DO NOT USE ANY MARKDOWN FORMATTING. No # headers, no * bullets, no - lists, no ** bold. Plain text only with numbered sections.`
-      : `You are a philosophical interpreter. Provide an informal conceptual reinterpretation of the given text. Include:
-1. KEY CONCEPTS: Identify the main ideas
-2. ASSUMPTIONS: What's being taken for granted
-3. IMPLICATIONS: What follows from these ideas
-4. CONNECTIONS: How this relates to broader philosophical frameworks
+YOUR TASK:
+Given input text containing claims or propositions, construct a formal model (an interpretation) that SATISFIES those propositions. This means finding a domain, assigning extensions to predicates, referents to constants, and mappings to function symbols such that every proposition in the input comes out TRUE under that interpretation.
 
-CRITICAL: DO NOT USE ANY MARKDOWN FORMATTING. No # headers, no * bullets, no - lists, no ** bold. Plain text only with numbered sections.`;
+CRITICAL MODELING RULES:
+1. NO LOGICAL DEFECTS: The model must be consistent. No proposition and its negation can both be true.
+2. NO CIRCULAR DEFINITIONS: No predicate or function may be defined in terms of itself.
+3. NO FREE VARIABLES: Every variable must be bound by a quantifier. If the input has free variables, bind them.
+4. CHARITABLE REINTERPRETATION: If the input as stated is logically defective (contradictory, ill-formed, or trivially unsatisfiable), find the NEAREST non-defective reading and model THAT. Explain what you changed and why.
+5. REINTERPRET CONSTANTS FREELY: You may and should reinterpret non-logical constants if doing so yields a satisfying model. For example, "God" can be mapped to a mathematical operator, "mind" to an ordered triple, "substance" to a set, etc. The goal is a model that WORKS, not one that preserves naive readings.
+6. FINITE MODELS PREFERRED: Use the smallest domain that works.
+
+OUTPUT FORMAT:
+1. REINTERPRETATION NOTES (if any input was defective or required reinterpretation, explain here)
+2. DOMAIN D: Explicitly list the elements
+3. CONSTANT ASSIGNMENTS: For each constant symbol, its referent in D
+4. PREDICATE EXTENSIONS: For each predicate, its extension (set of tuples from D)
+5. FUNCTION MAPPINGS: For each function symbol, its mapping
+6. SATISFACTION CHECK: Show that each input proposition is TRUE under this interpretation
+
+Use standard logical notation (quantifiers, connectives). DO NOT USE ANY MARKDOWN. Plain text only with numbered sections.${customBlock}`
+      : `You are an expert in philosophical analysis and conceptual modeling. Your job is to construct an INFORMAL CONCEPTUAL MODEL that makes the given text coherent and defensible.
+
+YOUR TASK:
+Given input text containing claims, arguments, or ideas, construct a conceptual framework that renders them intelligible and as close to true as possible.
+
+CRITICAL MODELING RULES:
+1. CHARITABLE REINTERPRETATION: If the input contains vague, ambiguous, or seemingly absurd claims, find the most defensible reading. Do not dismiss input as nonsense; find what it COULD mean.
+2. REINTERPRET FREELY: You may replace vague terms with precise ones. "Soul" might become "self-model," "God" might become "limit concept," "essence" might become "necessary property set." The goal is to find an interpretation under which the claims are defensible.
+3. NO HAND-WAVING: Every concept must be defined clearly enough that someone could determine whether a given case falls under it.
+4. STRUCTURAL CLARITY: Show how the concepts relate to each other (part-whole, cause-effect, genus-species, etc.)
+
+OUTPUT FORMAT:
+1. REINTERPRETATION NOTES (how you've reinterpreted key terms to make the input defensible)
+2. PRIMITIVE CONCEPTS: The undefined terms you start with
+3. DEFINED CONCEPTS: Terms defined from the primitives
+4. STRUCTURAL RELATIONS: How concepts connect
+5. CORE CLAIMS: The input propositions restated in your framework, showing they are now coherent
+6. CONSEQUENCES: What else follows from this framework
+
+DO NOT USE ANY MARKDOWN. Plain text only with numbered sections.${customBlock}`;
 
     try {
       if (isOpenAIModel(model)) {
         const messages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [
           { role: "system", content: systemPrompt },
-          { role: "user", content: `Build a ${mode} logical model for the following text:\n\n${inputText}` }
+          { role: "user", content: `Build a ${mode} model for the following:\n\n${inputText}` }
         ];
 
         for await (const chunk of streamOpenAI(messages, model)) {
@@ -782,7 +811,7 @@ CRITICAL: DO NOT USE ANY MARKDOWN FORMATTING. No # headers, no * bullets, no - l
         }
       } else {
         const messages: Array<{ role: "user" | "assistant"; content: string }> = [
-          { role: "user", content: `Build a ${mode} logical model for the following text:\n\n${inputText}` }
+          { role: "user", content: `Build a ${mode} model for the following:\n\n${inputText}` }
         ];
 
         for await (const chunk of streamAnthropic(systemPrompt, messages, model)) {
