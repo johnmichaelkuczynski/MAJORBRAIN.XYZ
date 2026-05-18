@@ -19,6 +19,9 @@ import { generateDebateAudio } from "./services/ttsService";
 // Initialize AI clients
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const venice = process.env.VENICE_API_KEY
+  ? new OpenAI({ apiKey: process.env.VENICE_API_KEY, baseURL: "https://api.venice.ai/api/v1" })
+  : null;
 
 // File upload configuration
 const upload = multer({ 
@@ -38,8 +41,12 @@ async function* streamOpenAI(
   messages: Array<{ role: "system" | "user" | "assistant"; content: string }>,
   model: string = "gpt-4o"
 ): AsyncGenerator<string> {
-  const stream = await openai.chat.completions.create({
-    model,
+  const isVenice = model.startsWith("venice/");
+  if (isVenice && !venice) throw new Error("VENICE_API_KEY not configured");
+  const client = isVenice ? venice! : openai;
+  const apiModel = isVenice ? model.replace(/^venice\//, "") : model;
+  const stream = await client.chat.completions.create({
+    model: apiModel,
     messages,
     stream: true,
     max_tokens: 16000,
@@ -574,7 +581,7 @@ BEGIN YOUR RESPONSE IN FIRST PERSON. NO PREAMBLE. NO FREELANCING.`;
 
 // Determine if using OpenAI or Anthropic
 function isOpenAIModel(model: string): boolean {
-  return model.startsWith("gpt-");
+  return model.startsWith("gpt-") || model.startsWith("venice/");
 }
 
 export async function registerRoutes(

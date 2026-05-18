@@ -3,9 +3,32 @@ import Anthropic from "@anthropic-ai/sdk";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const venice = process.env.VENICE_API_KEY
+  ? new OpenAI({ apiKey: process.env.VENICE_API_KEY, baseURL: "https://api.venice.ai/api/v1" })
+  : null;
 
-export type AIProvider = "openai" | "anthropic";
-export type ModelId = "gpt-4o" | "gpt-4o-mini" | "claude-sonnet-4" | "claude-haiku-4-5";
+export type AIProvider = "openai" | "anthropic" | "venice";
+
+export const VENICE_MODELS = [
+  "venice/zai-org-glm-5-1",
+  "venice/grok-4-3",
+  "venice/claude-opus-4-7",
+  "venice/claude-sonnet-4-6",
+  "venice/openai-gpt-55",
+  "venice/kimi-k2-6",
+  "venice/deepseek-v3.2",
+  "venice/qwen-3-6-plus",
+  "venice/venice-uncensored-1-2",
+  "venice/llama-3.3-70b",
+  "venice/minimax-m27",
+] as const;
+
+export type ModelId =
+  | "gpt-4o"
+  | "gpt-4o-mini"
+  | "claude-sonnet-4"
+  | "claude-haiku-4-5"
+  | (typeof VENICE_MODELS)[number];
 
 export interface StreamCallbacks {
   onChunk: (text: string) => void;
@@ -22,7 +45,13 @@ export interface GenerationOptions {
 }
 
 export function getProvider(model: ModelId): AIProvider {
-  return model.startsWith("gpt-") ? "openai" : "anthropic";
+  if (model.startsWith("venice/")) return "venice";
+  if (model.startsWith("gpt-")) return "openai";
+  return "anthropic";
+}
+
+function veniceModelId(model: ModelId): string {
+  return model.replace(/^venice\//, "");
 }
 
 export async function generateText(options: GenerationOptions): Promise<string> {
@@ -32,6 +61,18 @@ export async function generateText(options: GenerationOptions): Promise<string> 
   if (provider === "openai") {
     const response = await openai.chat.completions.create({
       model,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+      max_tokens: maxTokens,
+      temperature,
+    });
+    return response.choices[0]?.message?.content || "";
+  } else if (provider === "venice") {
+    if (!venice) throw new Error("VENICE_API_KEY not configured");
+    const response = await venice.chat.completions.create({
+      model: veniceModelId(model),
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }
@@ -56,9 +97,11 @@ export async function* streamText(options: GenerationOptions): AsyncGenerator<st
   const { model, systemPrompt, userPrompt, maxTokens = 4096, temperature = 0.7 } = options;
   const provider = getProvider(model);
 
-  if (provider === "openai") {
-    const stream = await openai.chat.completions.create({
-      model,
+  if (provider === "openai" || provider === "venice") {
+    const client = provider === "venice" ? venice : openai;
+    if (!client) throw new Error("VENICE_API_KEY not configured");
+    const stream = await client.chat.completions.create({
+      model: provider === "venice" ? veniceModelId(model) : model,
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }
