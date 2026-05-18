@@ -50,6 +50,7 @@ Examples:
 - `Kuczynski_POSITIONS_1.txt` - Philosophical positions
 - `Kuczynski_ARGUMENTS_1.txt` - Arguments
 - `Kuczynski_WORKS_1.txt` - Works/writings
+- `Kuczynski_OUTLINES_1.txt` - Outlines (one outline block per line, or one full outline document)
 
 **CORE Format (Priority):** `CORE_AUTHOR_N.txt`
 
@@ -61,6 +62,7 @@ Examples:
 - **POSITIONS** - One position per line
 - **ARGUMENTS** - One argument per line
 - **WORKS** - Text content from works
+- **OUTLINES** - Structured outlines (blocks separated by blank lines — each block becomes one outline record, so multi-line outlines stay intact)
 - **CORE** - Priority content from Document Analyzer (outline, positions, arguments, trends, Q&As)
 
 ### How It Works
@@ -83,6 +85,7 @@ Examples:
 - `quotes` - Quotations from philosophical works
 - `arguments` - Philosophical arguments
 - `works` - Full text content from works
+- `outlines` - Structured outlines per thinker (cited as [PREFIX-OL#])
 - `text_chunks` - Text segments for RAG functionality
 - `core_content` - PRIORITY content from Document Analyzer (searched first in all queries)
 

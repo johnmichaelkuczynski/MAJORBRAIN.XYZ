@@ -552,7 +552,7 @@ ${context.arguments?.length > 0 ? `\n--- MY ARGUMENTS ---\n${context.arguments.s
 
 ${context.works?.length > 0 ? `\n--- MY WORKS ---\n${context.works.slice(0, Math.floor(quoteCount / 3)).map((w: any, i: number) => `[W${i + 1}] ${(w.workText || w.work_text || '').substring(0, 500)}...`).join('\n')}` : ''}
 
-${context.outlines?.length > 0 ? `\n--- MY OUTLINES ---\n${context.outlines.slice(0, Math.floor(quoteCount / 2)).map((o: any, i: number) => `[OL${i + 1}] ${(o.outlineText || o.outline_text || '').substring(0, 1000)}`).join('\n')}` : ''}
+${context.outlines?.length > 0 ? `\n--- MY OUTLINES ---\n${context.outlines.slice(0, Math.floor(quoteCount / 2)).map((o: any, i: number) => `[${thinkerPrefix(name)}-OL${i + 1}] ${(o.outlineText || o.outline_text || '').substring(0, 1000)}`).join('\n')}` : ''}
 
 === HOW TO RESPOND (STRICT DATABASE GROUNDING) ===
 

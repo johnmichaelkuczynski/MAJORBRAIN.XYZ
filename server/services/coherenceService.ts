@@ -577,6 +577,9 @@ export async function extractGlobalSkeleton(
   const workTexts = databaseContent.works.slice(0, 5).map((w: any, i: number) => 
     `[${tp}-W${i + 1}] ${(w.workText || w.work_text || '').substring(0, 500)}...`
   );
+  const outlineTexts = (databaseContent.outlines || []).slice(0, 10).map((o: any, i: number) =>
+    `[${tp}-OL${i + 1}] ${(o.outlineText || o.outline_text || '').substring(0, 1000)}`
+  );
 
   const systemPrompt = `You are a skeleton extractor. Extract the structural DNA of this request.
 Return ONLY valid JSON with this exact structure:
@@ -595,6 +598,7 @@ ${positionTexts.join("\n")}
 ${quoteTexts.join("\n")}
 ${argumentTexts.join("\n")}
 ${workTexts.join("\n")}
+${outlineTexts.length > 0 ? `\nOUTLINES:\n${outlineTexts.join("\n")}` : ""}
 ${uploadedTexts.length > 0 ? `\nUPLOADED MATERIAL:\n${uploadedTexts.join("\n")}` : ""}
 
 Return ONLY the JSON skeleton.`;
@@ -628,6 +632,7 @@ Return ONLY the JSON skeleton.`;
       quotes: quoteTexts,
       arguments: argumentTexts,
       works: workTexts,
+      outlines: outlineTexts,
     },
   };
 
@@ -1214,6 +1219,7 @@ ${coreRules}
 ${skeleton.databaseContent.positions.slice(0, 8).join("\n")}
 ${skeleton.databaseContent.quotes.slice(0, 6).join("\n")}
 ${skeleton.databaseContent.arguments.slice(0, 4).join("\n")}
+${(skeleton.databaseContent.outlines || []).slice(0, 4).join("\n")}
 
 THESIS: ${skeleton.thesis}
 COMMITMENTS: ${skeleton.commitments.join("; ")}
@@ -1221,7 +1227,7 @@ COMMITMENTS: ${skeleton.commitments.join("; ")}
 ${priorClaimsStr ? `PRIOR CLAIMS MADE: ${priorClaimsStr}` : ""}
 
 === ENHANCED MODE (1:3 RATIO) ===
-- 1 part: Database content (cite with [P#], [Q#], [A#], [W#])
+- 1 part: Database content (cite with speaker-prefixed codes [${speakerPrefix(thinkerName)}-P#], [${speakerPrefix(thinkerName)}-Q#], [${speakerPrefix(thinkerName)}-A#], [${speakerPrefix(thinkerName)}-W#], [${speakerPrefix(thinkerName)}-OL#])
 - 3 parts: Your elaboration with examples, history, applications
 - Core claims must cite database items; elaboration extends them
 - Always speak as "I" - never third person
@@ -1240,6 +1246,7 @@ ${coreRules}
 ${skeleton.databaseContent.positions.slice(0, 10).join("\n")}
 ${skeleton.databaseContent.quotes.slice(0, 10).join("\n")}
 ${skeleton.databaseContent.arguments.slice(0, 5).join("\n")}
+${(skeleton.databaseContent.outlines || []).slice(0, 5).join("\n")}
 
 THESIS: ${skeleton.thesis}
 COMMITMENTS: ${skeleton.commitments.join("; ")}
@@ -1248,7 +1255,7 @@ KEY TERMS: ${Object.entries(skeleton.keyTerms).map(([k, v]) => `${k}: ${v}`).joi
 ${priorClaimsStr ? `PRIOR CLAIMS MADE: ${priorClaimsStr}` : ""}
 
 === STRICT DATABASE GROUNDING (ZERO TOLERANCE FOR VIOLATION) ===
-- Every substantive claim MUST cite a database item [P#], [Q#], [A#], [W#]
+- Every substantive claim MUST cite a database item with speaker-prefixed code: [${speakerPrefix(thinkerName)}-P#], [${speakerPrefix(thinkerName)}-Q#], [${speakerPrefix(thinkerName)}-A#], [${speakerPrefix(thinkerName)}-W#], [${speakerPrefix(thinkerName)}-OL#]
 - DO NOT fabricate positions the thinker "probably" holds
 - If you have no database positions on a sub-topic, acknowledge this honestly
 - Speak in FIRST PERSON as yourself

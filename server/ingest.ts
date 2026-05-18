@@ -275,7 +275,11 @@ async function ingestFile(filePath: string): Promise<IngestResult> {
     }
     
     // Standard file processing
-    const lines = content.split("\n").filter(line => line.trim().length > 0);
+    // OUTLINES: split by blank-line-separated blocks so multi-line outlines stay as one record.
+    // Other types: split by newline (one record per line).
+    const lines = type === "OUTLINES"
+      ? content.split(/\n\s*\n/).map(b => b.trim()).filter(b => b.length > 0)
+      : content.split("\n").filter(line => line.trim().length > 0);
     const BATCH_SIZE = 500;
     
     for (let i = 0; i < lines.length; i += BATCH_SIZE) {
