@@ -3,11 +3,13 @@ import postgres from "postgres";
 import * as schema from "@shared/schema";
 
 // Use the external database URL provided by the user
-const connectionString = process.env.EXTERNAL_DATABASE_URL;
+const connectionString = process.env.EXTERNAL_DATABASE_URL || process.env.DATABASE_URL;
 
 if (!connectionString) {
-  throw new Error("EXTERNAL_DATABASE_URL environment variable is required");
+  throw new Error("EXTERNAL_DATABASE_URL or DATABASE_URL environment variable is required");
 }
+
+console.log(`[DB] Using connection from ${process.env.EXTERNAL_DATABASE_URL ? 'EXTERNAL_DATABASE_URL' : 'DATABASE_URL'}`);
 
 const client = postgres(connectionString, {
   max: 10,
