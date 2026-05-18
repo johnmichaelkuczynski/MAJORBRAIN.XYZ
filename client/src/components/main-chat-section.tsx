@@ -37,6 +37,12 @@ export function MainChatSection() {
   const [wordCount, setWordCount] = useState(2000);
   const [quoteCount, setQuoteCount] = useState(10);
   const [enhanced, setEnhanced] = useState(true);
+  const [quoteMode, setQuoteMode] = useState<"exact" | "density">("density");
+  const [quotesPer, setQuotesPer] = useState(1);
+  const [perWords, setPerWords] = useState(500);
+  const effectiveQuoteCount = quoteMode === "density"
+    ? Math.max(1, Math.ceil((wordCount / Math.max(1, perWords)) * quotesPer))
+    : quoteCount;
   
   const [showSkeletonPopup, setShowSkeletonPopup] = useState(false);
   const [showSkeletonBuildPopup, setShowSkeletonBuildPopup] = useState(false);
@@ -165,7 +171,7 @@ export function MainChatSection() {
           message,
           model: selectedModel,
           wordCount,
-          quoteCount,
+          quoteCount: effectiveQuoteCount,
           enhanced
         }),
         signal: abortControllerRef.current.signal,
@@ -250,6 +256,12 @@ export function MainChatSection() {
           onQuoteCountChange={setQuoteCount}
           enhanced={enhanced}
           onEnhancedChange={setEnhanced}
+          quoteMode={quoteMode}
+          onQuoteModeChange={setQuoteMode}
+          quotesPer={quotesPer}
+          onQuotesPerChange={setQuotesPer}
+          perWords={perWords}
+          onPerWordsChange={setPerWords}
         />
 
         <div className="space-y-4 mt-4">

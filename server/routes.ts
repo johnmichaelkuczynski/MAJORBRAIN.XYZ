@@ -100,7 +100,7 @@ function stripCitationCodes(text: string): string {
     .replace(/\[UD\d+\]/g, "");
 }
 
-function sendSSE(res: Response, data: string, preserveCitations: boolean = false) {
+function sendSSE(res: Response, data: string, preserveCitations: boolean = true) {
   const output = preserveCitations ? data : stripCitationCodes(data);
   if (!output && !data.includes("\n")) return;
   res.write(`data: ${JSON.stringify({ content: output })}\n\n`);
@@ -564,7 +564,7 @@ ${context.outlines?.length > 0 ? `\n--- MY OUTLINES ---\n${context.outlines.slic
 === HOW TO RESPOND (STRICT DATABASE GROUNDING) ===
 
 1. Answer the question DIRECTLY using the database content above
-2. Cite sources with [P1], [Q1], [A1], [W1] codes
+2. Cite sources with [${thinkerPrefix(name)}-P#], [${thinkerPrefix(name)}-Q#], [${thinkerPrefix(name)}-A#], [${thinkerPrefix(name)}-W#] codes
 3. Speak as yourself in first person: "I believe...", "My argument is...", "I reject..."
 4. Be direct and substantive - no filler
 5. ${enhanced ? "ENHANCED: Use database as scaffolding (1 part), add your elaboration (3 parts) with examples, history, applications. Core claims must still cite database items." : "STRICT: Stay close to database content. Every substantive claim must cite a database item."}
@@ -572,7 +572,16 @@ ${context.outlines?.length > 0 ? `\n--- MY OUTLINES ---\n${context.outlines.slic
 7. DO NOT FREELANCE: If a sub-topic has no database content, acknowledge this honestly
 8. DO NOT USE MARKDOWN: No # headers, no * bullets, no - lists, no ** bold. Plain text only.
 
-Database contains ${totalDbContent} items. Cite them with [P#], [Q#], [A#], [W#] codes.
+=== MANDATORY VERBATIM QUOTATIONS (NON-NEGOTIABLE) ===
+You MUST include AT LEAST ${quoteCount} VERBATIM quoted passages from the "MY QUOTES" list above.
+A verbatim quotation = the EXACT text from a [Q#] item, wrapped in double quotation marks, immediately followed by its citation code.
+EXAMPLE: I have always held that "religion is the universal obsessional neurosis of humanity" [${thinkerPrefix(name)}-Q3].
+- The quote text inside the quotation marks MUST appear character-for-character as it does in the [${thinkerPrefix(name)}-Q#] item above.
+- Do NOT paraphrase and call it a quote. Do NOT fabricate quotes that are not in the list.
+- The citation code MUST appear in the visible output text. It will NOT be stripped.
+- A response with fewer than ${quoteCount} verbatim quoted passages is a FAILED response.
+
+Database contains ${totalDbContent} items (${context.positions?.length || 0} positions, ${context.quotes?.length || 0} quotes, ${context.arguments?.length || 0} arguments, ${context.works?.length || 0} works). USE THEM.
 
 BEGIN YOUR RESPONSE IN FIRST PERSON. NO PREAMBLE. NO FREELANCING.`;
 
